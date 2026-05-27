@@ -1,0 +1,15 @@
+{
+  "name": "real-health-juice-parlour-pos",
+  "version": "1.0.0",
+  "description": "Point of Sale system for Real Health Juice Parlour",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n CLIENT,SERVER -c cyan,green \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "build": "npm run build --prefix client && npm run build --prefix server",
+    "start": "NODE_ENV=production npm run start --prefix server",
+    "install:all": "npm install --prefix client && npm install --prefix server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "rhjp-server",
+  "version": "1.0.0",
+  "description": "Real Health Juice Parlour POS - API Server",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
