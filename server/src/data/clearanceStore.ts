@@ -1,16 +1,24 @@
+import { loadJson, saveJson } from '../lib/persistence'
+
 export interface DailyClearance {
   employeeId: string
   employeeName: string
-  dateKey: string // YYYY-MM-DD
+  dateKey: string
   clearedAt: string
   clearedBy: string
 }
 
-const clearances: DailyClearance[] = []
+const CLEARANCES_FILE = 'clearances.json'
+
+let clearances: DailyClearance[] = loadJson<DailyClearance[]>(CLEARANCES_FILE, [])
+
+function persistClearances() {
+  saveJson(CLEARANCES_FILE, clearances)
+}
 
 export function toDateKey(isoOrDate: Date | string = new Date()): string {
   const d = typeof isoOrDate === 'string' ? new Date(isoOrDate) : isoOrDate
-  return d.toLocaleDateString('en-CA') // YYYY-MM-DD
+  return d.toLocaleDateString('en-CA')
 }
 
 export function isCleared(employeeId: string, dateKey: string): boolean {
@@ -34,6 +42,7 @@ export function clearEmployeeDay(
     clearedBy,
   }
   clearances.push(record)
+  persistClearances()
   return record
 }
 

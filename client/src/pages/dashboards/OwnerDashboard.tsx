@@ -6,16 +6,20 @@ import { TrendingUp, Users, ShoppingBag, DollarSign, Settings, BarChart2, FileTe
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 
-interface Order { grandTotal: number; createdAt: string }
+interface RevenueStats {
+  today: { dateKey: string; orderCount: number; revenue: number }
+  allTime: { orderCount: number; revenue: number }
+}
 
 const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 const item: Variants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
 
 const modules: { label: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string; bg: string; path?: string }[] = [
+  { label: 'Faith Inventory', icon: Package, color: 'text-teal-700', bg: 'bg-teal-100', path: '/dashboard/owner/faith-inventory' },
   { label: 'Employee Records', icon: ClipboardList, color: 'text-amber-700', bg: 'bg-amber-100', path: '/dashboard/owner/employee-records' },
   { label: 'Sales Reports', icon: BarChart2, color: 'text-purple-700', bg: 'bg-purple-100' },
   { label: 'Staff Management', icon: Users, color: 'text-blue-700', bg: 'bg-blue-100' },
-  { label: 'Menu & Products', icon: Package, color: 'text-green-700', bg: 'bg-green-100' },
+  { label: 'Menu & Products', icon: ShoppingBag, color: 'text-green-700', bg: 'bg-green-100' },
   { label: 'Financial Summary', icon: FileText, color: 'text-rose-700', bg: 'bg-rose-100' },
   { label: 'System Settings', icon: Settings, color: 'text-gray-700', bg: 'bg-gray-100' },
 ]
@@ -23,25 +27,48 @@ const modules: { label: string; icon: React.ComponentType<{ size?: number; class
 export default function OwnerDashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [orders, setOrders] = useState<Order[]>([])
+  const [stats, setStats] = useState<RevenueStats | null>(null)
 
   useEffect(() => {
-    fetch('/api/orders').then((r) => r.json()).then(setOrders).catch(() => {})
-    const id = setInterval(() => {
-      fetch('/api/orders').then((r) => r.json()).then(setOrders).catch(() => {})
-    }, 10000)
+    const load = () =>
+      fetch('/api/orders/stats/revenue')
+        .then((r) => r.json())
+        .then(setStats)
+        .catch(() => {})
+    load()
+    const id = setInterval(load, 10000)
     return () => clearInterval(id)
   }, [])
 
-  const today = new Date().toDateString()
-  const todayOrders = orders.filter((o) => new Date(o.createdAt).toDateString() === today)
-  const todayRevenue = todayOrders.reduce((s, o) => s + o.grandTotal, 0)
-
-  const stats = [
-    { label: "Today's Revenue", value: `Ksh ${todayRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: "Today's Orders", value: todayOrders.length.toString(), icon: ShoppingBag, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Total Orders', value: orders.length.toString(), icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'All-time Revenue', value: `Ksh ${orders.reduce((s, o) => s + o.grandTotal, 0).toLocaleString()}`, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+  const statCards = [
+    {
+      label: "Today's Revenue",
+      value: `Ksh ${(stats?.today.revenue ?? 0).toLocaleString()}`,
+      icon: DollarSign,
+      color: 'text-amber-600',
+      bg: 'bg-amber-50',
+    },
+    {
+      label: "Today's Orders",
+      value: (stats?.today.orderCount ?? 0).toString(),
+      icon: ShoppingBag,
+      color: 'text-green-600',
+      bg: 'bg-green-50',
+    },
+    {
+      label: 'Total Orders',
+      value: (stats?.allTime.orderCount ?? 0).toString(),
+      icon: TrendingUp,
+      color: 'text-purple-600',
+      bg: 'bg-purple-50',
+    },
+    {
+      label: 'All-time Revenue',
+      value: `Ksh ${(stats?.allTime.revenue ?? 0).toLocaleString()}`,
+      icon: Users,
+      color: 'text-blue-600',
+      bg: 'bg-blue-50',
+    },
   ]
 
   return (
@@ -54,7 +81,7 @@ export default function OwnerDashboard() {
       {/* Live Stats */}
       <motion.div variants={container} initial="hidden" animate="show"
         className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {stats.map(({ label, value, icon: Icon, color, bg }) => (
+        {statCards.map(({ label, value, icon: Icon, color, bg }) => (
           <motion.div key={label} variants={item} className="bg-white rounded-2xl p-5 shadow-sm">
             <div className={`${bg} rounded-xl p-3 w-fit mb-3`}>
               <Icon size={24} className={color} />
