@@ -77,7 +77,7 @@ export function getInventoryTotals() {
   return {
     moneyIn,
     moneyOut,
-    balance: moneyIn - moneyOut,
+    profit: moneyIn - moneyOut,
     count: entries.length,
   }
 }

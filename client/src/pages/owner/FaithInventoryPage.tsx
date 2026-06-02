@@ -26,7 +26,7 @@ interface InventoryEntry {
 interface InventoryTotals {
   moneyIn: number
   moneyOut: number
-  balance: number
+  profit: number
   count: number
 }
 
@@ -34,7 +34,7 @@ function formatKsh(n: number) {
   return `Ksh ${n.toLocaleString('en-KE')}`
 }
 
-function balance(entry: Pick<InventoryEntry, 'moneyIn' | 'moneyOut'>) {
+function profit(entry: Pick<InventoryEntry, 'moneyIn' | 'moneyOut'>) {
   return entry.moneyIn - entry.moneyOut
 }
 
@@ -165,13 +165,13 @@ export default function FaithInventoryPage() {
               <div className="text-2xl font-bold text-rose-700">{formatKsh(totals.moneyOut)}</div>
             </div>
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-amber-200">
-              <div className="text-sm text-gray-500">Total Balance</div>
+              <div className="text-sm text-gray-500">Total Profit</div>
               <div
                 className={`text-2xl font-bold ${
-                  totals.balance >= 0 ? 'text-amber-800' : 'text-red-600'
+                  totals.profit >= 0 ? 'text-amber-800' : 'text-red-600'
                 }`}
               >
-                {formatKsh(totals.balance)}
+                {formatKsh(totals.profit)}
               </div>
               <div className="text-xs text-gray-400 mt-1">Money in − money out</div>
             </div>
@@ -244,7 +244,7 @@ export default function FaithInventoryPage() {
                   <th className="px-4 py-3 font-semibold">Description</th>
                   <th className="px-4 py-3 font-semibold text-right">Money In</th>
                   <th className="px-4 py-3 font-semibold text-right">Money Out</th>
-                  <th className="px-4 py-3 font-semibold text-right">Balance</th>
+                  <th className="px-4 py-3 font-semibold text-right">Profit</th>
                   <th className="px-4 py-3 font-semibold">Notes</th>
                   <th className="px-4 py-3 w-12" />
                 </tr>
@@ -264,7 +264,7 @@ export default function FaithInventoryPage() {
                   </tr>
                 ) : (
                   entries.map((row) => {
-                    const rowBalance = balance(row)
+                    const p = profit(row)
                     return (
                       <tr key={row.id} className="border-t border-gray-100 hover:bg-amber-50/50">
                         <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{row.dateKey}</td>
@@ -277,10 +277,10 @@ export default function FaithInventoryPage() {
                         </td>
                         <td
                           className={`px-4 py-3 text-right font-bold ${
-                            rowBalance >= 0 ? 'text-amber-800' : 'text-red-600'
+                            p >= 0 ? 'text-amber-800' : 'text-red-600'
                           }`}
                         >
-                          {formatKsh(rowBalance)}
+                          {formatKsh(p)}
                         </td>
                         <td className="px-4 py-3 text-gray-500 max-w-[160px] truncate">
                           {row.notes || '—'}
