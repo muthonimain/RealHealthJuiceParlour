@@ -7,8 +7,6 @@ import menuRoutes from './routes/menu'
 import employeeRoutes from './routes/employees'
 import ordersRoutes from './routes/orders'
 import clearancesRoutes from './routes/clearances'
-import inventoryRoutes from './routes/inventory'
-import { getAllOrders } from './data/ordersStore'
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -26,7 +24,6 @@ app.use('/api/menu', menuRoutes)
 app.use('/api/employees', employeeRoutes)
 app.use('/api/orders', ordersRoutes)
 app.use('/api/clearances', clearancesRoutes)
-app.use('/api/inventory', inventoryRoutes)
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'Real Health Juice Parlour POS' })
@@ -42,7 +39,5 @@ if (isProd) {
 }
 
 app.listen(PORT, () => {
-  const orderCount = getAllOrders().length
   console.log(`Server running on port ${PORT} (${isProd ? 'production' : 'development'})`)
-  console.log(`[persist] Loaded ${orderCount} saved order(s) from disk`)
 })

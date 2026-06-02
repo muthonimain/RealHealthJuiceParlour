@@ -7,7 +7,6 @@ import EmployeeDashboard from './pages/dashboards/EmployeeDashboard'
 import MenuCategoryPage from './pages/employee/MenuCategoryPage'
 import ReceiptPage from './pages/ReceiptPage'
 import EmployeeRecordsPage from './pages/owner/EmployeeRecordsPage'
-import FaithInventoryPage from './pages/owner/FaithInventoryPage'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -72,16 +71,6 @@ function App() {
               element={
                 <ProtectedRoute role="owner">
                   <EmployeeRecordsPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Owner: Faith inventory */}
-            <Route
-              path="/dashboard/owner/faith-inventory"
-              element={
-                <ProtectedRoute role="owner">
-                  <FaithInventoryPage />
                 </ProtectedRoute>
               }
             />

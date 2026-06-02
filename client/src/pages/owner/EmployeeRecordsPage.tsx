@@ -69,21 +69,14 @@ export default function EmployeeRecordsPage() {
   const [clearingId, setClearingId] = useState<string | null>(null)
   const [lastRefresh, setLastRefresh] = useState(new Date())
 
-  const [revenueStats, setRevenueStats] = useState<{
-    today: { orderCount: number; revenue: number }
-    allTime: { orderCount: number; revenue: number }
-  } | null>(null)
-
   const fetchData = useCallback(async () => {
     try {
-      const [ordersRes, summariesRes, statsRes] = await Promise.all([
+      const [ordersRes, summariesRes] = await Promise.all([
         fetch('/api/orders'),
         fetch('/api/clearances/summaries'),
-        fetch('/api/orders/stats/revenue'),
       ])
       if (ordersRes.ok) setOrders(await ordersRes.json())
       if (summariesRes.ok) setSummaries(await summariesRes.json())
-      if (statsRes.ok) setRevenueStats(await statsRes.json())
       setLastRefresh(new Date())
     } finally {
       setLoading(false)
@@ -119,6 +112,12 @@ export default function EmployeeRecordsPage() {
     }
   }
 
+  const totalRevenue = orders.reduce((sum, o) => sum + o.grandTotal, 0)
+  const todayOrders = orders.filter((o) => {
+    const d = new Date(o.createdAt)
+    return d.toDateString() === new Date().toDateString()
+  })
+  const todayRevenue = todayOrders.reduce((sum, o) => sum + o.grandTotal, 0)
   const pendingCount = summaries.filter((s) => s.status === 'pending' && s.totalOrders > 0).length
 
   return (
@@ -290,10 +289,10 @@ export default function EmployeeRecordsPage() {
         {/* Summary stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
-            { label: 'All-time Orders', value: revenueStats?.allTime.orderCount ?? orders.length },
-            { label: "Today's Orders", value: revenueStats?.today.orderCount ?? 0 },
-            { label: "Today's Revenue", value: `Ksh ${(revenueStats?.today.revenue ?? 0).toLocaleString()}` },
-            { label: 'All-time Revenue', value: `Ksh ${(revenueStats?.allTime.revenue ?? 0).toLocaleString()}` },
+            { label: "Total Orders", value: orders.length },
+            { label: "Today's Orders", value: todayOrders.length },
+            { label: "Today's Revenue", value: `Ksh ${todayRevenue.toLocaleString()}` },
+            { label: 'All-time Revenue', value: `Ksh ${totalRevenue.toLocaleString()}` },
           ].map(({ label, value }) => (
             <div key={label} className="bg-white rounded-2xl p-4 shadow-sm">
               <div className="text-xl font-bold text-gray-900">{value}</div>

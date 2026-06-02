@@ -7,6 +7,3 @@ server/dist/
 .env
 *.env.local
 .DS_Store
-
-# Persisted sales data (local only — do not commit live transaction data)
-server/persisted/

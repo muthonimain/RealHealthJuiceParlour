@@ -83,12 +83,12 @@ export default function LandingPage() {
         <p className="text-green-400 text-sm mt-1">Select your role to continue</p>
       </motion.div>
 
-      {/* Role Cards — two roles, centred */}
+      {/* Role Cards */}
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 w-full max-w-3xl mx-auto"
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl"
       >
         {roles.map(({ key, label, description, icon: Icon, bg, border, iconBg, iconColor, textColor, path }) => (
           <motion.button
@@ -97,12 +97,11 @@ export default function LandingPage() {
             onClick={() => navigate(path)}
             whileTap={{ scale: 0.97 }}
             className={`
-              ${bg} ${border} border-2 rounded-3xl p-8 sm:p-10 flex flex-col items-center gap-5
-              w-full sm:w-72 md:w-80
+              ${bg} ${border} border-2 rounded-3xl p-8 flex flex-col items-center gap-5
               cursor-pointer transition-all duration-200
               hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/30
               active:scale-[0.98]
-              touch-btn min-h-[240px]
+              touch-btn min-h-[220px]
             `}
           >
             <div className={`${iconBg} rounded-2xl p-5`}>

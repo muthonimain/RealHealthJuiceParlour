@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { createOrder, getAllOrders, getOrderById, getRevenueStats } from '../data/ordersStore'
+import { createOrder, getAllOrders, getOrderById } from '../data/ordersStore'
 import type { OrderItem } from '../data/ordersStore'
 
 const router = Router()
@@ -28,11 +28,6 @@ router.post('/', (req: Request, res: Response) => {
 // GET /api/orders — owner fetches all orders
 router.get('/', (_req: Request, res: Response) => {
   res.json(getAllOrders())
-})
-
-// GET /api/orders/stats/revenue — today's + all-time + per-day revenue (persisted)
-router.get('/stats/revenue', (_req: Request, res: Response) => {
-  res.json(getRevenueStats())
 })
 
 // GET /api/orders/:id — fetch a single order (for receipt page)
