@@ -97,7 +97,7 @@ async function loadCategoriesFromDb(): Promise<MenuCategory[]> {
     'SELECT * FROM menu_categories ORDER BY sort_order'
   )
   const itemsByCat = await loadItemsByCategory()
-  return rows.map((c) =>
+  return rows.map((c: CategoryRow) =>
     normalizeCategory({
       id: c.id,
       name: c.name,
