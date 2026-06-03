@@ -11,7 +11,7 @@ databases:
 services:
   - name: api
     github:
-      repo: YOUR_GITHUB_USER/RealHealthJuiceParlour
+      repo: muthonimain/RealHealthJuiceParlour
       branch: main
       deploy_on_push: true
     source_dir: /
