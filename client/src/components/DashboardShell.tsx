@@ -30,40 +30,37 @@ export default function DashboardShell({
   }
 
   return (
-    <div className={`min-h-screen flex flex-col ${pageBg}`}>
-      {/* Top Nav */}
-      <header className={`${headerBg} shadow-lg`}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <HeaderLogo />
-            <div className="min-w-0">
-              <div className="text-white font-bold text-base sm:text-lg leading-tight truncate">
-                Real Health Juice Parlour
-              </div>
-              <div className={`text-xs font-semibold uppercase tracking-widest ${accentClass}`}>
-                {title}
-              </div>
+    <div className={`owner-page min-h-dvh ${pageBg}`}>
+      <header className={`${headerBg} owner-page-header`}>
+        <div className="owner-page-header-inner max-w-7xl">
+          <HeaderLogo className="self-center shrink-0" />
+          <div className="min-w-0 flex-1 py-0.5">
+            <div className="text-white font-bold text-sm sm:text-lg leading-snug truncate">
+              Real Health Juice Parlour
+            </div>
+            <div className={`text-xs font-semibold uppercase tracking-wide sm:tracking-widest leading-snug truncate ${accentClass}`}>
+              {title}
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             <div className="text-right hidden sm:block">
               <div className="text-white font-semibold text-sm">{user?.name}</div>
               <div className={`text-xs ${accentClass} capitalize`}>{user?.role}</div>
             </div>
             <button
+              type="button"
               onClick={handleLogout}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 active:bg-white/30 text-white rounded-xl px-4 py-3 text-sm font-semibold transition-all"
+              className="owner-page-logout bg-white/10 hover:bg-white/20"
             >
               <LogOut size={18} />
-              <span>Logout</span>
+              <span className="hidden xs:inline">Logout</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
+      <main className="owner-page-main max-w-7xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-red-950">{subtitle}</h1>
           <p className="text-orange-800/70 text-sm mt-1">

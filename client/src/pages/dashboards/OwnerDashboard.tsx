@@ -3,15 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import DashboardShell from '../../components/DashboardShell'
 import { useAuth } from '../../context/AuthContext'
 import { TrendingUp, Users, ShoppingBag, DollarSign, Settings, BarChart2, Package, ClipboardList, Wallet, PieChart } from 'lucide-react'
-import { motion } from 'framer-motion'
-import type { Variants } from 'framer-motion'
 import { ownerTheme } from '../../theme/roles'
 import { sumRevenueForWorkingMonth, workingMonthLabel } from '../../lib/workingMonth'
+import { dataUnchanged } from '../../lib/stableData'
 
 interface Order { grandTotal: number; createdAt: string }
-
-const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
-const item: Variants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
 
 const modules: { label: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string; bg: string; path?: string }[] = [
   { label: 'Employee Records', icon: ClipboardList, color: 'text-amber-700', bg: 'bg-amber-100', path: '/dashboard/owner/employee-records' },
@@ -29,10 +25,15 @@ export default function OwnerDashboard() {
   const [orders, setOrders] = useState<Order[]>([])
 
   useEffect(() => {
-    fetch('/api/orders').then((r) => r.json()).then(setOrders).catch(() => {})
-    const id = setInterval(() => {
-      fetch('/api/orders').then((r) => r.json()).then(setOrders).catch(() => {})
-    }, 10000)
+    const pull = () =>
+      fetch('/api/orders')
+        .then((r) => r.json())
+        .then((next: Order[]) => {
+          setOrders((prev) => (dataUnchanged(prev, next) ? prev : next))
+        })
+        .catch(() => {})
+    pull()
+    const id = setInterval(pull, 20000)
     return () => clearInterval(id)
   }, [])
 
@@ -59,39 +60,36 @@ export default function OwnerDashboard() {
       pageBg={ownerTheme.shellPage}
     >
       {/* Live Stats */}
-      <motion.div variants={container} initial="hidden" animate="show"
-        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
         {stats.map(({ label, value, icon: Icon, color, bg }) => (
-          <motion.div key={label} variants={item} className={ownerTheme.statCard}>
+          <div key={label} className={ownerTheme.statCard}>
             <div className={`${bg} rounded-xl p-3 w-fit mb-3`}>
               <Icon size={24} className={color} />
             </div>
             <div className="text-2xl font-bold text-gray-900">{value}</div>
             <div className="text-sm text-gray-500 mt-1">{label}</div>
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
 
       {/* Modules */}
       <h2 className={`text-lg font-semibold ${ownerTheme.pageTitle} mb-4`}>Management Modules</h2>
-      <motion.div variants={container} initial="hidden" animate="show"
-        className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         {modules.map(({ label, icon: Icon, color, bg, path }) => (
-          <motion.button
+          <button
             key={label}
-            variants={item}
-            whileTap={{ scale: 0.96 }}
+            type="button"
             onClick={() => path && navigate(path)}
-            className={`${ownerTheme.moduleCard} flex flex-col items-center gap-3 transition-all min-h-[130px] ${path ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
+            className={`${ownerTheme.moduleCard} flex flex-col items-center gap-3 min-h-[120px] sm:min-h-[130px] active:scale-[0.98] transition-transform ${path ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
           >
             <div className={`${bg} rounded-xl p-4`}>
               <Icon size={28} className={color} />
             </div>
             <span className="text-sm font-semibold text-gray-700 text-center">{label}</span>
             {path && <span className={`text-xs ${ownerTheme.openLink} font-semibold uppercase tracking-wider`}>Open →</span>}
-          </motion.button>
+          </button>
         ))}
-      </motion.div>
+      </div>
     </DashboardShell>
   )
 }

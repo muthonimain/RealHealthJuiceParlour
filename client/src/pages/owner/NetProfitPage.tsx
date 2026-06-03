@@ -1,11 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, LogOut, TrendingUp, Minus, Equal } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { useAuth } from '../../context/AuthContext'
+import { TrendingUp, Minus, Equal } from 'lucide-react'
 import { authFetch } from '../../lib/api'
-import { HeaderLogo } from '../../components/BrandLogo'
-import { ownerTheme } from '../../theme/roles'
+import OwnerPageShell from '../../components/OwnerPageShell'
+import { dataUnchanged } from '../../lib/stableData'
 import type { DailyProfitSummary } from '../../types/expense'
 
 function todayHeading() {
@@ -38,7 +36,6 @@ function Line({
 }
 
 export default function NetProfitPage() {
-  const { logout } = useAuth()
   const navigate = useNavigate()
   const [summary, setSummary] = useState<DailyProfitSummary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -46,7 +43,10 @@ export default function NetProfitPage() {
   const load = useCallback(async () => {
     try {
       const res = await authFetch('/api/profit/daily')
-      if (res.ok) setSummary(await res.json())
+      if (res.ok) {
+        const next: DailyProfitSummary = await res.json()
+        setSummary((prev) => (dataUnchanged(prev, next) ? prev : next))
+      }
     } finally {
       setLoading(false)
     }
@@ -54,43 +54,18 @@ export default function NetProfitPage() {
 
   useEffect(() => {
     load()
-    const id = setInterval(load, 8000)
+    const id = setInterval(load, 20000)
     return () => clearInterval(id)
   }, [load])
 
   return (
-    <div className={`min-h-screen flex flex-col ${ownerTheme.shellPage}`}>
-      <header className={`${ownerTheme.header} shadow-lg sticky top-0 z-30`}>
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/dashboard/owner')}
-              title="Back to owner dashboard"
-              className="text-white/70 hover:text-white p-2 rounded-xl hover:bg-white/10 transition-all"
-            >
-              <ArrowLeft size={22} />
-            </button>
-            <HeaderLogo />
-            <div>
-              <div className="text-white font-bold text-base">Net Profit</div>
-              <div className={`${ownerTheme.headerAccent} text-xs`}>Daily profit breakdown</div>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              logout()
-              navigate('/')
-            }}
-            title="Logout"
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2 text-sm font-semibold transition-all"
-          >
-            <LogOut size={16} />
-            <span>Logout</span>
-          </button>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">
+    <OwnerPageShell
+      title="Net Profit"
+      subtitle="Daily profit breakdown"
+      onBack={() => navigate('/dashboard/owner')}
+      backTitle="Back to owner dashboard"
+    >
+      <div className="max-w-2xl mx-auto w-full">
         <p className="text-sm text-gray-500 mb-6">{todayHeading()}</p>
 
         {loading ? (
@@ -98,11 +73,7 @@ export default function NetProfitPage() {
             <div className="w-8 h-8 rounded-full border-4 border-amber-500 border-t-transparent animate-spin" />
           </div>
         ) : summary ? (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
+          <div className="space-y-6">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white rounded-2xl p-4 shadow-sm">
                 <div className="text-xs text-gray-500">Orders today</div>
@@ -157,11 +128,11 @@ export default function NetProfitPage() {
             <p className="text-xs text-gray-400 text-center">
               Updates automatically every few seconds. Record all daily expenses on the Expenses page.
             </p>
-          </motion.div>
+          </div>
         ) : (
           <p className="text-center text-gray-400">Could not load profit summary.</p>
         )}
-      </main>
-    </div>
+      </div>
+    </OwnerPageShell>
   )
 }

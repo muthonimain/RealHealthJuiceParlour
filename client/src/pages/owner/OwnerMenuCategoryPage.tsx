@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus, Pencil, Trash2, Save, X } from 'lucide-react'
-import { motion } from 'framer-motion'
 import { authFetch } from '../../lib/api'
 import type { MenuCategory, MenuItem } from '../../types/menu'
 import { ownerTheme } from '../../theme/roles'
@@ -288,9 +287,9 @@ export default function OwnerMenuCategoryPage() {
   )
 
   return (
-    <div className={`min-h-screen ${ownerTheme.shellPage} flex flex-col`}>
-      <header className={`${ownerTheme.header} shadow-lg sticky top-0 z-30`}>
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+    <div className={`owner-page min-h-dvh ${ownerTheme.shellPage}`}>
+      <header className={`${ownerTheme.header} owner-page-header`}>
+        <div className="owner-page-header-inner max-w-7xl">
           <button
             type="button"
             onClick={() => navigate('/dashboard/owner/menu')}
@@ -355,7 +354,7 @@ export default function OwnerMenuCategoryPage() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
+      <main className="owner-page-main max-w-3xl space-y-6">
         {formError && (
           <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2">{formError}</p>
         )}
@@ -380,9 +379,7 @@ export default function OwnerMenuCategoryPage() {
           )}
         </div>
 
-        <motion.form
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
+        <form
           onSubmit={handleAddItem}
           className="bg-white rounded-2xl shadow-sm border-2 border-amber-200 p-5"
         >
@@ -446,7 +443,7 @@ export default function OwnerMenuCategoryPage() {
           >
             {saving ? 'Adding…' : 'Add item'}
           </button>
-        </motion.form>
+        </form>
       </main>
     </div>
   )

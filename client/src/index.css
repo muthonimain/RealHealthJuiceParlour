@@ -3,14 +3,100 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+  html {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    overscroll-behavior: none;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  button,
+  a,
+  [role='button'],
+  input,
+  select,
+  textarea,
+  label {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a[href],
+  [role='button'] {
+    touch-action: manipulation;
+  }
+}
+
+@layer components {
+  .owner-page {
+    overflow-x: hidden;
+  }
+
+  .owner-page-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+  }
+
+  .owner-page-header-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding: 0.625rem 0.75rem;
+    min-width: 0;
+  }
+
+  @media (min-width: 640px) {
+    .owner-page-header-inner {
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+    }
+  }
+
+  .owner-page-back,
+  .owner-page-logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    color: rgb(255 255 255 / 0.85);
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .owner-page-back:hover,
+  .owner-page-logout:hover {
+    color: #fff;
+    background-color: rgb(255 255 255 / 0.1);
+  }
+
+  .owner-page-logout {
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding-inline: 0.625rem;
+  }
+
+  .owner-page-main {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding: 1rem 0.75rem 2.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .owner-page-main {
+      padding: 1.5rem 1rem 2.5rem;
+    }
   }
 }
 

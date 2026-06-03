@@ -89,22 +89,20 @@ export default function EmployeeDashboard() {
   }
 
   return (
-    <div className={`min-h-screen ${employeeTheme.shellPage} flex flex-col`}>
-      <header className={`${employeeTheme.header} shadow-lg sticky top-0 z-30`}>
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <HeaderLogo />
-            <div className="min-w-0">
-              <div className="text-white font-bold text-base leading-tight truncate">
-                Real Health Juice Parlour
-              </div>
-              <div className={`${employeeTheme.headerAccent} text-xs font-semibold tracking-wide truncate`}>
-                {user?.name ?? 'Staff'}
-              </div>
+    <div className={`owner-page min-h-dvh ${employeeTheme.shellPage}`}>
+      <header className={`${employeeTheme.header} owner-page-header`}>
+        <div className="owner-page-header-inner max-w-7xl">
+          <HeaderLogo compact className="shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-white font-bold text-sm sm:text-base leading-tight truncate">
+              Real Health Juice Parlour
+            </div>
+            <div className={`${employeeTheme.headerAccent} text-xs font-semibold tracking-wide truncate`}>
+              {user?.name ?? 'Staff'}
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {/* Cart Button */}
             <button
               onClick={() => setCartOpen(true)}
@@ -132,7 +130,7 @@ export default function EmployeeDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+      <main className="owner-page-main max-w-7xl">
         <div className="mb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <h1 className={`text-xl font-bold ${employeeTheme.pageTitle}`}>Menu Categories</h1>

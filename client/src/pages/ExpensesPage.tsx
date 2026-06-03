@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, LogOut, Plus, Receipt } from 'lucide-react'
-import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { authFetch, readApiJson } from '../lib/api'
 import { HeaderLogo } from '../components/BrandLogo'
+import OwnerPageShell from '../components/OwnerPageShell'
 import { ownerTheme, employeeTheme } from '../theme/roles'
 import type { Expense } from '../types/expense'
 
@@ -56,8 +56,30 @@ export default function ExpensesPage() {
   }, [])
 
   useEffect(() => {
-    loadExpenses()
-  }, [loadExpenses])
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await authFetch('/api/expenses')
+        const data = await readApiJson<{ items?: Expense[]; total?: number }>(res)
+        if (cancelled) return
+        if (!res.ok) {
+          throw new Error((data as { message?: string }).message || 'Failed to load expenses')
+        }
+        setExpenses(data.items ?? [])
+        setTotal(data.total ?? 0)
+        setError('')
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Could not load expense records.')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -105,41 +127,8 @@ export default function ExpensesPage() {
   const ringClass = isOwner ? 'focus:ring-amber-400' : employeeTheme.signInInputFocus
   const tableHead = isOwner ? 'bg-amber-50 text-amber-800' : employeeTheme.tableHead
 
-  return (
-    <div className={`min-h-screen flex flex-col ${theme.shellPage}`}>
-      <header className={`${theme.header} shadow-lg sticky top-0 z-30`}>
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(dashboardPath)}
-              title="Back to dashboard"
-              className="text-white/70 hover:text-white p-2 rounded-xl hover:bg-white/10 transition-all"
-            >
-              <ArrowLeft size={22} />
-            </button>
-            <HeaderLogo />
-            <div className="min-w-0">
-              <div className="text-white font-bold text-base">Expenses</div>
-              <div className={`${theme.headerAccent} text-xs`}>
-                Cost of goods · {user?.name}
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              logout()
-              navigate('/')
-            }}
-            title="Logout"
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2 text-sm font-semibold transition-all"
-          >
-            <LogOut size={16} />
-            <span>Logout</span>
-          </button>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+  const pageBody = (
+    <>
         <div className="bg-white rounded-2xl shadow-sm p-5 mb-6 border border-gray-100">
           <div className="text-sm text-gray-500 font-medium">Total money out (all records)</div>
           <div className="text-3xl font-bold text-gray-900 mt-1">Ksh {total.toLocaleString()}</div>
@@ -148,9 +137,7 @@ export default function ExpensesPage() {
           </p>
         </div>
 
-        <motion.form
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
+        <form
           onSubmit={handleSubmit}
           className={`bg-white rounded-2xl shadow-sm p-5 mb-8 border-2 ${isOwner ? 'border-amber-200' : 'border-teal-200'}`}
         >
@@ -215,7 +202,7 @@ export default function ExpensesPage() {
           >
             {saving ? 'Saving…' : 'Save expense'}
           </button>
-        </motion.form>
+        </form>
 
         <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
           <Receipt size={18} className={isOwner ? 'text-amber-600' : 'text-teal-600'} />
@@ -229,28 +216,47 @@ export default function ExpensesPage() {
             No expenses recorded yet. Use the form above to add one.
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+          <>
+            <div className="md:hidden space-y-3">
+              {expenses.map((exp) => (
+                <article
+                  key={exp.id}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
+                >
+                  <div className="flex justify-between gap-2 mb-1">
+                    <span className="font-semibold text-gray-900">{formatDateKey(exp.dateKey)}</span>
+                    <span className="font-bold text-gray-900 tabular-nums">
+                      Ksh {exp.amount.toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700">{exp.description}</p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    {exp.recordedByName} · {formatTime(exp.createdAt)}
+                  </p>
+                </article>
+              ))}
+              <div
+                className={`rounded-2xl px-4 py-3 flex justify-between font-bold text-gray-900 ${isOwner ? 'bg-amber-50' : 'bg-teal-50'}`}
+              >
+                <span>Total</span>
+                <span className="tabular-nums">Ksh {total.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className={`border-b ${isOwner ? 'border-amber-100' : 'border-teal-100'}`}>
                     <th className={`text-left px-4 py-3 font-semibold ${tableHead}`}>Date</th>
                     <th className={`text-left px-4 py-3 font-semibold ${tableHead}`}>Description</th>
                     <th className={`text-right px-4 py-3 font-semibold ${tableHead}`}>Money out (Ksh)</th>
-                    <th className={`text-left px-4 py-3 font-semibold ${tableHead} hidden md:table-cell`}>
-                      Recorded by
-                    </th>
-                    <th className={`text-left px-4 py-3 font-semibold ${tableHead} hidden sm:table-cell`}>
-                      Time
-                    </th>
+                    <th className={`text-left px-4 py-3 font-semibold ${tableHead}`}>Recorded by</th>
+                    <th className={`text-left px-4 py-3 font-semibold ${tableHead}`}>Time</th>
                   </tr>
                 </thead>
                 <tbody>
                   {expenses.map((exp) => (
-                    <tr
-                      key={exp.id}
-                      className="border-b border-gray-50 hover:bg-gray-50/80 transition-colors"
-                    >
+                    <tr key={exp.id} className="border-b border-gray-50">
                       <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800">
                         {formatDateKey(exp.dateKey)}
                       </td>
@@ -258,10 +264,8 @@ export default function ExpensesPage() {
                       <td className="px-4 py-3 text-right font-bold text-gray-900 tabular-nums">
                         {exp.amount.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-gray-600 hidden md:table-cell">
-                        {exp.recordedByName}
-                      </td>
-                      <td className="px-4 py-3 text-gray-400 text-xs hidden sm:table-cell whitespace-nowrap">
+                      <td className="px-4 py-3 text-gray-600">{exp.recordedByName}</td>
+                      <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
                         {formatTime(exp.createdAt)}
                       </td>
                     </tr>
@@ -275,14 +279,63 @@ export default function ExpensesPage() {
                     <td className="px-4 py-3 text-right font-bold text-gray-900 tabular-nums">
                       {total.toLocaleString()}
                     </td>
-                    <td colSpan={2} className="hidden md:table-cell" />
+                    <td colSpan={2} />
                   </tr>
                 </tfoot>
               </table>
             </div>
-          </div>
+          </>
         )}
-      </main>
+    </>
+  )
+
+  if (isOwner) {
+    return (
+      <OwnerPageShell
+        title="Expenses"
+        subtitle={`Cost of goods · ${user?.name ?? 'Owner'}`}
+        onBack={() => navigate(dashboardPath)}
+        backTitle="Back to owner dashboard"
+      >
+        {pageBody}
+      </OwnerPageShell>
+    )
+  }
+
+  return (
+    <div className={`owner-page min-h-dvh flex flex-col ${theme.shellPage}`}>
+      <header className={`${theme.header} owner-page-header`}>
+        <div className="owner-page-header-inner max-w-7xl">
+          <button
+            type="button"
+            onClick={() => navigate(dashboardPath)}
+            title="Back to dashboard"
+            className="owner-page-back shrink-0"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <HeaderLogo compact className="shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-white font-bold text-sm sm:text-base truncate">Expenses</div>
+            <div className={`${theme.headerAccent} text-xs truncate`}>
+              Cost of goods · {user?.name}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              logout()
+              navigate('/')
+            }}
+            title="Logout"
+            className="owner-page-logout bg-white/10 hover:bg-white/20"
+          >
+            <LogOut size={16} />
+            <span className="hidden xs:inline">Logout</span>
+          </button>
+        </div>
+      </header>
+      <main className="owner-page-main max-w-7xl">{pageBody}</main>
     </div>
   )
 }

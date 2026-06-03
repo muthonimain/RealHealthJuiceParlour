@@ -1,18 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  ArrowLeft,
-  RefreshCw,
-  Receipt,
-  LogOut,
-  CheckCircle2,
-  Clock,
-  User,
-} from 'lucide-react'
-import { motion } from 'framer-motion'
+import { RefreshCw, Receipt, CheckCircle2, Clock, User } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { HeaderLogo } from '../../components/BrandLogo'
-import { ownerTheme } from '../../theme/roles'
+import OwnerPageShell from '../../components/OwnerPageShell'
+import { dataUnchanged } from '../../lib/stableData'
 import { sumRevenueForWorkingMonth, workingMonthLabel } from '../../lib/workingMonth'
 
 interface OrderItem {
@@ -62,7 +53,7 @@ function todayLabel() {
 }
 
 export default function EmployeeRecordsPage() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [orders, setOrders] = useState<Order[]>([])
   const [summaries, setSummaries] = useState<EmployeeSummary[]>([])
@@ -76,8 +67,14 @@ export default function EmployeeRecordsPage() {
         fetch('/api/orders'),
         fetch('/api/clearances/summaries'),
       ])
-      if (ordersRes.ok) setOrders(await ordersRes.json())
-      if (summariesRes.ok) setSummaries(await summariesRes.json())
+      if (ordersRes.ok) {
+        const nextOrders: Order[] = await ordersRes.json()
+        setOrders((prev) => (dataUnchanged(prev, nextOrders) ? prev : nextOrders))
+      }
+      if (summariesRes.ok) {
+        const nextSummaries: EmployeeSummary[] = await summariesRes.json()
+        setSummaries((prev) => (dataUnchanged(prev, nextSummaries) ? prev : nextSummaries))
+      }
       setLastRefresh(new Date())
     } finally {
       setLoading(false)
@@ -86,7 +83,7 @@ export default function EmployeeRecordsPage() {
 
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 5000)
+    const interval = setInterval(fetchData, 15000)
     return () => clearInterval(interval)
   }, [fetchData])
 
@@ -123,48 +120,23 @@ export default function EmployeeRecordsPage() {
   const pendingCount = summaries.filter((s) => s.status === 'pending' && s.totalOrders > 0).length
 
   return (
-    <div className={`min-h-screen ${ownerTheme.shellPage} flex flex-col`}>
-      <header className={`${ownerTheme.header} shadow-lg sticky top-0 z-30`}>
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/dashboard/owner')}
-              title="Back to owner dashboard"
-              className="text-white/70 hover:text-white p-2 rounded-xl hover:bg-white/10 transition-all"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <HeaderLogo />
-            <div>
-              <div className="text-white font-bold text-base">Employee Records</div>
-              <div className={`${ownerTheme.headerAccent} text-xs`}>Employee records — owner view</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={fetchData}
-              title="Refresh records"
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2 text-sm transition-all"
-            >
-              <RefreshCw size={15} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-            <button
-              onClick={() => {
-                logout()
-                navigate('/')
-              }}
-              title="Logout"
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2 text-sm font-semibold transition-all"
-            >
-              <LogOut size={15} />
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+    <OwnerPageShell
+      title="Employee Records"
+      subtitle="Daily totals & orders"
+      onBack={() => navigate('/dashboard/owner')}
+      backTitle="Back to owner dashboard"
+      actions={
+        <button
+          type="button"
+          onClick={fetchData}
+          title="Refresh records"
+          className="owner-page-back px-2.5"
+        >
+          <RefreshCw size={15} />
+          <span className="hidden sm:inline text-sm">Refresh</span>
+        </button>
+      }
+    >
         <p className="text-sm text-gray-500 mb-4">{todayLabel()} — daily employee totals</p>
 
         {/* Employee banners */}
@@ -186,9 +158,8 @@ export default function EmployeeRecordsPage() {
                 const noOrders = summary.totalOrders === 0
 
                 return (
-                  <motion.div
+                  <div
                     key={summary.employeeId}
-                    layout
                     className={`
                       rounded-2xl p-5 shadow-sm border-2 flex flex-col gap-4
                       ${isPending ? 'bg-amber-50 border-amber-300' : ''}
@@ -274,7 +245,7 @@ export default function EmployeeRecordsPage() {
                         )}
                       </button>
                     )}
-                  </motion.div>
+                  </div>
                 )
               })}
             </div>
@@ -306,20 +277,18 @@ export default function EmployeeRecordsPage() {
           ))}
         </div>
 
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <Receipt size={18} className="text-amber-600" />
+            <Receipt size={18} className="text-amber-600 shrink-0" />
             All Order Records
           </h2>
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+          <p className="text-xs text-gray-400">
             Live · Updated{' '}
             {lastRefresh.toLocaleTimeString('en-KE', {
               hour: '2-digit',
               minute: '2-digit',
-              second: '2-digit',
             })}
-          </div>
+          </p>
         </div>
 
         {loading ? (
@@ -333,12 +302,44 @@ export default function EmployeeRecordsPage() {
             <p className="text-sm mt-1">Orders appear here when an employee generates a receipt.</p>
           </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-white rounded-2xl shadow-sm overflow-hidden"
-          >
-            <div className="overflow-x-auto">
+          <>
+            <div className="md:hidden space-y-3">
+              {orders.map((order, idx) => {
+                const { date, time } = formatDateTime(order.createdAt)
+                const itemsSummary = order.items.map((i) => `${i.name} ×${i.quantity}`).join(', ')
+                return (
+                  <article
+                    key={order.id}
+                    className="bg-white rounded-2xl shadow-sm border border-amber-100/80 p-4 space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-xs text-gray-400 font-mono">#{orders.length - idx}</p>
+                        <p className="font-semibold text-gray-900">{date}</p>
+                        <p className="text-xs text-gray-500">{time}</p>
+                      </div>
+                      <span className="bg-sky-100 text-sky-800 text-xs font-semibold px-2.5 py-1 rounded-lg shrink-0">
+                        {order.employeeName}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 leading-snug">{itemsSummary}</p>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Total</span>
+                      <span className="font-bold text-gray-900">Ksh {order.grandTotal.toLocaleString()}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/receipt/${order.id}`)}
+                      className="w-full bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold rounded-xl py-2.5 text-sm"
+                    >
+                      View receipt
+                    </button>
+                  </article>
+                )
+              })}
+            </div>
+
+            <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-amber-50 border-b border-amber-100">
@@ -411,16 +412,14 @@ export default function EmployeeRecordsPage() {
                 </tbody>
               </table>
             </div>
-          </motion.div>
+          </>
         )}
 
         {user && (
           <p className="text-center text-gray-400 text-xs mt-6">
-            Logged in as <span className="font-semibold">{user.name}</span> (Owner) · Auto-refreshes every 5
-            seconds
+            Logged in as <span className="font-semibold">{user.name}</span> (Owner) · Refreshes every 15 seconds
           </p>
         )}
-      </main>
-    </div>
+    </OwnerPageShell>
   )
 }

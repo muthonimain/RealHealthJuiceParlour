@@ -13,7 +13,7 @@ type LogoSize = 'sm' | 'header' | 'md' | 'lg' | 'hero'
 
 const sizeClasses: Record<LogoSize, string> = {
   sm: 'h-8 w-auto max-w-[100px]',
-  header: 'h-full w-full object-contain object-center',
+  header: 'h-full w-full min-h-[52px] min-w-[56px] max-h-[68px] max-w-[80px] sm:min-h-[56px] sm:min-w-[64px] sm:max-h-[72px] sm:max-w-[88px] object-contain object-center',
   md: 'h-12 w-auto max-w-[160px]',
   lg: 'h-28 w-auto max-w-[320px]',
   hero: 'w-full max-w-[min(92vw,28rem)] h-auto max-h-[min(42vh,260px)] object-contain',
@@ -33,12 +33,22 @@ interface BrandLogoProps {
 }
 
 /** Logo sized for dark dashboard headers — white panel keeps the mark readable. */
-export function HeaderLogo({ className = '' }: { className?: string }) {
+export function HeaderLogo({
+  className = '',
+  compact = false,
+}: {
+  className?: string
+  /** Smaller mark for dense owner sub-page headers on mobile */
+  compact?: boolean
+}) {
+  const box = compact
+    ? 'h-11 w-14 sm:h-12 sm:w-[4.25rem]'
+    : 'h-[3.75rem] w-[4.5rem] sm:h-16 sm:w-24'
   return (
     <div
-      className={`flex h-[3.25rem] w-[3.25rem] shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-md ring-1 ring-white/30 sm:h-14 sm:w-14 sm:p-2 ${className}`}
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg ring-2 ring-white/50 ${box} ${className}`}
     >
-      <BrandLogo size="header" />
+      <BrandLogo size="header" className={compact ? '!max-h-10 !max-w-[3.25rem] sm:!max-h-11 sm:!max-w-14' : ''} />
     </div>
   )
 }
@@ -61,6 +71,10 @@ export default function BrandLogo({ size = 'md', className = '' }: BrandLogoProp
     <img
       src={LOGO_PATHS[pathIndex]}
       alt="Real Health Juice Parlour"
+      width={size === 'header' ? 88 : undefined}
+      height={size === 'header' ? 72 : undefined}
+      decoding="async"
+      fetchPriority={size === 'header' ? 'high' : undefined}
       className={`${sizeClasses[size]} object-contain shrink-0 ${className}`}
       onError={() => {
         if (pathIndex + 1 < LOGO_PATHS.length) {

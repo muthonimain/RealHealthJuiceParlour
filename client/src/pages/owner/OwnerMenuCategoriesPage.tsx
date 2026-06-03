@@ -1,19 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, LogOut, X, Trash2 } from 'lucide-react'
-import { HeaderLogo } from '../../components/BrandLogo'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { Variants } from 'framer-motion'
+import { Plus, X, Trash2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import OwnerPageShell from '../../components/OwnerPageShell'
 import { useAuth } from '../../context/AuthContext'
 import { authFetch } from '../../lib/api'
 import type { MenuCategory } from '../../types/menu'
 import { ownerTheme } from '../../theme/roles'
 
-const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } }
-const card: Variants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
-
 export default function OwnerMenuCategoriesPage() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [loading, setLoading] = useState(true)
@@ -80,42 +76,17 @@ export default function OwnerMenuCategoriesPage() {
   }
 
   return (
-    <div className={`min-h-screen ${ownerTheme.shellPage} flex flex-col`}>
-      <header className={`${ownerTheme.header} shadow-lg sticky top-0 z-30`}>
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard/owner')}
-            className="flex items-center gap-2 text-amber-200 hover:text-white transition-colors"
-            title="Back to owner portal"
-          >
-            <ArrowLeft size={22} />
-            <span className="hidden sm:inline text-sm font-medium">Owner Portal</span>
-          </button>
-          <div className="flex items-center gap-3 min-w-0 text-white">
-            <HeaderLogo />
-            <div className="min-w-0">
-              <div className="font-bold text-base leading-tight truncate">Menu Categories</div>
-              <div className={`${ownerTheme.headerAccent} text-xs truncate`}>Owner portal</div>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              logout()
-              navigate('/')
-            }}
-            className="flex items-center gap-2 rounded-lg bg-amber-800 hover:bg-amber-700 text-white px-3 py-2 text-sm font-semibold transition-all"
-            title="Logout"
-          >
-            <LogOut size={18} />
-            <span>Logout</span>
-          </button>
-        </div>
-        <p className={`text-center ${ownerTheme.headerAccent} text-xs pb-2`}>{user?.name} — tap + to add a menu</p>
-      </header>
-
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+    <OwnerPageShell
+      title="Menu Categories"
+      subtitle="Owner portal"
+      onBack={() => navigate('/dashboard/owner')}
+      backTitle="Back to owner portal"
+      headerNote={
+        <p className={`text-center ${ownerTheme.headerAccent} text-xs pb-2 px-3`}>
+          {user?.name} — tap + to add a menu
+        </p>
+      }
+    >
         <p className="text-gray-500 text-sm mb-4">
           Open a category to add or edit items. Use the trash icon to delete a category or its items inside.
         </p>
@@ -126,17 +97,11 @@ export default function OwnerMenuCategoriesPage() {
         {loading ? (
           <p className="text-center text-gray-400 py-16">Loading menu…</p>
         ) : (
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-2 md:grid-cols-4 gap-4"
-          >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {categories.map((category) => (
-              <motion.div
+              <div
                 key={category.id}
-                variants={card}
-                className="relative bg-white rounded-2xl shadow-sm hover:shadow-md transition-all min-h-[140px]"
+                className="relative bg-white rounded-2xl shadow-sm hover:shadow-md min-h-[130px] sm:min-h-[140px]"
               >
                 <button
                   type="button"
@@ -157,12 +122,10 @@ export default function OwnerMenuCategoriesPage() {
                 >
                   <Trash2 size={18} />
                 </button>
-              </motion.div>
+              </div>
             ))}
 
-            <motion.button
-              variants={card}
-              whileTap={{ scale: 0.95 }}
+            <button
               type="button"
               onClick={() => {
                 setShowAdd(true)
@@ -175,10 +138,9 @@ export default function OwnerMenuCategoriesPage() {
                 <Plus size={32} className="text-amber-700" />
               </div>
               <span className="text-sm font-bold text-amber-800">New Menu</span>
-            </motion.button>
-          </motion.div>
+            </button>
+          </div>
         )}
-      </main>
 
       <AnimatePresence>
         {showAdd && (
@@ -235,6 +197,6 @@ export default function OwnerMenuCategoriesPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </OwnerPageShell>
   )
 }
