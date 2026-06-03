@@ -12,7 +12,8 @@ services:
     name: real-health-juice-parlour
     runtime: node
     plan: free
-    buildCommand: npm run install:all && npm run build
+    # NODE_ENV=production is set for runtime; install must still get devDependencies (vite, tsc, @types)
+    buildCommand: NPM_CONFIG_PRODUCTION=false npm run install:all && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
     envVars:
