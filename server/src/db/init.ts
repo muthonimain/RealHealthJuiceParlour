@@ -102,6 +102,24 @@ async function runMenuMigrations(): Promise<void> {
     )
   }
 
+  const honeySections = ['Honey', 'Nuts', 'Oils']
+  const honeyId = await applyCategorySections(
+    'honey-nuts-oils',
+    'honey, nuts & oils',
+    honeySections
+  )
+  if (!honeyId) {
+    const honey = buildDefaultMenu().find((c) => c.id === 'honey-nuts-oils')
+    if (honey) await seedMenu([honey])
+  } else {
+    await pool.query(
+      `UPDATE menu_items SET section = 'Honey'
+       WHERE category_id = $1
+         AND (section IS NULL OR TRIM(section) = '' OR LOWER(TRIM(section)) = 'more')`,
+      [honeyId]
+    )
+  }
+
   const gutId = await applyCategorySections('gut-healing-drinks', 'gut-healing drinks', [
     'Flavored Kombucha',
     'Plain Kombucha',

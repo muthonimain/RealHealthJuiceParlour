@@ -110,6 +110,13 @@ export const menuData: MenuCategory[] = [
     items: [],
   },
   {
+    id: 'honey-nuts-oils',
+    name: 'Honey, Nuts & Oils',
+    emoji: '🍯',
+    sections: ['Honey', 'Nuts', 'Oils'],
+    items: [],
+  },
+  {
     id: 'boost-your-meal',
     name: 'Boost Your Meal',
     emoji: '✨',
