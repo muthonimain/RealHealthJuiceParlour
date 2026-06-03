@@ -1,4 +1,5 @@
 import type { MenuCategory, MenuItem } from '../types/menu'
+import { resolveCategorySections } from './categorySectionPresets'
 
 export interface MenuSectionGroup {
   title: string
@@ -7,8 +8,13 @@ export interface MenuSectionGroup {
 
 /** Group items under category section headings (e.g. Herbs → Powders, Seeds). */
 export function getMenuSectionGroups(category: MenuCategory): MenuSectionGroup[] {
-  const titles = category.sections?.length
-    ? category.sections
+  const definedSections = resolveCategorySections(
+    category.id,
+    category.name,
+    category.sections
+  )
+  const titles = definedSections?.length
+    ? definedSections
     : [...new Set(category.items.map((i) => i.section).filter(Boolean) as string[])]
 
   if (titles.length === 0) {
@@ -40,5 +46,5 @@ export function getMenuSectionGroups(category: MenuCategory): MenuSectionGroup[]
 }
 
 export function categoryUsesSections(category: MenuCategory): boolean {
-  return (category.sections?.length ?? 0) > 0
+  return (resolveCategorySections(category.id, category.name, category.sections)?.length ?? 0) > 0
 }

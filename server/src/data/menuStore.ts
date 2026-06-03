@@ -1,4 +1,5 @@
 import { menuData as seedMenu } from './menu'
+import { findPresetForCategory } from './categorySectionPresets'
 import { pool } from '../db/pool'
 
 export interface MenuItem {
@@ -60,9 +61,17 @@ function normalizeCategory(cat: MenuCategory): MenuCategory {
 }
 
 function parseSections(value: unknown): string[] | undefined {
-  if (!value) return undefined
-  if (Array.isArray(value)) {
-    const list = value.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+  if (value == null) return undefined
+  let parsed: unknown = value
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value)
+    } catch {
+      return undefined
+    }
+  }
+  if (Array.isArray(parsed)) {
+    const list = parsed.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
     return list.length ? list : undefined
   }
   return undefined
@@ -143,13 +152,28 @@ function newItemId(categoryId: string): string {
   return `${categoryId}-item-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`
 }
 
+async function ensureCategorySectionsInDb(cat: MenuCategory): Promise<MenuCategory> {
+  if (cat.sections?.length) return cat
+  const preset = findPresetForCategory(cat.id, cat.name)
+  if (!preset) return cat
+
+  await pool.query(`UPDATE menu_categories SET sections = $1::jsonb WHERE id = $2`, [
+    JSON.stringify(preset.sections),
+    cat.id,
+  ])
+  return { ...cat, sections: preset.sections }
+}
+
 export async function getAllCategories(): Promise<MenuCategory[]> {
-  return loadCategoriesFromDb()
+  const all = await loadCategoriesFromDb()
+  return Promise.all(all.map(ensureCategorySectionsInDb))
 }
 
 export async function getCategoryById(id: string): Promise<MenuCategory | undefined> {
   const all = await loadCategoriesFromDb()
-  return all.find((c) => c.id === id)
+  const cat = all.find((c) => c.id === id)
+  if (!cat) return undefined
+  return ensureCategorySectionsInDb(cat)
 }
 
 export async function createCategory(name: string, emoji = '📋'): Promise<MenuCategory> {
@@ -158,38 +182,47 @@ export async function createCategory(name: string, emoji = '📋'): Promise<Menu
   const preset = COLOR_PRESETS[existing.length % COLOR_PRESETS.length]
   const id = slugify(name, ids)
   const sortOrder = existing.length
+  const trimmedName = name.trim()
+  const sectionPreset = findPresetForCategory(id, trimmedName)
+  const sectionsJson = sectionPreset ? JSON.stringify(sectionPreset.sections) : null
 
   await pool.query(
     `INSERT INTO menu_categories (id, name, emoji, color, light_color, text_color, sort_order, sections)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [id, name.trim(), emoji, preset.color, preset.lightColor, preset.textColor, sortOrder, null]
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,
+    [id, trimmedName, emoji, preset.color, preset.lightColor, preset.textColor, sortOrder, sectionsJson]
   )
 
   return {
     id,
-    name: name.trim(),
+    name: trimmedName,
     emoji,
     items: [],
-    sections: undefined,
+    sections: sectionPreset?.sections,
     ...preset,
   }
 }
 
 export async function updateCategory(
   id: string,
-  data: Partial<Pick<MenuCategory, 'name' | 'emoji'>>
+  data: Partial<Pick<MenuCategory, 'name' | 'emoji' | 'sections'>>
 ): Promise<MenuCategory | undefined> {
   const cat = await getCategoryById(id)
   if (!cat) return undefined
 
   const name = data.name !== undefined ? data.name.trim() : cat.name
   const emoji = data.emoji !== undefined ? data.emoji : cat.emoji
+  let sections = data.sections
+  if (sections === undefined) {
+    const preset = findPresetForCategory(id, name)
+    if (preset) sections = preset.sections
+  }
+  const sectionsJson =
+    sections === undefined ? null : sections.length ? JSON.stringify(sections) : null
 
-  await pool.query('UPDATE menu_categories SET name = $2, emoji = $3 WHERE id = $1', [
-    id,
-    name,
-    emoji,
-  ])
+  await pool.query(
+    'UPDATE menu_categories SET name = $2, emoji = $3, sections = $4::jsonb WHERE id = $1',
+    [id, name, emoji, sectionsJson]
+  )
 
   return getCategoryById(id)
 }

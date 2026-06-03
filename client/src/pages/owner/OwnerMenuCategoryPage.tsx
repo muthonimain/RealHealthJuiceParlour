@@ -6,6 +6,7 @@ import { authFetch } from '../../lib/api'
 import type { MenuCategory, MenuItem } from '../../types/menu'
 import { ownerTheme } from '../../theme/roles'
 import { formatItemPrice, hasDisplayPrice, normalizePrice } from '../../lib/menuPrice'
+import { resolveCategorySections } from '../../lib/categorySectionPresets'
 import { categoryUsesSections, getMenuSectionGroups } from '../../lib/menuSections'
 
 export default function OwnerMenuCategoryPage() {
@@ -40,9 +41,14 @@ export default function OwnerMenuCategoryPage() {
           ...data,
           items: data.items.map((i) => ({ ...i, price: normalizePrice(i.price) })),
         }
-        setCategory(normalized)
+        const sections = resolveCategorySections(
+          normalized.id,
+          normalized.name,
+          normalized.sections
+        )
+        setCategory({ ...normalized, sections: sections ?? normalized.sections })
         setCategoryName(normalized.name)
-        if (normalized.sections?.[0]) setItemSection(normalized.sections[0])
+        if (sections?.[0]) setItemSection(sections[0])
       } else {
         navigate('/dashboard/owner/menu')
       }

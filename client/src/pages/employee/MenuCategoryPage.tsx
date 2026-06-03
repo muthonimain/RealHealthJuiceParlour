@@ -10,6 +10,7 @@ import type { MenuItem, MenuCategory } from '../../types/menu'
 import { employeeTheme } from '../../theme/roles'
 import { formatItemPrice, hasDisplayPrice, normalizePrice } from '../../lib/menuPrice'
 import { authFetch } from '../../lib/api'
+import { resolveCategorySections } from '../../lib/categorySectionPresets'
 import { categoryUsesSections, getMenuSectionGroups } from '../../lib/menuSections'
 
 const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } }
@@ -123,8 +124,13 @@ export default function MenuCategoryPage() {
         ...data,
         items: data.items.map((i) => ({ ...i, price: normalizePrice(i.price) })),
       }
-      setCategory(normalized)
-      if (normalized.sections?.[0]) setItemSection(normalized.sections[0])
+      const sections = resolveCategorySections(
+        normalized.id,
+        normalized.name,
+        normalized.sections
+      )
+      setCategory({ ...normalized, sections: sections ?? normalized.sections })
+      if (sections?.[0]) setItemSection(sections[0])
     } catch {
       navigate('/dashboard/employee')
     } finally {
@@ -292,9 +298,9 @@ export default function MenuCategoryPage() {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-8">
-        {sectionGroups.length === 0 && !usesSections ? (
+        {sectionGroups.length === 0 && !usesSections && category.items.length === 0 ? (
           <p className={`text-center ${employeeTheme.pageHint} py-8`}>No items yet. Add your first item below.</p>
-        ) : (
+        ) : sectionGroups.length === 0 ? null : (
           sectionGroups.map((group) => (
             <section key={group.title || 'all'} className="space-y-4">
               {group.title ? (

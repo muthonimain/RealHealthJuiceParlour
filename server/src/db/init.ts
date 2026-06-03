@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { pool, requireDatabase } from './pool'
 import { buildDefaultMenu } from './menuSeed'
+import { findPresetForCategory } from '../data/categorySectionPresets'
 import type { MenuCategory } from '../data/menuStore'
 import type { Order } from '../data/ordersStore'
 import type { Expense } from '../data/expenseStore'
@@ -65,66 +66,41 @@ async function seedMenu(categories: MenuCategory[]): Promise<void> {
   }
 }
 
-async function applyCategorySections(
-  categoryId: string,
-  categoryNameMatch: string,
-  sections: string[]
-): Promise<string | null> {
-  const sectionsJson = JSON.stringify(sections)
-  const { rows } = await pool.query<{ id: string }>(
-    `SELECT id FROM menu_categories
-     WHERE id = $1 OR LOWER(TRIM(name)) = $2
-     LIMIT 1`,
-    [categoryId, categoryNameMatch.toLowerCase()]
-  )
-  if (!rows[0]) return null
-  await pool.query(`UPDATE menu_categories SET sections = $1::jsonb WHERE id = $2`, [
-    sectionsJson,
-    rows[0].id,
-  ])
-  return rows[0].id
-}
-
 async function runMenuMigrations(): Promise<void> {
   await pool.query(`ALTER TABLE menu_categories ADD COLUMN IF NOT EXISTS sections JSONB`)
   await pool.query(`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS section TEXT`)
 
-  const herbsId = await applyCategorySections('herbs', 'herbs', ['Powders', 'Seeds'])
-  if (!herbsId) {
-    const herbs = buildDefaultMenu().find((c) => c.id === 'herbs')
-    if (herbs) await seedMenu([herbs])
-  } else {
-    await pool.query(
-      `UPDATE menu_items SET section = 'Powders'
-       WHERE category_id = $1
-         AND (section IS NULL OR TRIM(section) = '' OR LOWER(TRIM(section)) = 'more')`,
-      [herbsId]
-    )
-  }
-
-  const honeySections = ['Honey', 'Nuts', 'Oils']
-  const honeyId = await applyCategorySections(
-    'honey-nuts-oils',
-    'honey, nuts & oils',
-    honeySections
+  const { rows: categories } = await pool.query<{ id: string; name: string }>(
+    'SELECT id, name FROM menu_categories'
   )
-  if (!honeyId) {
-    const honey = buildDefaultMenu().find((c) => c.id === 'honey-nuts-oils')
-    if (honey) await seedMenu([honey])
-  } else {
+
+  for (const cat of categories) {
+    const preset = findPresetForCategory(cat.id, cat.name)
+    if (!preset) continue
+
+    await pool.query(`UPDATE menu_categories SET sections = $1::jsonb WHERE id = $2`, [
+      JSON.stringify(preset.sections),
+      cat.id,
+    ])
     await pool.query(
-      `UPDATE menu_items SET section = 'Honey'
+      `UPDATE menu_items SET section = $2
        WHERE category_id = $1
          AND (section IS NULL OR TRIM(section) = '' OR LOWER(TRIM(section)) = 'more')`,
-      [honeyId]
+      [cat.id, preset.defaultItemSection]
     )
   }
 
-  const gutId = await applyCategorySections('gut-healing-drinks', 'gut-healing drinks', [
-    'Flavored Kombucha',
-    'Plain Kombucha',
-    'Other Drinks',
-  ])
+  for (const seedCat of buildDefaultMenu()) {
+    const exists = categories.some((c) => c.id === seedCat.id)
+    if (!exists && seedCat.sections?.length) {
+      await seedMenu([seedCat])
+    }
+  }
+
+  const gutId = categories.find(
+    (c) => findPresetForCategory(c.id, c.name)?.nameIncludes === 'guthealing'
+  )?.id
+
   if (gutId) {
     await pool.query(
       `UPDATE menu_items SET
