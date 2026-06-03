@@ -16,10 +16,11 @@ function loadEmployeesFromEnv(): Array<EmployeeRecord & { password: string }> {
     const username = env(`EMPLOYEE_${i}_USERNAME`, '')
     const password = env(`EMPLOYEE_${i}_PASSWORD`, '')
     if (!name && !username) break
+    const resolvedUsername = username || `employee${i}`
     employees.push({
       id: `emp-${i}`,
-      name: name || `Employee ${i}`,
-      username: username || `employee${i}`,
+      name: name || resolvedUsername,
+      username: resolvedUsername,
       password,
     })
     i++

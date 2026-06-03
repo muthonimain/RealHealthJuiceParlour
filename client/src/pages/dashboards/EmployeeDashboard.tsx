@@ -77,8 +77,8 @@ export default function EmployeeDashboard() {
             <BrandLogo size="sm" />
             <div>
               <div className="text-white font-bold text-base leading-tight">Real Health Juice Parlour</div>
-              <div className={`${employeeTheme.headerAccent} text-xs font-semibold uppercase tracking-widest`}>
-                {user?.name} &mdash; Employee
+              <div className={`${employeeTheme.headerAccent} text-xs font-semibold tracking-wide`}>
+                {user?.name ?? 'Staff'}
               </div>
             </div>
           </div>

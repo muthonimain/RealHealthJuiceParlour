@@ -16,10 +16,11 @@ function loadOwnersFromEnv(): Array<OwnerRecord & { password: string }> {
     const username = env(`OWNER_${i}_USERNAME`, '')
     const password = env(`OWNER_${i}_PASSWORD`, '')
     if (!name && !username) break
+    const resolvedUsername = username || `owner${i}`
     owners.push({
       id: `owner-${i}`,
-      name: name || `Owner ${i}`,
-      username: username || `owner${i}`,
+      name: name || resolvedUsername,
+      username: resolvedUsername,
       password,
     })
     i++
@@ -30,10 +31,11 @@ function loadOwnersFromEnv(): Array<OwnerRecord & { password: string }> {
     const username = env('OWNER_USERNAME', '')
     const password = env('OWNER_PASSWORD', '')
     if (name || username) {
+      const resolvedUsername = username || 'owner'
       owners.push({
         id: 'owner-1',
-        name: name || 'Owner',
-        username: username || 'owner',
+        name: name || resolvedUsername,
+        username: resolvedUsername,
         password,
       })
     }

@@ -29,8 +29,28 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
-      # Set these in Render Dashboard → Environment (required for login):
-      # OWNER_1_NAME, OWNER_1_USERNAME, OWNER_1_PASSWORD
-      # OWNER_2_NAME, OWNER_2_USERNAME, OWNER_2_PASSWORD
-      # EMPLOYEE_1_NAME, EMPLOYEE_1_USERNAME, EMPLOYEE_1_PASSWORD
-      # EMPLOYEE_2_NAME, EMPLOYEE_2_USERNAME, EMPLOYEE_2_PASSWORD
+      # Staff credentials — set values in Render Dashboard → Environment
+      - key: OWNER_1_NAME
+        sync: false
+      - key: OWNER_1_USERNAME
+        sync: false
+      - key: OWNER_1_PASSWORD
+        sync: false
+      - key: OWNER_2_NAME
+        sync: false
+      - key: OWNER_2_USERNAME
+        sync: false
+      - key: OWNER_2_PASSWORD
+        sync: false
+      - key: EMPLOYEE_1_NAME
+        sync: false
+      - key: EMPLOYEE_1_USERNAME
+        sync: false
+      - key: EMPLOYEE_1_PASSWORD
+        sync: false
+      - key: EMPLOYEE_2_NAME
+        sync: false
+      - key: EMPLOYEE_2_USERNAME
+        sync: false
+      - key: EMPLOYEE_2_PASSWORD
+        sync: false
