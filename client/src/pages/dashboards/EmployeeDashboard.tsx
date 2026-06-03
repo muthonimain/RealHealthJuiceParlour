@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShoppingCart, LogOut, Plus, X, Wallet } from 'lucide-react'
+import { ShoppingCart, LogOut, Plus, X, Wallet, Trash2 } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 import { authFetch } from '../../lib/api'
 import BrandLogo from '../../components/BrandLogo'
@@ -61,6 +61,25 @@ export default function EmployeeDashboard() {
       setCategoryError(err instanceof Error ? err.message : 'Failed to create category')
     } finally {
       setSavingCategory(false)
+    }
+  }
+
+  const handleDeleteCategory = async (cat: MenuCategory) => {
+    const msg =
+      cat.items.length > 0
+        ? `Delete "${cat.name}" and all ${cat.items.length} items? This cannot be undone.`
+        : `Delete menu category "${cat.name}"? This cannot be undone.`
+    if (!confirm(msg)) return
+    setCategoryError('')
+    try {
+      const res = await authFetch(`/api/menu/categories/${cat.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Could not delete category')
+      }
+      loadMenu()
+    } catch (err: unknown) {
+      setCategoryError(err instanceof Error ? err.message : 'Failed to delete category')
     }
   }
 
@@ -128,6 +147,10 @@ export default function EmployeeDashboard() {
           </button>
         </div>
 
+        {categoryError && (
+          <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2 mb-4">{categoryError}</p>
+        )}
+
         {menuLoading ? (
           <p className={`text-center ${employeeTheme.pageHint} py-12`}>Loading menu…</p>
         ) : (
@@ -138,19 +161,31 @@ export default function EmployeeDashboard() {
           className="grid grid-cols-2 md:grid-cols-4 gap-4"
         >
           {menuData.map((category) => (
-            <motion.button
+            <motion.div
               key={category.id}
               variants={item}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate(`/dashboard/employee/menu/${category.id}`)}
-              className={`rounded-2xl transition-all flex flex-col items-center justify-center gap-3 p-6 min-h-[140px] cursor-pointer ${employeeTheme.categoryCard}`}
+              className={`relative rounded-2xl min-h-[140px] ${employeeTheme.categoryCard}`}
             >
-              <span className="text-4xl">{category.emoji}</span>
-              <span className={`text-sm font-bold text-center leading-tight ${employeeTheme.categoryName}`}>
-                {category.name}
-              </span>
-              <span className={`text-xs ${employeeTheme.categoryMeta}`}>{category.items.length} items</span>
-            </motion.button>
+              <button
+                type="button"
+                onClick={() => navigate(`/dashboard/employee/menu/${category.id}`)}
+                className="w-full h-full flex flex-col items-center justify-center gap-3 p-6 rounded-2xl"
+              >
+                <span className="text-4xl">{category.emoji}</span>
+                <span className={`text-sm font-bold text-center leading-tight ${employeeTheme.categoryName}`}>
+                  {category.name}
+                </span>
+                <span className={`text-xs ${employeeTheme.categoryMeta}`}>{category.items.length} items</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteCategory(category)}
+                title={`Delete ${category.name}`}
+                className="absolute top-2 right-2 p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+              >
+                <Trash2 size={18} />
+              </button>
+            </motion.div>
           ))}
 
           <motion.button

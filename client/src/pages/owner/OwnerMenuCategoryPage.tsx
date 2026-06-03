@@ -145,8 +145,40 @@ export default function OwnerMenuCategoryPage() {
 
   const removeItem = async (itemId: string) => {
     if (!categoryId || !confirm('Remove this item from the menu?')) return
-    await authFetch(`/api/menu/categories/${categoryId}/items/${itemId}`, { method: 'DELETE' })
-    load()
+    setFormError('')
+    try {
+      const res = await authFetch(`/api/menu/categories/${categoryId}/items/${itemId}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Could not delete item')
+      }
+      if (editingItemId === itemId) setEditingItemId(null)
+      await load()
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Failed to delete item')
+    }
+  }
+
+  const removeCategory = async () => {
+    if (!categoryId || !category) return
+    const msg =
+      category.items.length > 0
+        ? `Delete "${category.name}" and all ${category.items.length} items? This cannot be undone.`
+        : `Delete menu category "${category.name}"? This cannot be undone.`
+    if (!confirm(msg)) return
+    setFormError('')
+    try {
+      const res = await authFetch(`/api/menu/categories/${categoryId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Could not delete category')
+      }
+      navigate('/dashboard/owner/menu')
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Failed to delete category')
+    }
   }
 
   if (loading) {
@@ -312,10 +344,21 @@ export default function OwnerMenuCategoryPage() {
             )}
             <p className={`${ownerTheme.headerAccent} text-xs`}>{category.items.length} items</p>
           </div>
+          <button
+            type="button"
+            onClick={removeCategory}
+            title="Delete this menu category"
+            className="p-2 rounded-xl text-red-200 hover:text-white hover:bg-red-600/40 transition-colors shrink-0"
+          >
+            <Trash2 size={22} />
+          </button>
         </div>
       </header>
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
+        {formError && (
+          <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2">{formError}</p>
+        )}
         <div className="space-y-6">
           {sectionGroups.length === 0 && !usesSections ? (
             <p className="text-center text-gray-400 py-8">No items yet. Add your first item below.</p>

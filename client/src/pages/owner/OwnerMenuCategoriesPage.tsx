@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, LogOut, X } from 'lucide-react'
+import { ArrowLeft, Plus, LogOut, X, Trash2 } from 'lucide-react'
 import BrandLogo from '../../components/BrandLogo'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
@@ -60,6 +60,25 @@ export default function OwnerMenuCategoriesPage() {
     }
   }
 
+  const handleDeleteCategory = async (cat: MenuCategory) => {
+    const msg =
+      cat.items.length > 0
+        ? `Delete "${cat.name}" and all ${cat.items.length} items? This cannot be undone.`
+        : `Delete menu category "${cat.name}"? This cannot be undone.`
+    if (!confirm(msg)) return
+    setError('')
+    try {
+      const res = await authFetch(`/api/menu/categories/${cat.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Could not delete category')
+      }
+      await load()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete category')
+    }
+  }
+
   return (
     <div className={`min-h-screen ${ownerTheme.shellPage} flex flex-col`}>
       <header className={`${ownerTheme.header} shadow-lg sticky top-0 z-30`}>
@@ -94,8 +113,11 @@ export default function OwnerMenuCategoriesPage() {
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
         <p className="text-gray-500 text-sm mb-4">
-          Open a category to add or edit items. Changes appear on employee screens right away.
+          Open a category to add or edit items. Use the trash icon to delete a category or its items inside.
         </p>
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2 mb-4">{error}</p>
+        )}
 
         {loading ? (
           <p className="text-center text-gray-400 py-16">Loading menu…</p>
@@ -107,20 +129,31 @@ export default function OwnerMenuCategoriesPage() {
             className="grid grid-cols-2 md:grid-cols-4 gap-4"
           >
             {categories.map((category) => (
-              <motion.button
+              <motion.div
                 key={category.id}
                 variants={card}
-                whileTap={{ scale: 0.95 }}
-                type="button"
-                onClick={() => navigate(`/dashboard/owner/menu/${category.id}`)}
-                className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center gap-3 p-6 min-h-[140px]"
+                className="relative bg-white rounded-2xl shadow-sm hover:shadow-md transition-all min-h-[140px]"
               >
-                <span className="text-4xl">{category.emoji}</span>
-                <span className="text-sm font-bold text-gray-800 text-center leading-tight">
-                  {category.name}
-                </span>
-                <span className="text-xs text-gray-400">{category.items.length} items</span>
-              </motion.button>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/dashboard/owner/menu/${category.id}`)}
+                  className="w-full h-full flex flex-col items-center justify-center gap-3 p-6 rounded-2xl"
+                >
+                  <span className="text-4xl">{category.emoji}</span>
+                  <span className="text-sm font-bold text-gray-800 text-center leading-tight">
+                    {category.name}
+                  </span>
+                  <span className="text-xs text-gray-400">{category.items.length} items</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteCategory(category)}
+                  title={`Delete ${category.name}`}
+                  className="absolute top-2 right-2 p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </motion.div>
             ))}
 
             <motion.button

@@ -20,10 +20,12 @@ function ItemCard({
   item,
   categoryName,
   onEdit,
+  onDelete,
 }: {
   item: MenuItem
   categoryName: string
   onEdit: () => void
+  onDelete: () => void
 }) {
   const { addItem, increment, decrement, getQuantity } = useCart()
   const qty = getQuantity(item.id)
@@ -40,15 +42,25 @@ function ItemCard({
       variants={cardVariant}
       className="bg-white rounded-2xl shadow-sm p-4 flex flex-col gap-3 relative"
     >
-      <button
-        type="button"
-        onClick={onEdit}
-        title="Edit item"
-        className="absolute top-2 right-2 p-2 rounded-lg text-sky-600 hover:bg-sky-50 transition-colors"
-      >
-        <Pencil size={16} />
-      </button>
-      <div className="font-bold text-gray-900 text-sm leading-tight pr-8">{item.name}</div>
+      <div className="absolute top-2 right-2 flex gap-0.5">
+        <button
+          type="button"
+          onClick={onEdit}
+          title="Edit item"
+          className="p-2 rounded-lg text-sky-600 hover:bg-sky-50 transition-colors"
+        >
+          <Pencil size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          title="Delete item"
+          className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+      <div className="font-bold text-gray-900 text-sm leading-tight pr-16">{item.name}</div>
       {item.note && <div className="text-xs text-gray-400 italic">{item.note}</div>}
       <div
         className={`font-bold text-lg shrink-0 ${
@@ -230,6 +242,26 @@ export default function MenuCategoryPage() {
     }
   }
 
+  const removeCategory = async () => {
+    if (!categoryId || !category) return
+    const msg =
+      category.items.length > 0
+        ? `Delete "${category.name}" and all ${category.items.length} items? This cannot be undone.`
+        : `Delete menu category "${category.name}"? This cannot be undone.`
+    if (!confirm(msg)) return
+    setItemError('')
+    try {
+      const res = await authFetch(`/api/menu/categories/${categoryId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Could not delete category')
+      }
+      navigate('/dashboard/employee')
+    } catch (err: unknown) {
+      setItemError(err instanceof Error ? err.message : 'Failed to delete category')
+    }
+  }
+
   const removeItem = async (itemId: string) => {
     if (!categoryId || !confirm('Remove this item from the menu?')) return
     setItemError('')
@@ -282,18 +314,28 @@ export default function MenuCategoryPage() {
             </div>
           </div>
 
-          <button
-            onClick={() => setCartOpen(true)}
-            className={`relative flex items-center gap-2 ${employeeTheme.cartBtn} text-white rounded-xl px-4 py-2.5 font-semibold text-sm transition-all`}
-          >
-            <ShoppingCart size={18} />
-            <span className="hidden sm:inline">Diner's Order</span>
-            {totalItems > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {totalItems}
-              </span>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={removeCategory}
+              title="Delete this menu category"
+              className="p-2 rounded-xl text-red-200 hover:text-white hover:bg-red-600/30 transition-colors"
+            >
+              <Trash2 size={20} />
+            </button>
+            <button
+              onClick={() => setCartOpen(true)}
+              className={`relative flex items-center gap-2 ${employeeTheme.cartBtn} text-white rounded-xl px-4 py-2.5 font-semibold text-sm transition-all`}
+            >
+              <ShoppingCart size={18} />
+              <span className="hidden sm:inline">Diner's Order</span>
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -411,6 +453,7 @@ export default function MenuCategoryPage() {
                         item={item}
                         categoryName={category.name}
                         onEdit={() => startEditItem(item)}
+                        onDelete={() => removeItem(item.id)}
                       />
                     )
                   )}
