@@ -130,10 +130,11 @@ export default function ExpensesPage() {
               logout()
               navigate('/')
             }}
-            title="Sign out"
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2 text-sm transition-all"
+            title="Logout"
+            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2 text-sm font-semibold transition-all"
           >
             <LogOut size={16} />
+            <span>Logout</span>
           </button>
         </div>
       </header>

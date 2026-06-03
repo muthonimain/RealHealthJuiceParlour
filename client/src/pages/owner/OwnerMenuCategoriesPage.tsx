@@ -102,10 +102,11 @@ export default function OwnerMenuCategoriesPage() {
               logout()
               navigate('/')
             }}
-            className="p-2 rounded-lg bg-amber-800 hover:bg-amber-700 text-white"
-            title="Log out"
+            className="flex items-center gap-2 rounded-lg bg-amber-800 hover:bg-amber-700 text-white px-3 py-2 text-sm font-semibold transition-all"
+            title="Logout"
           >
-            <LogOut size={20} />
+            <LogOut size={18} />
+            <span>Logout</span>
           </button>
         </div>
         <p className={`text-center ${ownerTheme.headerAccent} text-xs pb-2`}>{user?.name} — tap + to add a menu</p>

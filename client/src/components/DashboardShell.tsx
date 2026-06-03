@@ -52,7 +52,7 @@ export default function DashboardShell({
               className="flex items-center gap-2 bg-white/10 hover:bg-white/20 active:bg-white/30 text-white rounded-xl px-4 py-3 text-sm font-semibold transition-all"
             >
               <LogOut size={18} />
-              <span className="hidden sm:inline">Sign Out</span>
+              <span>Logout</span>
             </button>
           </div>
         </div>
