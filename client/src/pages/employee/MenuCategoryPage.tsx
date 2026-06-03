@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ShoppingCart, Plus, Minus } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Plus, Minus, Pencil, Trash2, X, Save } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useCart } from '../../context/CartContext'
@@ -15,7 +15,15 @@ import { categoryUsesSections, getMenuSectionGroups } from '../../lib/menuSectio
 const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } }
 const cardVariant: Variants = { hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } }
 
-function ItemCard({ item, categoryName }: { item: MenuItem; categoryName: string }) {
+function ItemCard({
+  item,
+  categoryName,
+  onEdit,
+}: {
+  item: MenuItem
+  categoryName: string
+  onEdit: () => void
+}) {
   const { addItem, increment, decrement, getQuantity } = useCart()
   const qty = getQuantity(item.id)
 
@@ -29,9 +37,17 @@ function ItemCard({ item, categoryName }: { item: MenuItem; categoryName: string
   return (
     <motion.div
       variants={cardVariant}
-      className="bg-white rounded-2xl shadow-sm p-4 flex flex-col gap-3"
+      className="bg-white rounded-2xl shadow-sm p-4 flex flex-col gap-3 relative"
     >
-      <div className="font-bold text-gray-900 text-sm leading-tight">{item.name}</div>
+      <button
+        type="button"
+        onClick={onEdit}
+        title="Edit item"
+        className="absolute top-2 right-2 p-2 rounded-lg text-sky-600 hover:bg-sky-50 transition-colors"
+      >
+        <Pencil size={16} />
+      </button>
+      <div className="font-bold text-gray-900 text-sm leading-tight pr-8">{item.name}</div>
       {item.note && <div className="text-xs text-gray-400 italic">{item.note}</div>}
       <div
         className={`font-bold text-lg shrink-0 ${
@@ -90,6 +106,13 @@ export default function MenuCategoryPage() {
   const [savingItem, setSavingItem] = useState(false)
   const [itemError, setItemError] = useState('')
 
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editPrice, setEditPrice] = useState('')
+  const [editNote, setEditNote] = useState('')
+  const [editSection, setEditSection] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
+
   const loadCategory = useCallback(async () => {
     if (!categoryId) return
     try {
@@ -147,6 +170,75 @@ export default function MenuCategoryPage() {
       setItemError(err instanceof Error ? err.message : 'Failed to add item')
     } finally {
       setSavingItem(false)
+    }
+  }
+
+  const startEditItem = (item: MenuItem) => {
+    setEditingItemId(item.id)
+    setEditName(item.name)
+    setEditPrice(hasDisplayPrice(item.price) ? String(normalizePrice(item.price)) : '')
+    setEditNote(item.note ?? '')
+    setEditSection(item.section ?? category?.sections?.[0] ?? '')
+    setItemError('')
+    setShowAddItems(false)
+  }
+
+  const cancelEditItem = () => {
+    setEditingItemId(null)
+    setItemError('')
+  }
+
+  const saveEditItem = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!categoryId || !editingItemId || !editName.trim()) return
+    const price = normalizePrice(editPrice)
+    if (editPrice.trim() !== '' && price <= 0) {
+      setItemError('Enter a valid price greater than 0, or leave price empty for “on request” items.')
+      return
+    }
+    setItemError('')
+    setSavingEdit(true)
+    try {
+      const body: { name: string; note?: string; price?: number; section?: string } = {
+        name: editName.trim(),
+        note: editNote.trim() || undefined,
+      }
+      if (editPrice.trim() !== '') body.price = price
+      else body.price = 0
+      if (categoryUsesSections(category!)) body.section = editSection || undefined
+
+      const res = await authFetch(
+        `/api/menu/categories/${categoryId}/items/${editingItemId}`,
+        { method: 'PATCH', body: JSON.stringify(body) }
+      )
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Could not save changes')
+      }
+      setEditingItemId(null)
+      await loadCategory()
+    } catch (err: unknown) {
+      setItemError(err instanceof Error ? err.message : 'Failed to update item')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const removeItem = async (itemId: string) => {
+    if (!categoryId || !confirm('Remove this item from the menu?')) return
+    setItemError('')
+    try {
+      const res = await authFetch(`/api/menu/categories/${categoryId}/items/${itemId}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Could not remove item')
+      }
+      if (editingItemId === itemId) setEditingItemId(null)
+      await loadCategory()
+    } catch (err: unknown) {
+      setItemError(err instanceof Error ? err.message : 'Failed to remove item')
     }
   }
 
@@ -224,17 +316,112 @@ export default function MenuCategoryPage() {
                   animate="show"
                   className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
                 >
-                  {group.items.map((item) => (
-                    <ItemCard key={item.id} item={item} categoryName={category.name} />
-                  ))}
+                  {group.items.map((item) =>
+                    editingItemId === item.id ? (
+                      <motion.form
+                        key={item.id}
+                        variants={cardVariant}
+                        initial="hidden"
+                        animate="show"
+                        onSubmit={saveEditItem}
+                        className={`${employeeTheme.panel} p-4 flex flex-col gap-3 col-span-2 md:col-span-2 lg:col-span-2`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-bold text-gray-800 text-sm">Edit item</h3>
+                          <button
+                            type="button"
+                            onClick={cancelEditItem}
+                            className="p-1.5 text-gray-400 hover:text-gray-600"
+                            title="Cancel"
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                        {itemError && (
+                          <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{itemError}</p>
+                        )}
+                        {usesSections && category.sections && (
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600">Section</label>
+                            <select
+                              value={editSection}
+                              onChange={(e) => setEditSection(e.target.value)}
+                              className={`mt-1 w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900 text-sm focus:ring-2 outline-none ${employeeTheme.signInInputFocus}`}
+                            >
+                              {category.sections.map((s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="Item name"
+                          required
+                          className={`w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900 text-sm focus:ring-2 outline-none ${employeeTheme.signInInputFocus}`}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={editPrice}
+                          onChange={(e) => setEditPrice(e.target.value)}
+                          placeholder="Price (Ksh) — leave empty if on request"
+                          className={`w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900 text-sm focus:ring-2 outline-none ${employeeTheme.signInInputFocus}`}
+                        />
+                        <input
+                          type="text"
+                          value={editNote}
+                          onChange={(e) => setEditNote(e.target.value)}
+                          placeholder="Note (optional)"
+                          className={`w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900 text-sm focus:ring-2 outline-none ${employeeTheme.signInInputFocus}`}
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            disabled={savingEdit}
+                            className={`flex-1 flex items-center justify-center gap-1 ${employeeTheme.cartBtn} text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-60`}
+                          >
+                            <Save size={16} />
+                            {savingEdit ? 'Saving…' : 'Save'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                            className="px-3 py-2.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50"
+                            title="Delete item"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </motion.form>
+                    ) : (
+                      <ItemCard
+                        key={item.id}
+                        item={item}
+                        categoryName={category.name}
+                        onEdit={() => startEditItem(item)}
+                      />
+                    )
+                  )}
                 </motion.div>
               )}
             </section>
           ))
         )}
 
+        {itemError && !showAddItems && !editingItemId && (
+          <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2 text-center max-w-xl mx-auto">
+            {itemError}
+          </p>
+        )}
+
         <div className="max-w-xl mx-auto w-full">
-          {!showAddItems ? (
+          {!showAddItems && !editingItemId ? (
             <button
               type="button"
               onClick={() => {

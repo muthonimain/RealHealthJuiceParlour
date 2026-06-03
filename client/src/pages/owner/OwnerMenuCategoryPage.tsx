@@ -119,14 +119,21 @@ export default function OwnerMenuCategoryPage() {
       note: editNote.trim() || undefined,
     }
     if (editPrice.trim() !== '') body.price = price
+    else body.price = 0
     if (categoryUsesSections(category!)) body.section = editSection || undefined
-    const res = await authFetch(`/api/menu/categories/${categoryId}/items/${editingItemId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(body),
-    })
-    if (res.ok) {
+    try {
+      const res = await authFetch(`/api/menu/categories/${categoryId}/items/${editingItemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Could not save changes')
+      }
       setEditingItemId(null)
-      load()
+      await load()
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Failed to update item')
     }
   }
 
