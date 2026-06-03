@@ -15,12 +15,23 @@ export function getMenuSectionGroups(category: MenuCategory): MenuSectionGroup[]
     return category.items.length > 0 ? [{ title: '', items: category.items }] : []
   }
 
-  return titles.map((title) => ({
+  const groups = titles.map((title) => ({
     title,
     items: category.items.filter(
       (i) => (i.section ?? '').trim().toLowerCase() === title.trim().toLowerCase()
     ),
   }))
+
+  const sectionKeys = new Set(titles.map((t) => t.trim().toLowerCase()))
+  const other = category.items.filter((i) => {
+    const s = (i.section ?? '').trim().toLowerCase()
+    return !s || !sectionKeys.has(s)
+  })
+  if (other.length > 0) {
+    groups.push({ title: 'More', items: other })
+  }
+
+  return groups
 }
 
 export function categoryUsesSections(category: MenuCategory): boolean {

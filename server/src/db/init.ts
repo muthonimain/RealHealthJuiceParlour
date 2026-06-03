@@ -65,24 +65,64 @@ async function seedMenu(categories: MenuCategory[]): Promise<void> {
   }
 }
 
+async function applyCategorySections(
+  categoryId: string,
+  categoryNameMatch: string,
+  sections: string[]
+): Promise<string | null> {
+  const sectionsJson = JSON.stringify(sections)
+  const { rows } = await pool.query<{ id: string }>(
+    `SELECT id FROM menu_categories
+     WHERE id = $1 OR LOWER(TRIM(name)) = $2
+     LIMIT 1`,
+    [categoryId, categoryNameMatch.toLowerCase()]
+  )
+  if (!rows[0]) return null
+  await pool.query(`UPDATE menu_categories SET sections = $1::jsonb WHERE id = $2`, [
+    sectionsJson,
+    rows[0].id,
+  ])
+  return rows[0].id
+}
+
 async function runMenuMigrations(): Promise<void> {
   await pool.query(`ALTER TABLE menu_categories ADD COLUMN IF NOT EXISTS sections JSONB`)
   await pool.query(`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS section TEXT`)
 
-  const herbsSections = JSON.stringify(['Powders', 'Seeds'])
-  const { rows } = await pool.query<{ id: string }>(
-    `SELECT id FROM menu_categories WHERE LOWER(TRIM(name)) = 'herbs' LIMIT 1`
-  )
-
-  if (rows[0]) {
-    await pool.query(`UPDATE menu_categories SET sections = $1::jsonb WHERE id = $2`, [
-      herbsSections,
-      rows[0].id,
-    ])
-  } else {
+  const herbsId = await applyCategorySections('herbs', 'herbs', ['Powders', 'Seeds'])
+  if (!herbsId) {
     const herbs = buildDefaultMenu().find((c) => c.id === 'herbs')
-    if (herbs) {
-      await seedMenu([herbs])
+    if (herbs) await seedMenu([herbs])
+  }
+
+  const gutId = await applyCategorySections('gut-healing-drinks', 'gut-healing drinks', [
+    'Flavored Kombucha',
+    'Plain Kombucha',
+  ])
+  if (gutId) {
+    await pool.query(
+      `UPDATE menu_items SET
+         name = REPLACE(name, 'Kombucha –', 'Plain Kombucha –'),
+         section = 'Plain Kombucha'
+       WHERE category_id = $1 AND id IN ('gh-1', 'gh-2', 'gh-3')`,
+      [gutId]
+    )
+    const flavored = [
+      { id: 'gh-f1', name: 'Flavored Kombucha – Small', price: 100 },
+      { id: 'gh-f2', name: 'Flavored Kombucha – Medium', price: 200 },
+      { id: 'gh-f3', name: 'Flavored Kombucha – Large', price: 350 },
+    ]
+    for (let i = 0; i < flavored.length; i++) {
+      const item = flavored[i]
+      await pool.query(
+        `INSERT INTO menu_items (id, category_id, name, price, note, section, sort_order)
+         VALUES ($1, $2, $3, $4, NULL, 'Flavored Kombucha', $5)
+         ON CONFLICT (id) DO UPDATE SET
+           name = EXCLUDED.name,
+           price = EXCLUDED.price,
+           section = EXCLUDED.section`,
+        [item.id, gutId, item.name, item.price, 10 + i]
+      )
     }
   }
 }
