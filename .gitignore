@@ -7,3 +7,6 @@ server/dist/
 .env
 *.env.local
 .DS_Store
+
+# Persisted data (local only)
+server/persisted/

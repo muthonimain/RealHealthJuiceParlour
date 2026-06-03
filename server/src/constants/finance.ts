@@ -1,0 +1,1 @@
+export const DAILY_OPERATIONAL_COST = 5550

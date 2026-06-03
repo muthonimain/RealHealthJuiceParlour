@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Leaf, Droplets } from 'lucide-react'
+import { LogOut } from 'lucide-react'
+import BrandLogo from './BrandLogo'
 import { useAuth } from '../context/AuthContext'
 import type { ReactNode } from 'react'
 
@@ -8,10 +9,18 @@ interface Props {
   subtitle: string
   accentClass: string
   headerBg: string
+  pageBg?: string
   children: ReactNode
 }
 
-export default function DashboardShell({ title, subtitle, accentClass, headerBg, children }: Props) {
+export default function DashboardShell({
+  title,
+  subtitle,
+  accentClass,
+  headerBg,
+  pageBg = 'bg-gray-100',
+  children,
+}: Props) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -21,15 +30,12 @@ export default function DashboardShell({ title, subtitle, accentClass, headerBg,
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className={`min-h-screen flex flex-col ${pageBg}`}>
       {/* Top Nav */}
       <header className={`${headerBg} shadow-lg`}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <Leaf size={22} className="text-green-300" />
-              <Droplets size={18} className="text-emerald-300" />
-            </div>
+            <BrandLogo size="sm" />
             <div>
               <div className="text-white font-bold text-lg leading-tight">Real Health Juice Parlour</div>
               <div className={`text-xs font-semibold uppercase tracking-widest ${accentClass}`}>{title}</div>

@@ -50,8 +50,9 @@ export default function LoginPage() {
 
   const passwordRef = useRef<HTMLInputElement>(null)
 
-  const validRole: UserRole | null =
-    role === 'owner' ? 'owner' : role === 'employee' ? 'employee' : null
+  if (role === 'owner') return <Navigate to="/owner-select" replace />
+
+  const validRole: UserRole | null = role === 'employee' ? 'employee' : null
 
   if (!validRole) return <Navigate to="/" replace />
 

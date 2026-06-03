@@ -20,7 +20,8 @@ export default function ProtectedRoute({ role, children }: Props) {
   }
 
   if (!user || user.role !== role) {
-    return <Navigate to={`/login/${role}`} replace />
+    const redirect = role === 'owner' ? '/owner-select' : '/employee-select'
+    return <Navigate to={redirect} replace />
   }
 
   return <>{children}</>

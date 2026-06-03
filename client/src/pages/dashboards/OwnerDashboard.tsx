@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DashboardShell from '../../components/DashboardShell'
 import { useAuth } from '../../context/AuthContext'
-import { TrendingUp, Users, ShoppingBag, DollarSign, Settings, BarChart2, FileText, Package, ClipboardList } from 'lucide-react'
+import { TrendingUp, Users, ShoppingBag, DollarSign, Settings, BarChart2, Package, ClipboardList, Wallet, PieChart } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
+import { ownerTheme } from '../../theme/roles'
+import { sumRevenueForWorkingMonth, workingMonthLabel } from '../../lib/workingMonth'
 
 interface Order { grandTotal: number; createdAt: string }
 
@@ -13,10 +15,11 @@ const item: Variants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0
 
 const modules: { label: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string; bg: string; path?: string }[] = [
   { label: 'Employee Records', icon: ClipboardList, color: 'text-amber-700', bg: 'bg-amber-100', path: '/dashboard/owner/employee-records' },
+  { label: 'Expenses', icon: Wallet, color: 'text-orange-700', bg: 'bg-orange-100', path: '/dashboard/owner/expenses' },
+  { label: 'Net Profit', icon: PieChart, color: 'text-emerald-700', bg: 'bg-emerald-100', path: '/dashboard/owner/net-profit' },
+  { label: 'Menu & Products', icon: Package, color: 'text-green-700', bg: 'bg-green-100', path: '/dashboard/owner/menu' },
   { label: 'Sales Reports', icon: BarChart2, color: 'text-purple-700', bg: 'bg-purple-100' },
   { label: 'Staff Management', icon: Users, color: 'text-blue-700', bg: 'bg-blue-100' },
-  { label: 'Menu & Products', icon: Package, color: 'text-green-700', bg: 'bg-green-100' },
-  { label: 'Financial Summary', icon: FileText, color: 'text-rose-700', bg: 'bg-rose-100' },
   { label: 'System Settings', icon: Settings, color: 'text-gray-700', bg: 'bg-gray-100' },
 ]
 
@@ -37,19 +40,23 @@ export default function OwnerDashboard() {
   const todayOrders = orders.filter((o) => new Date(o.createdAt).toDateString() === today)
   const todayRevenue = todayOrders.reduce((s, o) => s + o.grandTotal, 0)
 
+  const monthRevenue = sumRevenueForWorkingMonth(orders)
+  const monthLabel = workingMonthLabel()
+
   const stats = [
     { label: "Today's Revenue", value: `Ksh ${todayRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
     { label: "Today's Orders", value: todayOrders.length.toString(), icon: ShoppingBag, color: 'text-green-600', bg: 'bg-green-50' },
     { label: 'Total Orders', value: orders.length.toString(), icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'All-time Revenue', value: `Ksh ${orders.reduce((s, o) => s + o.grandTotal, 0).toLocaleString()}`, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: `${monthLabel} revenue`, value: `Ksh ${monthRevenue.toLocaleString()}`, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
   ]
 
   return (
     <DashboardShell
       title="Owner Portal"
       subtitle={`Welcome back, ${user?.name ?? 'Owner'}`}
-      accentClass="text-amber-300"
-      headerBg="bg-amber-900"
+      accentClass={ownerTheme.headerAccent}
+      headerBg={ownerTheme.header}
+      pageBg={ownerTheme.shellPage}
     >
       {/* Live Stats */}
       <motion.div variants={container} initial="hidden" animate="show"
@@ -81,7 +88,7 @@ export default function OwnerDashboard() {
               <Icon size={28} className={color} />
             </div>
             <span className="text-sm font-semibold text-gray-700 text-center">{label}</span>
-            {path && <span className="text-xs text-amber-600 font-semibold uppercase tracking-wider">Open →</span>}
+            {path && <span className={`text-xs ${ownerTheme.openLink} font-semibold uppercase tracking-wider`}>Open →</span>}
           </motion.button>
         ))}
       </motion.div>

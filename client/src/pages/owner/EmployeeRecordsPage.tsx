@@ -4,8 +4,6 @@ import {
   ArrowLeft,
   RefreshCw,
   Receipt,
-  Leaf,
-  Droplets,
   LogOut,
   CheckCircle2,
   Clock,
@@ -13,6 +11,9 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
+import BrandLogo from '../../components/BrandLogo'
+import { ownerTheme } from '../../theme/roles'
+import { sumRevenueForWorkingMonth, workingMonthLabel } from '../../lib/workingMonth'
 
 interface OrderItem {
   name: string
@@ -112,7 +113,8 @@ export default function EmployeeRecordsPage() {
     }
   }
 
-  const totalRevenue = orders.reduce((sum, o) => sum + o.grandTotal, 0)
+  const monthRevenue = sumRevenueForWorkingMonth(orders)
+  const monthLabel = workingMonthLabel()
   const todayOrders = orders.filter((o) => {
     const d = new Date(o.createdAt)
     return d.toDateString() === new Date().toDateString()
@@ -121,8 +123,8 @@ export default function EmployeeRecordsPage() {
   const pendingCount = summaries.filter((s) => s.status === 'pending' && s.totalOrders > 0).length
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <header className="bg-amber-900 shadow-lg sticky top-0 z-30">
+    <div className={`min-h-screen ${ownerTheme.shellPage} flex flex-col`}>
+      <header className={`${ownerTheme.header} shadow-lg sticky top-0 z-30`}>
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -132,13 +134,10 @@ export default function EmployeeRecordsPage() {
             >
               <ArrowLeft size={20} />
             </button>
-            <div className="flex items-center gap-2">
-              <Leaf size={18} className="text-green-300" />
-              <Droplets size={15} className="text-emerald-300" />
-            </div>
+            <BrandLogo size="sm" />
             <div>
               <div className="text-white font-bold text-base">Employee Records</div>
-              <div className="text-amber-300 text-xs">Real Health Juice Parlour — Owner View</div>
+              <div className={`${ownerTheme.headerAccent} text-xs`}>Employee records — owner view</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -227,7 +226,7 @@ export default function EmployeeRecordsPage() {
                       ) : isPending ? (
                         <span className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-200 px-3 py-1.5 rounded-full uppercase tracking-wide">
                           <Clock size={14} />
-                          Pending
+                          Pending clearance
                         </span>
                       ) : (
                         <span className="flex items-center gap-1 text-xs font-bold text-green-800 bg-green-200 px-3 py-1.5 rounded-full uppercase tracking-wide">
@@ -292,11 +291,16 @@ export default function EmployeeRecordsPage() {
             { label: "Total Orders", value: orders.length },
             { label: "Today's Orders", value: todayOrders.length },
             { label: "Today's Revenue", value: `Ksh ${todayRevenue.toLocaleString()}` },
-            { label: 'All-time Revenue', value: `Ksh ${totalRevenue.toLocaleString()}` },
-          ].map(({ label, value }) => (
+            {
+              label: `${monthLabel} revenue`,
+              value: `Ksh ${monthRevenue.toLocaleString()}`,
+              hint: 'Adds each day · resets on the 1st of next month',
+            },
+          ].map(({ label, value, hint }) => (
             <div key={label} className="bg-white rounded-2xl p-4 shadow-sm">
               <div className="text-xl font-bold text-gray-900">{value}</div>
               <div className="text-sm text-gray-500 mt-0.5">{label}</div>
+              {hint && <div className="text-xs text-gray-400 mt-1">{hint}</div>}
             </div>
           ))}
         </div>

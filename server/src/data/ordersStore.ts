@@ -1,3 +1,5 @@
+import { pool } from '../db/pool'
+
 export interface OrderItem {
   id: string
   name: string
@@ -18,23 +20,60 @@ export interface Order {
   createdAt: string
 }
 
-// In-memory store — persists while server is running
-const orders: Order[] = []
+interface OrderRow {
+  id: string
+  employee_id: string
+  employee_name: string
+  items: OrderItem[]
+  subtotal: number
+  delivery_included: boolean
+  delivery_amount: number
+  grand_total: number
+  created_at: Date
+}
 
-export function createOrder(data: Omit<Order, 'id' | 'createdAt'>): Order {
-  const order: Order = {
-    ...data,
-    id: `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-    createdAt: new Date().toISOString(),
+function mapOrder(row: OrderRow): Order {
+  return {
+    id: row.id,
+    employeeId: row.employee_id,
+    employeeName: row.employee_name,
+    items: row.items,
+    subtotal: row.subtotal,
+    deliveryIncluded: row.delivery_included,
+    deliveryAmount: row.delivery_amount,
+    grandTotal: row.grand_total,
+    createdAt: new Date(row.created_at).toISOString(),
   }
-  orders.unshift(order) // newest first
-  return order
 }
 
-export function getAllOrders(): Order[] {
-  return orders
+export async function createOrder(data: Omit<Order, 'id' | 'createdAt'>): Promise<Order> {
+  const id = `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+  const { rows } = await pool.query<OrderRow>(
+    `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, grand_total)
+     VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8)
+     RETURNING *`,
+    [
+      id,
+      data.employeeId ?? '',
+      data.employeeName,
+      JSON.stringify(data.items),
+      data.subtotal,
+      data.deliveryIncluded,
+      data.deliveryAmount,
+      data.grandTotal,
+    ]
+  )
+  return mapOrder(rows[0])
 }
 
-export function getOrderById(id: string): Order | undefined {
-  return orders.find((o) => o.id === id)
+export async function getAllOrders(): Promise<Order[]> {
+  const { rows } = await pool.query<OrderRow>(
+    'SELECT * FROM orders ORDER BY created_at DESC'
+  )
+  return rows.map(mapOrder)
+}
+
+export async function getOrderById(id: string): Promise<Order | undefined> {
+  const { rows } = await pool.query<OrderRow>('SELECT * FROM orders WHERE id = $1', [id])
+  return rows[0] ? mapOrder(rows[0]) : undefined
 }

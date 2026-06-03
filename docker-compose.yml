@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rhjp
+      POSTGRES_PASSWORD: rhjp_local_dev
+      POSTGRES_DB: rhjp_pos
+    ports:
+      - '5432:5432'
+    volumes:
+      - rhjp_pg_data:/var/lib/postgresql/data
+
+volumes:
+  rhjp_pg_data:

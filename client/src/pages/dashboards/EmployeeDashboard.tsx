@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShoppingCart, LogOut, Leaf, Droplets } from 'lucide-react'
+import { ShoppingCart, LogOut, Plus, X, Wallet } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
+import { authFetch } from '../../lib/api'
+import BrandLogo from '../../components/BrandLogo'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { useCart } from '../../context/CartContext'
-import { menuData } from '../../data/menu'
+import type { MenuCategory } from '../../types/menu'
 import CartDrawer from '../../components/CartDrawer'
+import { employeeTheme } from '../../theme/roles'
 
 const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 const item: Variants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
@@ -16,6 +20,49 @@ export default function EmployeeDashboard() {
   const { totalItems, totalPrice } = useCart()
   const navigate = useNavigate()
   const [cartOpen, setCartOpen] = useState(false)
+  const [menuData, setMenuData] = useState<MenuCategory[]>([])
+  const [menuLoading, setMenuLoading] = useState(true)
+  const [showAddCategory, setShowAddCategory] = useState(false)
+  const [newCategoryTitle, setNewCategoryTitle] = useState('')
+  const [savingCategory, setSavingCategory] = useState(false)
+  const [categoryError, setCategoryError] = useState('')
+
+  const loadMenu = () => {
+    fetch('/api/menu/categories')
+      .then((r) => r.json())
+      .then(setMenuData)
+      .catch(() => {})
+      .finally(() => setMenuLoading(false))
+  }
+
+  useEffect(() => {
+    loadMenu()
+  }, [])
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newCategoryTitle.trim()) return
+    setSavingCategory(true)
+    setCategoryError('')
+    try {
+      const res = await authFetch('/api/menu/categories', {
+        method: 'POST',
+        body: JSON.stringify({ name: newCategoryTitle.trim() }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Could not create category')
+      }
+      const created: MenuCategory = await res.json()
+      setShowAddCategory(false)
+      setNewCategoryTitle('')
+      navigate(`/dashboard/employee/menu/${created.id}`)
+    } catch (err: unknown) {
+      setCategoryError(err instanceof Error ? err.message : 'Failed to create category')
+    } finally {
+      setSavingCategory(false)
+    }
+  }
 
   const handleLogout = () => {
     logout()
@@ -23,18 +70,14 @@ export default function EmployeeDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Top Nav */}
-      <header className="bg-sky-900 shadow-lg sticky top-0 z-30">
+    <div className={`min-h-screen ${employeeTheme.shellPage} flex flex-col`}>
+      <header className={`${employeeTheme.header} shadow-lg sticky top-0 z-30`}>
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <Leaf size={20} className="text-green-300" />
-              <Droplets size={16} className="text-emerald-300" />
-            </div>
+            <BrandLogo size="sm" />
             <div>
               <div className="text-white font-bold text-base leading-tight">Real Health Juice Parlour</div>
-              <div className="text-sky-300 text-xs font-semibold uppercase tracking-widest">
+              <div className={`${employeeTheme.headerAccent} text-xs font-semibold uppercase tracking-widest`}>
                 {user?.name} &mdash; Employee
               </div>
             </div>
@@ -44,7 +87,7 @@ export default function EmployeeDashboard() {
             {/* Cart Button */}
             <button
               onClick={() => setCartOpen(true)}
-              className="relative flex items-center gap-2 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white rounded-xl px-4 py-2.5 font-semibold text-sm transition-all"
+              className={`relative flex items-center gap-2 ${employeeTheme.cartBtn} text-white rounded-xl px-4 py-2.5 font-semibold text-sm transition-all`}
             >
               <ShoppingCart size={18} />
               <span className="hidden sm:inline">Diner's Order</span>
@@ -68,13 +111,26 @@ export default function EmployeeDashboard() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
-        <div className="mb-5">
-          <h1 className="text-xl font-bold text-gray-900">Menu Categories</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
-            {new Date().toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
+        <div className="mb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Menu Categories</h1>
+            <p className="text-gray-500 text-sm mt-0.5">
+              {new Date().toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard/employee/expenses')}
+            className={`flex items-center justify-center gap-2 ${employeeTheme.cartBtn} text-white font-semibold rounded-xl px-4 py-2.5 text-sm shadow-sm`}
+          >
+            <Wallet size={18} />
+            Expenses
+          </button>
         </div>
 
+        {menuLoading ? (
+          <p className="text-center text-gray-400 py-12">Loading menu…</p>
+        ) : (
         <motion.div
           variants={container}
           initial="hidden"
@@ -96,15 +152,89 @@ export default function EmployeeDashboard() {
               <span className="text-xs text-gray-400">{category.items.length} items</span>
             </motion.button>
           ))}
+
+          <motion.button
+            type="button"
+            variants={item}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setShowAddCategory(true)
+              setCategoryError('')
+            }}
+            className="bg-white rounded-2xl border-2 border-dashed border-teal-400 hover:border-teal-600 hover:bg-teal-50/80 transition-all flex flex-col items-center justify-center gap-2 p-6 min-h-[140px]"
+            title="Add Menu Category"
+          >
+            <div className="bg-teal-100 rounded-full p-4">
+              <Plus size={32} className="text-teal-700" />
+            </div>
+            <span className="text-sm font-bold text-teal-800 text-center">Add Menu Category</span>
+          </motion.button>
         </motion.div>
+        )}
       </main>
+
+      <AnimatePresence>
+        {showAddCategory && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowAddCategory(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900">Add Menu Category</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCategory(false)}
+                  className="p-1 text-gray-400 hover:text-gray-600"
+                  title="Close"
+                >
+                  <X size={22} />
+                </button>
+              </div>
+              <form onSubmit={handleCreateCategory} className="flex flex-col gap-4">
+                {categoryError && (
+                  <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2">{categoryError}</p>
+                )}
+                <div>
+                  <label className="text-sm font-semibold text-gray-700">Category title</label>
+                  <input
+                    type="text"
+                    value={newCategoryTitle}
+                    onChange={(e) => setNewCategoryTitle(e.target.value)}
+                    placeholder="e.g. Seasonal Specials"
+                    autoFocus
+                    className="mt-1 w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 focus:ring-2 focus:ring-teal-400 outline-none"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={savingCategory}
+                  className={`${employeeTheme.cartBtn} w-full text-white font-bold py-4 rounded-xl disabled:opacity-60`}
+                >
+                  {savingCategory ? 'Creating…' : 'Create & add items'}
+                </button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Sticky Cart Bar (when items in cart) */}
       {totalItems > 0 && (
         <motion.div
           initial={{ y: 80 }}
           animate={{ y: 0 }}
-          className="sticky bottom-0 bg-sky-700 border-t border-sky-600 px-4 py-3 z-20"
+          className={`sticky bottom-0 ${employeeTheme.cartBar} border-t px-4 py-3 z-20`}
         >
           <button
             onClick={() => setCartOpen(true)}

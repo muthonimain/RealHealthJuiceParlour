@@ -1,6 +1,7 @@
 import { createContext, useContext, useReducer } from 'react'
 import type { ReactNode } from 'react'
-import type { MenuItem } from '../data/menu'
+import type { MenuItem } from '../types/menu'
+import { normalizePrice } from '../lib/menuPrice'
 
 export interface CartItem extends MenuItem {
   quantity: number
@@ -30,7 +31,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         }
       }
       return {
-        items: [...state.items, { ...action.item, quantity: 1, categoryName: action.categoryName }],
+        items: [
+          ...state.items,
+          {
+            ...action.item,
+            price: normalizePrice(action.item.price),
+            quantity: 1,
+            categoryName: action.categoryName,
+          },
+        ],
       }
     }
     case 'INCREMENT':
@@ -72,7 +81,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [] })
 
   const totalItems = state.items.reduce((sum, i) => sum + i.quantity, 0)
-  const totalPrice = state.items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const totalPrice = state.items.reduce(
+    (sum, i) => sum + normalizePrice(i.price) * i.quantity,
+    0
+  )
 
   const addItem = (item: MenuItem, categoryName: string) =>
     dispatch({ type: 'ADD', item, categoryName })

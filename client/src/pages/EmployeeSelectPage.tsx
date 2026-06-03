@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Eye, EyeOff, Leaf, Droplets, AlertCircle, User } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, AlertCircle, User } from 'lucide-react'
+import BrandLogo from '../components/BrandLogo'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { employeeTheme } from '../theme/roles'
 
 interface EmployeeInfo {
   id: string
@@ -52,7 +54,7 @@ export default function EmployeeSelectPage() {
     setIsLogging(true)
     setLoginError('')
     try {
-      await login('employee', selected.username, password)
+      await login('employee', selected.username, password.trim())
       navigate('/dashboard/employee')
     } catch (err: unknown) {
       setLoginError(err instanceof Error ? err.message : 'Invalid password. Try again.')
@@ -62,36 +64,31 @@ export default function EmployeeSelectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-950 via-sky-900 to-blue-900 flex flex-col items-center justify-center px-6 py-10">
-      {/* Back */}
+    <div className={`min-h-screen ${employeeTheme.page} flex flex-col items-center justify-center px-6 py-10`}>
       <motion.button
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={() => navigate('/')}
-        className="absolute top-6 left-6 flex items-center gap-2 text-white/70 hover:text-white transition-colors py-3 px-4 rounded-xl hover:bg-white/10"
+        className={`absolute top-6 left-6 flex items-center gap-2 transition-colors py-3 px-4 rounded-xl ${employeeTheme.back}`}
       >
         <ArrowLeft size={20} />
         <span className="text-sm font-medium">Back</span>
       </motion.button>
 
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-8"
+        className="text-center w-full max-w-2xl mx-auto mb-10 flex flex-col items-center"
       >
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <Leaf size={24} className="text-green-300" />
-          <Droplets size={20} className="text-emerald-300" />
+        <div className="w-full flex justify-center mb-5 px-2">
+          <BrandLogo size="hero" className="drop-shadow-md" />
         </div>
-        <h1 className="text-3xl font-bold text-white">Real Health Juice Parlour</h1>
-        <p className="text-sky-300 font-semibold mt-1">Who's working today?</p>
-        <p className="text-sky-400 text-sm mt-0.5">Tap your name to sign in</p>
+        <p className={`${employeeTheme.subtitle} text-lg font-semibold tracking-wide`}>Employee sign in</p>
+        <p className={`${employeeTheme.hint} text-sm mt-2`}>Tap your name to continue</p>
       </motion.div>
 
-      {/* Load error */}
       {loadError && (
-        <div className="mb-6 bg-red-900/50 border border-red-500 text-red-200 rounded-2xl px-5 py-3 text-sm flex items-center gap-2">
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-3 text-sm flex items-center gap-2">
           <AlertCircle size={16} />
           {loadError}
         </div>
@@ -103,7 +100,7 @@ export default function EmployeeSelectPage() {
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl"
+          className="grid grid-cols-2 gap-4 w-full max-w-2xl"
         >
           {employees.map((emp) => (
             <motion.button
@@ -111,12 +108,12 @@ export default function EmployeeSelectPage() {
               variants={card}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleSelect(emp)}
-              className="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 rounded-3xl p-6 flex flex-col items-center gap-3 min-h-[140px] transition-all"
+              className="bg-sky-50 border-2 border-sky-300 hover:shadow-xl hover:shadow-emerald-900/10 rounded-3xl p-6 flex flex-col items-center gap-3 min-h-[140px] transition-all shadow-sm"
             >
-              <div className="bg-sky-500/30 rounded-2xl p-4">
-                <User size={36} className="text-sky-200" />
+              <div className="bg-sky-100 rounded-2xl p-4">
+                <User size={36} className="text-sky-600" />
               </div>
-              <span className="text-white font-bold text-base text-center leading-tight">
+              <span className="text-sky-800 font-bold text-base text-center leading-tight">
                 {emp.name}
               </span>
             </motion.button>
@@ -202,7 +199,7 @@ export default function EmployeeSelectPage() {
         )}
       </AnimatePresence>
 
-      <p className="mt-10 text-sky-700 text-xs text-center">
+      <p className={`mt-10 ${employeeTheme.footer} text-xs text-center`}>
         Real Health Juice Parlour &copy; {new Date().getFullYear()}
       </p>
     </div>

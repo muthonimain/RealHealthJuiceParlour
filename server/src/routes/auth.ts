@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
-import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { employees } from '../data/employees'
+import { verifyOwnerLogin } from '../data/owners'
+import { verifyEmployeeLogin } from '../data/employees'
 
 const router = Router()
 const env = (key: string, fallback: string) => (process.env[key] ?? '').trim() || fallback
@@ -16,35 +16,26 @@ router.post('/login', async (req: Request, res: Response) => {
     password: string
   }
 
-  if (!role || !username || !password) {
+  if (!role || !username?.trim() || !password?.trim()) {
     res.status(400).json({ message: 'Role, username and password are required.' })
     return
   }
 
   if (role === 'owner') {
-    const ownerUsername = env('OWNER_USERNAME', 'owner')
-    const ownerPassword = env('OWNER_PASSWORD', 'owner1234')
-    const ownerName = env('OWNER_NAME', 'Owner')
-
-    if (username !== ownerUsername || password !== ownerPassword) {
+    const owner = verifyOwnerLogin(username, password)
+    if (!owner) {
       res.status(401).json({ message: 'Invalid username or password.' })
       return
     }
 
-    const token = jwt.sign({ id: 'owner-1', role: 'owner' }, JWT_SECRET, { expiresIn: JWT_EXPIRES })
-    res.json({ token, user: { id: 'owner-1', name: ownerName, role: 'owner' } })
+    const token = jwt.sign({ id: owner.id, role: 'owner' }, JWT_SECRET, { expiresIn: JWT_EXPIRES })
+    res.json({ token, user: { id: owner.id, name: owner.name, role: 'owner' } })
     return
   }
 
   if (role === 'employee') {
-    const employee = employees.find((e) => e.username === username)
+    const employee = verifyEmployeeLogin(username, password)
     if (!employee) {
-      res.status(401).json({ message: 'Invalid username or password.' })
-      return
-    }
-
-    const valid = await bcrypt.compare(password, employee.passwordHash)
-    if (!valid) {
       res.status(401).json({ message: 'Invalid username or password.' })
       return
     }

@@ -2,11 +2,16 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import EmployeeSelectPage from './pages/EmployeeSelectPage'
+import OwnerSelectPage from './pages/OwnerSelectPage'
 import OwnerDashboard from './pages/dashboards/OwnerDashboard'
 import EmployeeDashboard from './pages/dashboards/EmployeeDashboard'
 import MenuCategoryPage from './pages/employee/MenuCategoryPage'
 import ReceiptPage from './pages/ReceiptPage'
 import EmployeeRecordsPage from './pages/owner/EmployeeRecordsPage'
+import OwnerMenuCategoriesPage from './pages/owner/OwnerMenuCategoriesPage'
+import OwnerMenuCategoryPage from './pages/owner/OwnerMenuCategoryPage'
+import ExpensesPage from './pages/ExpensesPage'
+import NetProfitPage from './pages/owner/NetProfitPage'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -21,7 +26,10 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
 
-            {/* Owner login — dynamic :role param so LoginPage can read it */}
+            {/* Owner: select Carol or Kariuki, then password */}
+            <Route path="/owner-select" element={<OwnerSelectPage />} />
+
+            {/* Legacy login route (employee only) */}
             <Route path="/login/:role" element={<LoginPage />} />
 
             {/* Employee: select name first, then password */}
@@ -54,6 +62,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/dashboard/employee/expenses"
+              element={
+                <ProtectedRoute role="employee">
+                  <ExpensesPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Receipt page — employee views after generating */}
             <Route
@@ -71,6 +87,40 @@ function App() {
               element={
                 <ProtectedRoute role="owner">
                   <EmployeeRecordsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Owner: menu management */}
+            <Route
+              path="/dashboard/owner/menu"
+              element={
+                <ProtectedRoute role="owner">
+                  <OwnerMenuCategoriesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/owner/menu/:categoryId"
+              element={
+                <ProtectedRoute role="owner">
+                  <OwnerMenuCategoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/owner/expenses"
+              element={
+                <ProtectedRoute role="owner">
+                  <ExpensesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/owner/net-profit"
+              element={
+                <ProtectedRoute role="owner">
+                  <NetProfitPage />
                 </ProtectedRoute>
               }
             />

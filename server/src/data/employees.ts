@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs'
+import '../env'
 
 const env = (key: string, fallback: string) => (process.env[key] ?? '').trim() || fallback
 
@@ -6,12 +6,10 @@ export interface EmployeeRecord {
   id: string
   name: string
   username: string
-  passwordHash: string
 }
 
-// Build employee list from numbered env vars: EMPLOYEE_1_*, EMPLOYEE_2_*, etc.
-function loadEmployees(): EmployeeRecord[] {
-  const employees: EmployeeRecord[] = []
+function loadEmployeesFromEnv(): Array<EmployeeRecord & { password: string }> {
+  const employees: Array<EmployeeRecord & { password: string }> = []
   let i = 1
   while (true) {
     const name = env(`EMPLOYEE_${i}_NAME`, '')
@@ -22,11 +20,29 @@ function loadEmployees(): EmployeeRecord[] {
       id: `emp-${i}`,
       name: name || `Employee ${i}`,
       username: username || `employee${i}`,
-      passwordHash: bcrypt.hashSync(password || 'changeme', 10),
+      password,
     })
     i++
   }
   return employees
 }
 
-export const employees = loadEmployees()
+/** Public list for employee-select screen (no passwords). */
+export function listEmployees(): EmployeeRecord[] {
+  return loadEmployeesFromEnv().map(({ password: _p, ...rest }) => rest)
+}
+
+/** Read .env on each login so credential updates apply without restart. */
+export function verifyEmployeeLogin(username: string, password: string): EmployeeRecord | null {
+  const u = username.trim().toLowerCase()
+  const p = password.trim()
+  if (!u || !p) return null
+
+  const match = loadEmployeesFromEnv().find(
+    (e) => e.username.toLowerCase() === u && e.password === p
+  )
+  if (!match) return null
+
+  const { password: _pw, ...publicEmployee } = match
+  return publicEmployee
+}
