@@ -30,10 +30,10 @@ export default function DashboardShell({
   }
 
   return (
-    <div className={`owner-page min-h-dvh ${pageBg}`}>
-      <header className={`${headerBg} owner-page-header`}>
-        <div className="owner-page-header-inner max-w-7xl">
-          <HeaderLogo className="self-center shrink-0" />
+    <div className={`owner-page min-h-dvh w-full ${pageBg}`}>
+      <header className={`${headerBg} owner-page-header w-full`}>
+        <div className="owner-page-header-inner w-full max-w-7xl">
+          <HeaderLogo compact className="self-center shrink-0" />
           <div className="min-w-0 flex-1 py-0.5">
             <div className="text-white font-bold text-sm sm:text-lg leading-snug truncate">
               Real Health Juice Parlour
@@ -60,10 +60,10 @@ export default function DashboardShell({
         </div>
       </header>
 
-      <main className="owner-page-main max-w-7xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-red-950">{subtitle}</h1>
-          <p className="text-orange-800/70 text-sm mt-1">
+      <main className="owner-page-main w-full max-w-7xl">
+        <div className="mb-5 sm:mb-6 min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-red-950 break-words">{subtitle}</h1>
+          <p className="text-orange-800/70 text-sm mt-1 break-words">
             {new Date().toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>

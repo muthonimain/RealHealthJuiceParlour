@@ -14,12 +14,14 @@ export const ownerTheme = {
   hint: 'text-orange-900/65',
   back: 'text-orange-900/55 hover:text-red-900 hover:bg-amber-100/80',
   footer: 'text-orange-900/35',
-  header: 'bg-gradient-to-r from-red-900 via-rose-900 to-amber-900',
+  header: 'bg-red-900 sm:bg-gradient-to-r sm:from-red-900 sm:via-rose-900 sm:to-amber-900',
   headerAccent: 'text-amber-200',
-  shellPage: 'bg-gradient-to-b from-amber-50/80 via-orange-50/60 to-rose-100/50',
+  shellPage: 'bg-amber-50 sm:bg-gradient-to-b sm:from-amber-50 sm:via-orange-50/90 sm:to-rose-100/80',
   card: 'bg-white/95 border-2 border-amber-200/70 shadow-sm hover:shadow-md',
-  statCard: 'bg-white rounded-2xl p-5 shadow-sm border border-amber-100/80',
-  moduleCard: 'bg-white rounded-2xl p-6 shadow-sm border border-amber-100/60 hover:shadow-md',
+  statCard:
+    'bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-amber-100/80 min-w-0 w-full box-border',
+  moduleCard:
+    'bg-white rounded-2xl p-3 sm:p-6 shadow-sm border border-amber-100/60 hover:shadow-md min-w-0 w-full box-border',
   openLink: 'text-red-700',
   pageTitle: 'text-red-950',
   pageHint: 'text-orange-800/70',

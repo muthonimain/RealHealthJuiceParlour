@@ -59,36 +59,48 @@ export default function OwnerDashboard() {
       headerBg={ownerTheme.header}
       pageBg={ownerTheme.shellPage}
     >
-      {/* Live Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
-        {stats.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className={ownerTheme.statCard}>
-            <div className={`${bg} rounded-xl p-3 w-fit mb-3`}>
-              <Icon size={24} className={color} />
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <div className="owner-dashboard-grid owner-dashboard-grid--stats">
+          {stats.map(({ label, value, icon: Icon, color, bg }) => (
+            <div key={label} className={ownerTheme.statCard}>
+              <div className={`${bg} rounded-lg sm:rounded-xl p-2 sm:p-3 w-fit mb-2 sm:mb-3`}>
+                <Icon className={`${color} w-5 h-5 sm:w-6 sm:h-6`} />
+              </div>
+              <div className="text-base sm:text-2xl font-bold text-gray-900 leading-tight break-words">
+                {value}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-500 mt-1 leading-snug">{label}</div>
             </div>
-            <div className="text-2xl font-bold text-gray-900">{value}</div>
-            <div className="text-sm text-gray-500 mt-1">{label}</div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* Modules */}
-      <h2 className={`text-lg font-semibold ${ownerTheme.pageTitle} mb-4`}>Management Modules</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-        {modules.map(({ label, icon: Icon, color, bg, path }) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => path && navigate(path)}
-            className={`${ownerTheme.moduleCard} flex flex-col items-center gap-3 min-h-[120px] sm:min-h-[130px] active:scale-[0.98] transition-transform ${path ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
-          >
-            <div className={`${bg} rounded-xl p-4`}>
-              <Icon size={28} className={color} />
-            </div>
-            <span className="text-sm font-semibold text-gray-700 text-center">{label}</span>
-            {path && <span className={`text-xs ${ownerTheme.openLink} font-semibold uppercase tracking-wider`}>Open →</span>}
-          </button>
-        ))}
+        <div>
+          <h2 className={`text-base sm:text-lg font-semibold ${ownerTheme.pageTitle} mb-3 sm:mb-4`}>
+            Management Modules
+          </h2>
+          <div className="owner-dashboard-grid owner-dashboard-grid--modules">
+            {modules.map(({ label, icon: Icon, color, bg, path }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => path && navigate(path)}
+                className={`${ownerTheme.moduleCard} flex flex-col items-center justify-center gap-2 sm:gap-3 min-h-[108px] sm:min-h-[130px] active:opacity-90 ${path ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
+              >
+                <div className={`${bg} rounded-lg sm:rounded-xl p-2.5 sm:p-4`}>
+                  <Icon size={24} className={color} />
+                </div>
+                <span className="text-xs sm:text-sm font-semibold text-gray-700 text-center leading-tight px-1">
+                  {label}
+                </span>
+                {path && (
+                  <span className={`text-[10px] sm:text-xs ${ownerTheme.openLink} font-semibold uppercase tracking-wide`}>
+                    Open →
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </DashboardShell>
   )

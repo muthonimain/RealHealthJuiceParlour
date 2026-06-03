@@ -4,16 +4,31 @@
 
 @layer base {
   html {
-    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
     -webkit-text-size-adjust: 100%;
   }
 
   body {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    overflow-x: hidden;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
     overscroll-behavior-y: none;
-    touch-action: pan-x pan-y;
+    /* Vertical scroll only — prevents sideways drift on mobile */
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100vw;
+    min-height: 100dvh;
+    overflow-x: clip;
+    isolation: isolate;
   }
 
   button,
@@ -35,7 +50,10 @@
 
 @layer components {
   .owner-page {
-    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow-x: clip;
   }
 
   .owner-page-header {
@@ -91,6 +109,41 @@
     max-width: 80rem;
     margin-inline: auto;
     padding: 1rem 0.75rem 2.5rem;
+    box-sizing: border-box;
+  }
+
+  .owner-dashboard-grid {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: 0.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .owner-dashboard-grid {
+      gap: 1rem;
+    }
+  }
+
+  .owner-dashboard-grid--stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .owner-dashboard-grid--stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .owner-dashboard-grid--modules {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 768px) {
+    .owner-dashboard-grid--modules {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
   @media (min-width: 640px) {
