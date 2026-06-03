@@ -61,8 +61,8 @@ export default function DashboardShell({
       {/* Content */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">{subtitle}</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-red-950">{subtitle}</h1>
+          <p className="text-orange-800/70 text-sm mt-1">
             {new Date().toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>

@@ -62,7 +62,7 @@ export default function OwnerDashboard() {
       <motion.div variants={container} initial="hidden" animate="show"
         className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {stats.map(({ label, value, icon: Icon, color, bg }) => (
-          <motion.div key={label} variants={item} className="bg-white rounded-2xl p-5 shadow-sm">
+          <motion.div key={label} variants={item} className={ownerTheme.statCard}>
             <div className={`${bg} rounded-xl p-3 w-fit mb-3`}>
               <Icon size={24} className={color} />
             </div>
@@ -73,7 +73,7 @@ export default function OwnerDashboard() {
       </motion.div>
 
       {/* Modules */}
-      <h2 className="text-lg font-semibold text-gray-700 mb-4">Management Modules</h2>
+      <h2 className={`text-lg font-semibold ${ownerTheme.pageTitle} mb-4`}>Management Modules</h2>
       <motion.div variants={container} initial="hidden" animate="show"
         className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {modules.map(({ label, icon: Icon, color, bg, path }) => (
@@ -82,7 +82,7 @@ export default function OwnerDashboard() {
             variants={item}
             whileTap={{ scale: 0.96 }}
             onClick={() => path && navigate(path)}
-            className={`bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-all min-h-[130px] ${path ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
+            className={`${ownerTheme.moduleCard} flex flex-col items-center gap-3 transition-all min-h-[130px] ${path ? 'cursor-pointer' : 'cursor-default opacity-70'}`}
           >
             <div className={`${bg} rounded-xl p-4`}>
               <Icon size={28} className={color} />

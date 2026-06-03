@@ -34,7 +34,7 @@ function ItemCard({ item, categoryName }: { item: MenuItem; categoryName: string
       {item.note && <div className="text-xs text-gray-400 italic">{item.note}</div>}
       <div
         className={`font-bold text-lg shrink-0 ${
-          hasDisplayPrice(price) ? 'text-teal-800' : 'text-gray-400'
+          hasDisplayPrice(price) ? 'text-sky-800' : 'text-gray-400'
         }`}
       >
         {formatItemPrice(price)}
@@ -225,12 +225,12 @@ export default function MenuCategoryPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               onSubmit={handleAddItem}
-              className="bg-white rounded-2xl shadow-sm border-2 border-teal-200 p-5"
+              className={`${employeeTheme.panel} p-5`}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="bg-teal-100 rounded-full p-2">
-                    <Plus size={22} className="text-teal-700" />
+                  <div className={`${employeeTheme.addCategoryIconBg} rounded-full p-2`}>
+                    <Plus size={22} className={employeeTheme.addCategoryIcon} />
                   </div>
                   <h2 className="font-bold text-gray-800">Add Items</h2>
                 </div>
@@ -252,7 +252,7 @@ export default function MenuCategoryPage() {
                   onChange={(e) => setItemName(e.target.value)}
                   placeholder="Item name"
                   required
-                  className="sm:col-span-2 px-4 py-3 rounded-xl border border-gray-200 text-gray-900 focus:ring-2 focus:ring-teal-400 outline-none"
+                  className={`sm:col-span-2 px-4 py-3 rounded-xl border border-gray-200 text-gray-900 focus:ring-2 outline-none ${employeeTheme.signInInputFocus}`}
                 />
                 <input
                   type="number"
@@ -262,14 +262,14 @@ export default function MenuCategoryPage() {
                   onChange={(e) => setItemPrice(e.target.value)}
                   placeholder="Price (Ksh)"
                   required
-                  className="px-4 py-3 rounded-xl border border-gray-200 text-gray-900 focus:ring-2 focus:ring-teal-400 outline-none"
+                  className={`px-4 py-3 rounded-xl border border-gray-200 text-gray-900 focus:ring-2 outline-none ${employeeTheme.signInInputFocus}`}
                 />
                 <input
                   type="text"
                   value={itemNote}
                   onChange={(e) => setItemNote(e.target.value)}
                   placeholder="Note (optional)"
-                  className="px-4 py-3 rounded-xl border border-gray-200 text-gray-900 focus:ring-2 focus:ring-teal-400 outline-none"
+                  className={`px-4 py-3 rounded-xl border border-gray-200 text-gray-900 focus:ring-2 outline-none ${employeeTheme.signInInputFocus}`}
                 />
               </div>
               <button

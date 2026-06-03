@@ -102,8 +102,8 @@ export default function ExpensesPage() {
   }
 
   const btnClass = isOwner ? 'bg-amber-600 hover:bg-amber-700' : employeeTheme.cartBtn
-  const ringClass = isOwner ? 'focus:ring-amber-400' : 'focus:ring-teal-400'
-  const tableHead = isOwner ? 'bg-amber-50 text-amber-800' : 'bg-teal-50 text-teal-800'
+  const ringClass = isOwner ? 'focus:ring-amber-400' : employeeTheme.signInInputFocus
+  const tableHead = isOwner ? 'bg-amber-50 text-amber-800' : employeeTheme.tableHead
 
   return (
     <div className={`min-h-screen flex flex-col ${theme.shellPage}`}>

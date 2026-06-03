@@ -113,8 +113,8 @@ export default function EmployeeDashboard() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
         <div className="mb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Menu Categories</h1>
-            <p className="text-gray-500 text-sm mt-0.5">
+            <h1 className={`text-xl font-bold ${employeeTheme.pageTitle}`}>Menu Categories</h1>
+            <p className={`${employeeTheme.pageHint} text-sm mt-0.5`}>
               {new Date().toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
@@ -129,7 +129,7 @@ export default function EmployeeDashboard() {
         </div>
 
         {menuLoading ? (
-          <p className="text-center text-gray-400 py-12">Loading menu…</p>
+          <p className={`text-center ${employeeTheme.pageHint} py-12`}>Loading menu…</p>
         ) : (
         <motion.div
           variants={container}
@@ -143,13 +143,13 @@ export default function EmployeeDashboard() {
               variants={item}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate(`/dashboard/employee/menu/${category.id}`)}
-              className="bg-white rounded-2xl shadow-sm hover:shadow-md active:shadow-sm transition-all flex flex-col items-center justify-center gap-3 p-6 min-h-[140px] cursor-pointer"
+              className={`rounded-2xl transition-all flex flex-col items-center justify-center gap-3 p-6 min-h-[140px] cursor-pointer ${employeeTheme.categoryCard}`}
             >
               <span className="text-4xl">{category.emoji}</span>
-              <span className="text-sm font-bold text-gray-800 text-center leading-tight">
+              <span className={`text-sm font-bold text-center leading-tight ${employeeTheme.categoryName}`}>
                 {category.name}
               </span>
-              <span className="text-xs text-gray-400">{category.items.length} items</span>
+              <span className={`text-xs ${employeeTheme.categoryMeta}`}>{category.items.length} items</span>
             </motion.button>
           ))}
 
@@ -161,13 +161,13 @@ export default function EmployeeDashboard() {
               setShowAddCategory(true)
               setCategoryError('')
             }}
-            className="bg-white rounded-2xl border-2 border-dashed border-teal-400 hover:border-teal-600 hover:bg-teal-50/80 transition-all flex flex-col items-center justify-center gap-2 p-6 min-h-[140px]"
+            className={`rounded-2xl transition-all flex flex-col items-center justify-center gap-2 p-6 min-h-[140px] ${employeeTheme.addCategoryCard}`}
             title="Add Menu Category"
           >
-            <div className="bg-teal-100 rounded-full p-4">
-              <Plus size={32} className="text-teal-700" />
+            <div className={`${employeeTheme.addCategoryIconBg} rounded-full p-4`}>
+              <Plus size={32} className={employeeTheme.addCategoryIcon} />
             </div>
-            <span className="text-sm font-bold text-teal-800 text-center">Add Menu Category</span>
+            <span className={`text-sm font-bold text-center ${employeeTheme.addCategoryLabel}`}>Add Menu Category</span>
           </motion.button>
         </motion.div>
         )}
@@ -212,7 +212,7 @@ export default function EmployeeDashboard() {
                     onChange={(e) => setNewCategoryTitle(e.target.value)}
                     placeholder="e.g. Seasonal Specials"
                     autoFocus
-                    className="mt-1 w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 focus:ring-2 focus:ring-teal-400 outline-none"
+                    className={`mt-1 w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 focus:ring-2 outline-none ${employeeTheme.signInInputFocus}`}
                     required
                   />
                 </div>

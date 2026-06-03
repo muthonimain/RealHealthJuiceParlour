@@ -108,12 +108,12 @@ export default function EmployeeSelectPage() {
               variants={card}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleSelect(emp)}
-              className="bg-sky-50 border-2 border-sky-300 hover:shadow-xl hover:shadow-emerald-900/10 rounded-3xl p-6 flex flex-col items-center gap-3 min-h-[140px] transition-all shadow-sm"
+              className={`${employeeTheme.signInCard} p-6 flex flex-col items-center gap-3 min-h-[140px] transition-all`}
             >
-              <div className="bg-sky-100 rounded-2xl p-4">
-                <User size={36} className="text-sky-600" />
+              <div className={`${employeeTheme.signInCardIconBg} rounded-2xl p-4`}>
+                <User size={36} className={employeeTheme.signInCardIcon} />
               </div>
-              <span className="text-sky-800 font-bold text-base text-center leading-tight">
+              <span className={`${employeeTheme.signInCardName} font-bold text-base text-center leading-tight`}>
                 {emp.name}
               </span>
             </motion.button>
@@ -132,12 +132,12 @@ export default function EmployeeSelectPage() {
           >
             <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
               {/* Card Header */}
-              <div className="bg-sky-600 px-8 py-6 flex flex-col items-center gap-2">
+              <div className={`${employeeTheme.signInFormHeader} px-8 py-6 flex flex-col items-center gap-2`}>
                 <div className="bg-white/20 rounded-2xl p-4">
                   <User size={36} className="text-white" />
                 </div>
                 <div className="text-white font-bold text-xl">{selected.name}</div>
-                <div className="text-sky-200 text-xs">Enter your password to continue</div>
+                <div className={`${employeeTheme.signInFormSub} text-xs`}>Enter your password to continue</div>
               </div>
 
               {/* Form */}
@@ -163,7 +163,7 @@ export default function EmployeeSelectPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
                       autoComplete="current-password"
-                      className="w-full px-5 py-4 pr-14 rounded-2xl border-2 border-gray-200 text-gray-900 text-lg placeholder:text-gray-400 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400 transition-all"
+                      className={`w-full px-5 py-4 pr-14 rounded-2xl border-2 border-gray-200 text-gray-900 text-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-all ${employeeTheme.signInInputFocus}`}
                     />
                     <button
                       type="button"
@@ -179,7 +179,7 @@ export default function EmployeeSelectPage() {
                   type="submit"
                   disabled={isLogging}
                   whileTap={{ scale: 0.97 }}
-                  className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-lg rounded-2xl py-5 flex items-center justify-center gap-2 disabled:opacity-60 transition-all min-h-[64px]"
+                  className={`${employeeTheme.signInSubmit} text-white font-bold text-lg rounded-2xl py-5 flex items-center justify-center gap-2 disabled:opacity-60 transition-all min-h-[64px]`}
                 >
                   {isLogging
                     ? <div className="w-6 h-6 rounded-full border-4 border-white border-t-transparent animate-spin" />
