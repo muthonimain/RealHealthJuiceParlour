@@ -50,12 +50,16 @@ app.get('/api/health', async (_req, res) => {
   }
 })
 
-// Serve React static build in production (Express 5 requires named wildcards, not '*')
+// Serve React static build in production (single host — API + SPA)
 if (isProd) {
   const clientDist = path.join(__dirname, '../../client/dist')
+  const indexHtml = path.join(clientDist, 'index.html')
   app.use(express.static(clientDist))
-  app.get('/{*splat}', (_req, res) => {
-    res.sendFile(path.join(clientDist, 'index.html'))
+  // Fallback for client-side routes — avoid app.get('*') / wildcards (Express 5 path-to-regexp)
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next()
+    if (req.path.startsWith('/api')) return next()
+    res.sendFile(indexHtml)
   })
 }
 
