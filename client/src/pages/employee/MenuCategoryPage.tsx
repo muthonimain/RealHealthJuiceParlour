@@ -10,6 +10,7 @@ import type { MenuItem, MenuCategory } from '../../types/menu'
 import { employeeTheme } from '../../theme/roles'
 import { formatItemPrice, hasDisplayPrice, normalizePrice } from '../../lib/menuPrice'
 import { authFetch } from '../../lib/api'
+import { categoryUsesSections, getMenuSectionGroups } from '../../lib/menuSections'
 
 const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } }
 const cardVariant: Variants = { hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } }
@@ -85,6 +86,7 @@ export default function MenuCategoryPage() {
   const [itemName, setItemName] = useState('')
   const [itemPrice, setItemPrice] = useState('')
   const [itemNote, setItemNote] = useState('')
+  const [itemSection, setItemSection] = useState('')
   const [savingItem, setSavingItem] = useState(false)
   const [itemError, setItemError] = useState('')
 
@@ -94,10 +96,12 @@ export default function MenuCategoryPage() {
       const res = await fetch(`/api/menu/categories/${categoryId}`)
       if (!res.ok) throw new Error('not found')
       const data: MenuCategory = await res.json()
-      setCategory({
+      const normalized: MenuCategory = {
         ...data,
         items: data.items.map((i) => ({ ...i, price: normalizePrice(i.price) })),
-      })
+      }
+      setCategory(normalized)
+      if (normalized.sections?.[0]) setItemSection(normalized.sections[0])
     } catch {
       navigate('/dashboard/employee')
     } finally {
@@ -127,6 +131,7 @@ export default function MenuCategoryPage() {
           name: itemName.trim(),
           price,
           note: itemNote.trim() || undefined,
+          section: itemSection || undefined,
         }),
       })
       if (!res.ok) {
@@ -154,6 +159,9 @@ export default function MenuCategoryPage() {
   }
 
   if (!category) return null
+
+  const sectionGroups = getMenuSectionGroups(category)
+  const usesSections = categoryUsesSections(category)
 
   return (
     <div className={`min-h-screen ${employeeTheme.shellPage} flex flex-col`}>
@@ -191,21 +199,39 @@ export default function MenuCategoryPage() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-        >
-          {category.items.map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              categoryName={category.name}
-            />
-          ))}
-        </motion.div>
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-8">
+        {sectionGroups.length === 0 && !usesSections ? (
+          <p className={`text-center ${employeeTheme.pageHint} py-8`}>No items yet. Add your first item below.</p>
+        ) : (
+          sectionGroups.map((group) => (
+            <section key={group.title || 'all'} className="space-y-4">
+              {group.title ? (
+                <h2
+                  className={`text-lg font-bold ${employeeTheme.pageTitle} border-b-2 border-sky-300/80 pb-2 flex items-center gap-2`}
+                >
+                  <span className="text-sky-500">▸</span>
+                  {group.title}
+                </h2>
+              ) : null}
+              {group.items.length === 0 && group.title ? (
+                <p className={`text-sm ${employeeTheme.pageHint} text-center py-6`}>
+                  No items in {group.title} yet.
+                </p>
+              ) : (
+                <motion.div
+                  variants={container}
+                  initial="hidden"
+                  animate="show"
+                  className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+                >
+                  {group.items.map((item) => (
+                    <ItemCard key={item.id} item={item} categoryName={category.name} />
+                  ))}
+                </motion.div>
+              )}
+            </section>
+          ))
+        )}
 
         <div className="max-w-xl mx-auto w-full">
           {!showAddItems ? (
@@ -246,6 +272,23 @@ export default function MenuCategoryPage() {
                 <p className="mb-3 text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2">{itemError}</p>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {usesSections && category.sections && (
+                  <div className="sm:col-span-2">
+                    <label className="text-sm font-semibold text-gray-700">Section</label>
+                    <select
+                      value={itemSection}
+                      onChange={(e) => setItemSection(e.target.value)}
+                      className={`mt-1 w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 focus:ring-2 outline-none ${employeeTheme.signInInputFocus}`}
+                      required
+                    >
+                      {category.sections.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <input
                   type="text"
                   value={itemName}

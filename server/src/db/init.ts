@@ -31,19 +31,28 @@ async function seedMenu(categories: MenuCategory[]): Promise<void> {
     await client.query('BEGIN')
     let sort = 0
     for (const cat of categories) {
+      const sectionsJson = cat.sections?.length ? JSON.stringify(cat.sections) : null
       await client.query(
-        `INSERT INTO menu_categories (id, name, emoji, color, light_color, text_color, sort_order)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `INSERT INTO menu_categories (id, name, emoji, color, light_color, text_color, sort_order, sections)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
          ON CONFLICT (id) DO NOTHING`,
-        [cat.id, cat.name, cat.emoji, cat.color, cat.lightColor, cat.textColor, sort++]
+        [cat.id, cat.name, cat.emoji, cat.color, cat.lightColor, cat.textColor, sort++, sectionsJson]
       )
       let itemSort = 0
       for (const item of cat.items) {
         await client.query(
-          `INSERT INTO menu_items (id, category_id, name, price, note, sort_order)
-           VALUES ($1, $2, $3, $4, $5, $6)
+          `INSERT INTO menu_items (id, category_id, name, price, note, section, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
            ON CONFLICT (id) DO NOTHING`,
-          [item.id, cat.id, item.name, item.price, item.note ?? null, itemSort++]
+          [
+            item.id,
+            cat.id,
+            item.name,
+            item.price,
+            item.note ?? null,
+            item.section ?? null,
+            itemSort++,
+          ]
         )
       }
     }
@@ -53,6 +62,28 @@ async function seedMenu(categories: MenuCategory[]): Promise<void> {
     throw e
   } finally {
     client.release()
+  }
+}
+
+async function runMenuMigrations(): Promise<void> {
+  await pool.query(`ALTER TABLE menu_categories ADD COLUMN IF NOT EXISTS sections JSONB`)
+  await pool.query(`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS section TEXT`)
+
+  const herbsSections = JSON.stringify(['Powders', 'Seeds'])
+  const { rows } = await pool.query<{ id: string }>(
+    `SELECT id FROM menu_categories WHERE LOWER(TRIM(name)) = 'herbs' LIMIT 1`
+  )
+
+  if (rows[0]) {
+    await pool.query(`UPDATE menu_categories SET sections = $1::jsonb WHERE id = $2`, [
+      herbsSections,
+      rows[0].id,
+    ])
+  } else {
+    const herbs = buildDefaultMenu().find((c) => c.id === 'herbs')
+    if (herbs) {
+      await seedMenu([herbs])
+    }
   }
 }
 
@@ -117,6 +148,7 @@ export async function initDatabase(): Promise<void> {
 
   requireDatabase()
   await runSchema()
+  await runMenuMigrations()
 
   const { rows: menuCount } = await pool.query<{ count: string }>(
     'SELECT COUNT(*)::text AS count FROM menu_categories'

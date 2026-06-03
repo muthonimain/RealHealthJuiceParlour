@@ -3,6 +3,8 @@ export interface MenuItem {
   name: string
   price: number
   note?: string
+  /** Sub-heading within a category (e.g. Powders, Seeds under Herbs). */
+  section?: string
 }
 
 export interface MenuCategory {
@@ -12,5 +14,7 @@ export interface MenuCategory {
   color: string
   lightColor: string
   textColor: string
+  /** When set, the category UI shows these section headings (even if empty). */
+  sections?: string[]
   items: MenuItem[]
 }

@@ -3,12 +3,14 @@ export interface MenuItem {
   name: string
   price: number
   note?: string
+  section?: string
 }
 
 export interface MenuCategory {
   id: string
   name: string
   emoji: string
+  sections?: string[]
   items: MenuItem[]
 }
 
@@ -101,9 +103,16 @@ export const menuData: MenuCategory[] = [
     ],
   },
   {
+    id: 'herbs',
+    name: 'Herbs',
+    emoji: '🌿',
+    sections: ['Powders', 'Seeds'],
+    items: [],
+  },
+  {
     id: 'boost-your-meal',
     name: 'Boost Your Meal',
-    emoji: '🌿',
+    emoji: '✨',
     items: [
       { id: 'bm-1', name: 'Detox Boost (Add-on)', price: 0, note: 'Price on request' },
       { id: 'bm-2', name: 'Energy Boost (Add-on)', price: 0, note: 'Price on request' },

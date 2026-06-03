@@ -6,6 +6,7 @@ import { authFetch } from '../../lib/api'
 import type { MenuCategory, MenuItem } from '../../types/menu'
 import { ownerTheme } from '../../theme/roles'
 import { formatItemPrice, hasDisplayPrice, normalizePrice } from '../../lib/menuPrice'
+import { categoryUsesSections, getMenuSectionGroups } from '../../lib/menuSections'
 
 export default function OwnerMenuCategoryPage() {
   const { categoryId } = useParams<{ categoryId: string }>()
@@ -19,6 +20,7 @@ export default function OwnerMenuCategoryPage() {
   const [itemName, setItemName] = useState('')
   const [itemPrice, setItemPrice] = useState('')
   const [itemNote, setItemNote] = useState('')
+  const [itemSection, setItemSection] = useState('')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
 
@@ -26,6 +28,7 @@ export default function OwnerMenuCategoryPage() {
   const [editName, setEditName] = useState('')
   const [editPrice, setEditPrice] = useState('')
   const [editNote, setEditNote] = useState('')
+  const [editSection, setEditSection] = useState('')
 
   const load = useCallback(async () => {
     if (!categoryId) return
@@ -39,6 +42,7 @@ export default function OwnerMenuCategoryPage() {
         }
         setCategory(normalized)
         setCategoryName(normalized.name)
+        if (normalized.sections?.[0]) setItemSection(normalized.sections[0])
       } else {
         navigate('/dashboard/owner/menu')
       }
@@ -80,6 +84,7 @@ export default function OwnerMenuCategoryPage() {
           name: itemName.trim(),
           price,
           note: itemNote.trim() || undefined,
+          section: itemSection || undefined,
         }),
       })
       if (res.ok) {
@@ -98,6 +103,7 @@ export default function OwnerMenuCategoryPage() {
     setEditName(item.name)
     setEditPrice(String(normalizePrice(item.price) || ''))
     setEditNote(item.note ?? '')
+    setEditSection(item.section ?? category?.sections?.[0] ?? '')
   }
 
   const saveEditItem = async () => {
@@ -108,11 +114,12 @@ export default function OwnerMenuCategoryPage() {
       return
     }
     setFormError('')
-    const body: { name: string; note?: string; price?: number } = {
+    const body: { name: string; note?: string; price?: number; section?: string } = {
       name: editName.trim(),
       note: editNote.trim() || undefined,
     }
     if (editPrice.trim() !== '') body.price = price
+    if (categoryUsesSections(category!)) body.section = editSection || undefined
     const res = await authFetch(`/api/menu/categories/${categoryId}/items/${editingItemId}`, {
       method: 'PATCH',
       body: JSON.stringify(body),
@@ -138,6 +145,102 @@ export default function OwnerMenuCategoryPage() {
   }
 
   if (!category) return null
+
+  const sectionGroups = getMenuSectionGroups(category)
+  const usesSections = categoryUsesSections(category)
+
+  const renderItemRow = (item: MenuItem) => (
+    <div key={item.id} className="bg-white rounded-2xl shadow-sm p-4">
+      {editingItemId === item.id ? (
+        <div className="space-y-3">
+          {usesSections && category.sections && (
+            <select
+              value={editSection}
+              onChange={(e) => setEditSection(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900"
+            >
+              {category.sections.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          )}
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900"
+            placeholder="Item name"
+          />
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={editPrice}
+            onChange={(e) => setEditPrice(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900"
+            placeholder="Price (Ksh)"
+          />
+          <input
+            type="text"
+            value={editNote}
+            onChange={(e) => setEditNote(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900"
+            placeholder="Note (optional)"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={saveEditItem}
+              className="flex-1 bg-amber-700 text-white font-semibold py-2 rounded-xl"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingItemId(null)}
+              className="px-4 py-2 text-gray-500"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="font-bold text-gray-900">{item.name}</div>
+            {item.note && <div className="text-xs text-gray-400 italic mt-0.5">{item.note}</div>}
+            <div
+              className={`font-semibold mt-1 text-lg ${
+                hasDisplayPrice(item.price) ? 'text-red-800' : 'text-gray-400'
+              }`}
+            >
+              {formatItemPrice(item.price)}
+            </div>
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => startEditItem(item)}
+              className="p-2 text-gray-400 hover:text-amber-700 hover:bg-amber-50 rounded-lg"
+              title="Edit item"
+            >
+              <Pencil size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => removeItem(item.id)}
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+              title="Delete item"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <div className={`min-h-screen ${ownerTheme.shellPage} flex flex-col`}>
@@ -200,88 +303,23 @@ export default function OwnerMenuCategoryPage() {
       </header>
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
-        <div className="space-y-3">
-          {category.items.length === 0 ? (
+        <div className="space-y-6">
+          {sectionGroups.length === 0 && !usesSections ? (
             <p className="text-center text-gray-400 py-8">No items yet. Add your first item below.</p>
           ) : (
-            category.items.map((item) => (
-              <div key={item.id} className="bg-white rounded-2xl shadow-sm p-4">
-                {editingItemId === item.id ? (
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900"
-                      placeholder="Item name"
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={editPrice}
-                      onChange={(e) => setEditPrice(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900"
-                      placeholder="Price (Ksh)"
-                    />
-                    <input
-                      type="text"
-                      value={editNote}
-                      onChange={(e) => setEditNote(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900"
-                      placeholder="Note (optional)"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={saveEditItem}
-                        className="flex-1 bg-amber-700 text-white font-semibold py-2 rounded-xl"
-                      >
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditingItemId(null)}
-                        className="px-4 py-2 text-gray-500"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
+            sectionGroups.map((group) => (
+              <section key={group.title || 'all'} className="space-y-3">
+                {group.title ? (
+                  <h2 className="text-lg font-bold text-red-950 border-b-2 border-amber-300/80 pb-2">
+                    {group.title}
+                  </h2>
+                ) : null}
+                {group.items.length === 0 && group.title ? (
+                  <p className="text-sm text-gray-500 text-center py-4">No items in {group.title} yet.</p>
                 ) : (
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-bold text-gray-900">{item.name}</div>
-                      {item.note && <div className="text-xs text-gray-400 italic mt-0.5">{item.note}</div>}
-                      <div
-                        className={`font-semibold mt-1 text-lg ${
-                          hasDisplayPrice(item.price) ? 'text-red-800' : 'text-gray-400'
-                        }`}
-                      >
-                        {formatItemPrice(item.price)}
-                      </div>
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => startEditItem(item)}
-                        className="p-2 text-gray-400 hover:text-amber-700 hover:bg-amber-50 rounded-lg"
-                        title="Edit item"
-                      >
-                        <Pencil size={18} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                        title="Delete item"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
+                  group.items.map((item) => renderItemRow(item))
                 )}
-              </div>
+              </section>
             ))
           )}
         </div>
@@ -302,6 +340,23 @@ export default function OwnerMenuCategoryPage() {
             <p className="mb-3 text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2">{formError}</p>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {usesSections && category.sections && (
+              <div className="sm:col-span-2">
+                <label className="text-sm font-semibold text-gray-700">Section</label>
+                <select
+                  value={itemSection}
+                  onChange={(e) => setItemSection(e.target.value)}
+                  className="mt-1 w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 focus:ring-2 focus:ring-amber-400 outline-none"
+                  required
+                >
+                  {category.sections.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <input
               type="text"
               value={itemName}

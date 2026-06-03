@@ -77,7 +77,12 @@ router.post(
   '/categories/:id/items',
   ...staffOnly,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { name, price, note } = req.body as { name?: string; price?: number; note?: string }
+    const { name, price, note, section } = req.body as {
+      name?: string
+      price?: number
+      note?: string
+      section?: string
+    }
     if (!name?.trim()) {
       res.status(400).json({ message: 'Item name is required.' })
       return
@@ -86,6 +91,7 @@ router.post(
       name,
       price: price ?? 0,
       note,
+      section,
     })
     if (!item) {
       res.status(404).json({ message: 'Category not found' })

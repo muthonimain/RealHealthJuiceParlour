@@ -6,6 +6,7 @@ export interface MenuItem {
   name: string
   price: number
   note?: string
+  section?: string
 }
 
 export interface MenuCategory {
@@ -15,6 +16,7 @@ export interface MenuCategory {
   color: string
   lightColor: string
   textColor: string
+  sections?: string[]
   items: MenuItem[]
 }
 
@@ -57,6 +59,15 @@ function normalizeCategory(cat: MenuCategory): MenuCategory {
   }
 }
 
+function parseSections(value: unknown): string[] | undefined {
+  if (!value) return undefined
+  if (Array.isArray(value)) {
+    const list = value.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+    return list.length ? list : undefined
+  }
+  return undefined
+}
+
 interface CategoryRow {
   id: string
   name: string
@@ -64,6 +75,7 @@ interface CategoryRow {
   color: string
   light_color: string
   text_color: string
+  sections: unknown
 }
 
 interface ItemRow {
@@ -72,6 +84,7 @@ interface ItemRow {
   name: string
   price: number
   note: string | null
+  section: string | null
 }
 
 async function loadItemsByCategory(): Promise<Map<string, MenuItem[]>> {
@@ -86,6 +99,7 @@ async function loadItemsByCategory(): Promise<Map<string, MenuItem[]>> {
       name: row.name,
       price: row.price,
       note: row.note ?? undefined,
+      section: row.section ?? undefined,
     })
     map.set(row.category_id, list)
   }
@@ -105,6 +119,7 @@ async function loadCategoriesFromDb(): Promise<MenuCategory[]> {
       color: c.color,
       lightColor: c.light_color,
       textColor: c.text_color,
+      sections: parseSections(c.sections),
       items: itemsByCat.get(c.id) ?? [],
     })
   )
@@ -145,9 +160,9 @@ export async function createCategory(name: string, emoji = '📋'): Promise<Menu
   const sortOrder = existing.length
 
   await pool.query(
-    `INSERT INTO menu_categories (id, name, emoji, color, light_color, text_color, sort_order)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [id, name.trim(), emoji, preset.color, preset.lightColor, preset.textColor, sortOrder]
+    `INSERT INTO menu_categories (id, name, emoji, color, light_color, text_color, sort_order, sections)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [id, name.trim(), emoji, preset.color, preset.lightColor, preset.textColor, sortOrder, null]
   )
 
   return {
@@ -155,6 +170,7 @@ export async function createCategory(name: string, emoji = '📋'): Promise<Menu
     name: name.trim(),
     emoji,
     items: [],
+    sections: undefined,
     ...preset,
   }
 }
@@ -185,22 +201,29 @@ export async function deleteCategory(id: string): Promise<boolean> {
 
 export async function addItem(
   categoryId: string,
-  data: { name: string; price: number; note?: string }
+  data: { name: string; price: number; note?: string; section?: string }
 ): Promise<MenuItem | undefined> {
   const cat = await getCategoryById(categoryId)
   if (!cat) return undefined
+
+  let section = data.section?.trim() || undefined
+  if (section && cat.sections?.length) {
+    const match = cat.sections.find((s) => s.toLowerCase() === section!.toLowerCase())
+    section = match ?? section
+  }
 
   const item: MenuItem = {
     id: newItemId(categoryId),
     name: data.name.trim(),
     price: normalizePrice(data.price),
     note: data.note?.trim() || undefined,
+    section,
   }
 
   await pool.query(
-    `INSERT INTO menu_items (id, category_id, name, price, note, sort_order)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [item.id, categoryId, item.name, item.price, item.note ?? null, cat.items.length]
+    `INSERT INTO menu_items (id, category_id, name, price, note, section, sort_order)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [item.id, categoryId, item.name, item.price, item.note ?? null, item.section ?? null, cat.items.length]
   )
 
   return item
@@ -209,7 +232,7 @@ export async function addItem(
 export async function updateItem(
   categoryId: string,
   itemId: string,
-  data: Partial<Pick<MenuItem, 'name' | 'price' | 'note'>>
+  data: Partial<Pick<MenuItem, 'name' | 'price' | 'note' | 'section'>>
 ): Promise<MenuItem | undefined> {
   const cat = await getCategoryById(categoryId)
   const existing = cat?.items.find((i) => i.id === itemId)
@@ -218,13 +241,18 @@ export async function updateItem(
   const name = data.name !== undefined ? data.name.trim() : existing.name
   const price = data.price !== undefined ? normalizePrice(data.price) : existing.price
   const note = data.note !== undefined ? data.note.trim() || undefined : existing.note
+  let section = data.section !== undefined ? data.section.trim() || undefined : existing.section
+  if (section && cat?.sections?.length) {
+    const match = cat.sections.find((s) => s.toLowerCase() === section!.toLowerCase())
+    section = match ?? section
+  }
 
   await pool.query(
-    'UPDATE menu_items SET name = $3, price = $4, note = $5 WHERE category_id = $1 AND id = $2',
-    [categoryId, itemId, name, price, note ?? null]
+    'UPDATE menu_items SET name = $3, price = $4, note = $5, section = $6 WHERE category_id = $1 AND id = $2',
+    [categoryId, itemId, name, price, note ?? null, section ?? null]
   )
 
-  return { id: itemId, name, price, note }
+  return { id: itemId, name, price, note, section }
 }
 
 export async function deleteItem(categoryId: string, itemId: string): Promise<boolean> {

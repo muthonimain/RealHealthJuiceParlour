@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS menu_categories (
   color TEXT NOT NULL,
   light_color TEXT NOT NULL,
   text_color TEXT NOT NULL,
-  sort_order INT NOT NULL DEFAULT 0
+  sort_order INT NOT NULL DEFAULT 0,
+  sections JSONB
 );
 
 CREATE TABLE IF NOT EXISTS menu_items (
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
   name TEXT NOT NULL,
   price INT NOT NULL DEFAULT 0,
   note TEXT,
+  section TEXT,
   sort_order INT NOT NULL DEFAULT 0
 );
 
