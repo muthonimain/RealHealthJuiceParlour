@@ -4,7 +4,9 @@ export interface CategorySectionPreset {
   /** Match category id exactly or as prefix (e.g. honey-nuts-oils-2). */
   idPrefixes: string[]
   /** Normalized category name must include this substring (letters/digits only, lowercased). */
-  nameIncludes: string
+  nameIncludes?: string
+  /** All of these substrings must appear in the normalized name (any word order). */
+  nameMustIncludeAll?: string[]
   sections: string[]
   /** Items with no section are assigned here on sync. */
   defaultItemSection: string
@@ -18,8 +20,8 @@ export const CATEGORY_SECTION_PRESETS: CategorySectionPreset[] = [
     defaultItemSection: 'Powders',
   },
   {
-    idPrefixes: ['honey-nuts-oils', 'honey-nuts'],
-    nameIncludes: 'honeynuts',
+    idPrefixes: ['honey-nuts-oils', 'honey-nuts', 'nuts-oils-honey', 'nuts-oils'],
+    nameMustIncludeAll: ['honey', 'nuts', 'oils'],
     sections: ['Honey', 'Nuts', 'Oils'],
     defaultItemSection: 'Honey',
   },
@@ -42,7 +44,10 @@ export function findPresetForCategory(id: string, name: string): CategorySection
     const idMatch = preset.idPrefixes.some(
       (p) => idLower === p || idLower.startsWith(`${p}-`) || idLower.startsWith(p)
     )
-    const nameMatch = nameNorm.includes(preset.nameIncludes)
+    const nameMatch =
+      (preset.nameIncludes != null && nameNorm.includes(preset.nameIncludes)) ||
+      (preset.nameMustIncludeAll != null &&
+        preset.nameMustIncludeAll.every((part) => nameNorm.includes(part)))
     return idMatch || nameMatch
   })
 }

@@ -10,6 +10,7 @@ const STYLE_BY_ID: Record<string, { color: string; lightColor: string; textColor
   'herbal-teas': { color: 'bg-yellow-600', lightColor: 'bg-yellow-50', textColor: 'text-yellow-700' },
   'healthy-snacks': { color: 'bg-orange-500', lightColor: 'bg-orange-50', textColor: 'text-orange-700' },
   herbs: { color: 'bg-green-600', lightColor: 'bg-green-50', textColor: 'text-green-700' },
+  'nuts-oils-honey': { color: 'bg-amber-600', lightColor: 'bg-amber-50', textColor: 'text-amber-800' },
   'honey-nuts-oils': { color: 'bg-amber-600', lightColor: 'bg-amber-50', textColor: 'text-amber-800' },
   'boost-your-meal': { color: 'bg-lime-600', lightColor: 'bg-lime-50', textColor: 'text-lime-700' },
   'gut-healing-drinks': { color: 'bg-teal-600', lightColor: 'bg-teal-50', textColor: 'text-teal-700' },

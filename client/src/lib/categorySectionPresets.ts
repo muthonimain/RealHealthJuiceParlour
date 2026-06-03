@@ -1,10 +1,15 @@
 /** Mirrors server presets so section headings show even before DB sync completes. */
 
-const PRESETS: { idPrefixes: string[]; nameIncludes: string; sections: string[] }[] = [
+const PRESETS: {
+  idPrefixes: string[]
+  nameIncludes?: string
+  nameMustIncludeAll?: string[]
+  sections: string[]
+}[] = [
   { idPrefixes: ['herbs'], nameIncludes: 'herbs', sections: ['Powders', 'Seeds'] },
   {
-    idPrefixes: ['honey-nuts-oils', 'honey-nuts'],
-    nameIncludes: 'honeynuts',
+    idPrefixes: ['honey-nuts-oils', 'honey-nuts', 'nuts-oils-honey', 'nuts-oils'],
+    nameMustIncludeAll: ['honey', 'nuts', 'oils'],
     sections: ['Honey', 'Nuts', 'Oils'],
   },
   {
@@ -30,7 +35,10 @@ export function resolveCategorySections(
     const idMatch = p.idPrefixes.some(
       (prefix) => idLower === prefix || idLower.startsWith(`${prefix}-`) || idLower.startsWith(prefix)
     )
-    return idMatch || nameNorm.includes(p.nameIncludes)
+    const nameMatch =
+      (p.nameIncludes != null && nameNorm.includes(p.nameIncludes)) ||
+      (p.nameMustIncludeAll != null && p.nameMustIncludeAll.every((part) => nameNorm.includes(part)))
+    return idMatch || nameMatch
   })
   return preset?.sections
 }
