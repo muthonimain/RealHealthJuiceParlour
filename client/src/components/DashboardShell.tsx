@@ -17,54 +17,55 @@ export default function DashboardShell({
   title,
   subtitle,
   accentClass,
-  headerBg,
-  pageBg = 'bg-gray-100',
   children,
 }: Props) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
-
   return (
-    <div className={`owner-page min-h-dvh w-full ${pageBg}`}>
-      <header className={`${headerBg} owner-page-header w-full`}>
-        <div className="owner-page-header-inner w-full max-w-7xl">
-          <HeaderLogo compact className="self-center shrink-0" />
-          <div className="min-w-0 flex-1 py-0.5">
-            <div className="text-white font-bold text-sm sm:text-lg leading-snug truncate">
+    <div className="rhjp-owner-layout">
+      <header className="rhjp-owner-header">
+        <div className="rhjp-owner-header-row">
+          <HeaderLogo compact />
+          <div className="min-w-0 flex-1">
+            <p className="text-white font-bold text-sm leading-tight m-0 truncate">
               Real Health Juice Parlour
-            </div>
-            <div className={`text-xs font-semibold uppercase tracking-wide sm:tracking-widest leading-snug truncate ${accentClass}`}>
+            </p>
+            <p className={`text-xs font-semibold uppercase m-0 mt-0.5 truncate ${accentClass}`}>
               {title}
-            </div>
+            </p>
           </div>
-
-          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-            <div className="text-right hidden sm:block">
-              <div className="text-white font-semibold text-sm">{user?.name}</div>
-              <div className={`text-xs ${accentClass} capitalize`}>{user?.role}</div>
-            </div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="owner-page-logout bg-white/10 hover:bg-white/20"
-            >
-              <LogOut size={18} />
-              <span className="hidden xs:inline">Logout</span>
-            </button>
-          </div>
+          {user ? (
+            <p className="hidden md:block text-right text-xs text-amber-200 shrink-0 m-0">
+              <span className="block text-white font-semibold">{user.name}</span>
+              <span className="capitalize">{user.role}</span>
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              logout()
+              navigate('/')
+            }}
+            title="Logout"
+            className="rhjp-owner-icon-btn"
+            aria-label="Logout"
+          >
+            <LogOut size={18} />
+          </button>
         </div>
       </header>
 
-      <main className="owner-page-main w-full max-w-7xl">
-        <div className="mb-5 sm:mb-6 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-red-950 break-words">{subtitle}</h1>
-          <p className="text-orange-800/70 text-sm mt-1 break-words">
-            {new Date().toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+      <main className="rhjp-owner-main">
+        <div className="mb-4 min-w-0">
+          <h1 className="text-xl font-bold text-red-950 m-0">{subtitle}</h1>
+          <p className="text-orange-900/80 text-sm mt-1 m-0">
+            {new Date().toLocaleDateString('en-KE', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
           </p>
         </div>
         {children}

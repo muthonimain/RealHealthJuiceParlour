@@ -130,7 +130,7 @@ export default function EmployeeRecordsPage() {
           type="button"
           onClick={fetchData}
           title="Refresh records"
-          className="owner-page-back px-2.5"
+          className="rhjp-owner-icon-btn"
         >
           <RefreshCw size={15} />
           <span className="hidden sm:inline text-sm">Refresh</span>

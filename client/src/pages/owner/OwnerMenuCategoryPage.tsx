@@ -287,16 +287,17 @@ export default function OwnerMenuCategoryPage() {
   )
 
   return (
-    <div className={`owner-page min-h-dvh ${ownerTheme.shellPage}`}>
-      <header className={`${ownerTheme.header} owner-page-header`}>
-        <div className="owner-page-header-inner max-w-7xl">
+    <div className="rhjp-owner-layout">
+      <header className="rhjp-owner-header">
+        <div className="rhjp-owner-header-row max-w-3xl">
           <button
             type="button"
             onClick={() => navigate('/dashboard/owner/menu')}
-            className={`${ownerTheme.headerAccent} hover:text-white p-2 rounded-xl hover:bg-white/10`}
+            className="rhjp-owner-icon-btn"
             title="Back to categories"
+            aria-label="Back to categories"
           >
-            <ArrowLeft size={22} />
+            <ArrowLeft size={20} />
           </button>
           <div className="flex-1 min-w-0">
             {editingName ? (
@@ -354,7 +355,7 @@ export default function OwnerMenuCategoryPage() {
         </div>
       </header>
 
-      <main className="owner-page-main max-w-3xl space-y-6">
+      <main className="rhjp-owner-main max-w-3xl space-y-6">
         {formError && (
           <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2">{formError}</p>
         )}

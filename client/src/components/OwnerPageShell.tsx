@@ -11,13 +11,11 @@ interface OwnerPageShellProps {
   onBack: () => void
   backTitle?: string
   children: ReactNode
-  /** Extra header actions (e.g. refresh) — shown before logout */
   actions?: ReactNode
-  /** Optional line under the header bar */
   headerNote?: ReactNode
 }
 
-/** Shared owner sub-page chrome — stable scroll on mobile, compact header. */
+/** Shared owner sub-page chrome — mobile-safe layout (no sticky/clip/gradients). */
 export default function OwnerPageShell({
   title,
   subtitle,
@@ -31,25 +29,20 @@ export default function OwnerPageShell({
   const navigate = useNavigate()
 
   return (
-    <div className={`owner-page min-h-dvh ${ownerTheme.shellPage}`}>
-      <header className={`${ownerTheme.header} owner-page-header`}>
-        <div className="owner-page-header-inner">
-          <button
-            type="button"
-            onClick={onBack}
-            title={backTitle}
-            className="owner-page-back shrink-0"
-          >
+    <div className="rhjp-owner-layout">
+      <header className="rhjp-owner-header">
+        <div className="rhjp-owner-header-row">
+          <button type="button" onClick={onBack} title={backTitle} className="rhjp-owner-icon-btn" aria-label={backTitle}>
             <ArrowLeft size={20} />
           </button>
-          <HeaderLogo compact className="shrink-0" />
+          <HeaderLogo compact />
           <div className="min-w-0 flex-1">
-            <h1 className="text-white font-bold text-sm sm:text-base leading-tight truncate">{title}</h1>
+            <h1 className="text-white font-bold text-sm leading-tight m-0 truncate">{title}</h1>
             {subtitle ? (
-              <p className={`${ownerTheme.headerAccent} text-xs leading-tight truncate`}>{subtitle}</p>
+              <p className={`${ownerTheme.headerAccent} text-xs leading-tight m-0 mt-0.5 truncate`}>{subtitle}</p>
             ) : null}
           </div>
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-0.5">
             {actions}
             <button
               type="button"
@@ -58,17 +51,17 @@ export default function OwnerPageShell({
                 navigate('/')
               }}
               title="Logout"
-              className="owner-page-logout"
+              className="rhjp-owner-icon-btn"
+              aria-label="Logout"
             >
-              <LogOut size={16} />
-              <span className="hidden xs:inline">Logout</span>
+              <LogOut size={18} />
             </button>
           </div>
         </div>
         {headerNote}
       </header>
 
-      <main className="owner-page-main">{children}</main>
+      <main className="rhjp-owner-main">{children}</main>
     </div>
   )
 }

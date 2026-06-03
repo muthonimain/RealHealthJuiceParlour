@@ -303,23 +303,24 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className={`owner-page min-h-dvh flex flex-col ${theme.shellPage}`}>
-      <header className={`${theme.header} owner-page-header`}>
-        <div className="owner-page-header-inner max-w-7xl">
+    <div className="min-h-dvh w-full overflow-x-hidden bg-sky-50">
+      <header className="w-full bg-sky-800 text-white border-b border-sky-900">
+        <div className="flex items-center gap-2 max-w-7xl mx-auto p-3 min-w-0 w-full box-border">
           <button
             type="button"
             onClick={() => navigate(dashboardPath)}
             title="Back to dashboard"
-            className="owner-page-back shrink-0"
+            className="rhjp-owner-icon-btn shrink-0"
+            aria-label="Back to dashboard"
           >
             <ArrowLeft size={20} />
           </button>
           <HeaderLogo compact className="shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="text-white font-bold text-sm sm:text-base truncate">Expenses</div>
-            <div className={`${theme.headerAccent} text-xs truncate`}>
+            <p className="text-white font-bold text-sm m-0 truncate">Expenses</p>
+            <p className={`${theme.headerAccent} text-xs m-0 mt-0.5 truncate`}>
               Cost of goods · {user?.name}
-            </div>
+            </p>
           </div>
           <button
             type="button"
@@ -328,14 +329,14 @@ export default function ExpensesPage() {
               navigate('/')
             }}
             title="Logout"
-            className="owner-page-logout bg-white/10 hover:bg-white/20"
+            className="rhjp-owner-icon-btn"
+            aria-label="Logout"
           >
             <LogOut size={16} />
-            <span className="hidden xs:inline">Logout</span>
           </button>
         </div>
       </header>
-      <main className="owner-page-main max-w-7xl">{pageBody}</main>
+      <main className="w-full max-w-7xl mx-auto px-3 py-4 pb-8 box-border">{pageBody}</main>
     </div>
   )
 }

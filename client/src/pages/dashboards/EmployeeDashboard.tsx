@@ -89,20 +89,20 @@ export default function EmployeeDashboard() {
   }
 
   return (
-    <div className={`owner-page min-h-dvh ${employeeTheme.shellPage}`}>
-      <header className={`${employeeTheme.header} owner-page-header`}>
-        <div className="owner-page-header-inner max-w-7xl">
+    <div className="min-h-dvh w-full overflow-x-hidden bg-sky-50">
+      <header className="w-full bg-sky-800 text-white border-b border-sky-900">
+        <div className="flex items-center gap-2 max-w-7xl mx-auto p-3 min-w-0 w-full box-border">
           <HeaderLogo compact className="shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="text-white font-bold text-sm sm:text-base leading-tight truncate">
+            <p className="text-white font-bold text-sm leading-tight m-0 truncate">
               Real Health Juice Parlour
-            </div>
-            <div className={`${employeeTheme.headerAccent} text-xs font-semibold tracking-wide truncate`}>
+            </p>
+            <p className={`${employeeTheme.headerAccent} text-xs font-semibold m-0 mt-0.5 truncate`}>
               {user?.name ?? 'Staff'}
-            </div>
+            </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-1.5">
             {/* Cart Button */}
             <button
               onClick={() => setCartOpen(true)}
@@ -130,7 +130,7 @@ export default function EmployeeDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="owner-page-main max-w-7xl">
+      <main className="w-full max-w-7xl mx-auto px-3 py-4 pb-8 box-border">
         <div className="mb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <h1 className={`text-xl font-bold ${employeeTheme.pageTitle}`}>Menu Categories</h1>

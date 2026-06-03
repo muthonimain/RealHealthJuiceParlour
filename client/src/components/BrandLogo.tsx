@@ -13,7 +13,7 @@ type LogoSize = 'sm' | 'header' | 'md' | 'lg' | 'hero'
 
 const sizeClasses: Record<LogoSize, string> = {
   sm: 'h-8 w-auto max-w-[100px]',
-  header: 'h-full w-full min-h-[52px] min-w-[56px] max-h-[68px] max-w-[80px] sm:min-h-[56px] sm:min-w-[64px] sm:max-h-[72px] sm:max-w-[88px] object-contain object-center',
+  header: 'h-9 w-10 object-contain',
   md: 'h-12 w-auto max-w-[160px]',
   lg: 'h-28 w-auto max-w-[320px]',
   hero: 'w-full max-w-[min(92vw,28rem)] h-auto max-h-[min(42vh,260px)] object-contain',
@@ -71,10 +71,7 @@ export default function BrandLogo({ size = 'md', className = '' }: BrandLogoProp
     <img
       src={LOGO_PATHS[pathIndex]}
       alt="Real Health Juice Parlour"
-      width={size === 'header' ? 88 : undefined}
-      height={size === 'header' ? 72 : undefined}
       decoding="async"
-      fetchPriority={size === 'header' ? 'high' : undefined}
       className={`${sizeClasses[size]} object-contain shrink-0 ${className}`}
       onError={() => {
         if (pathIndex + 1 < LOGO_PATHS.length) {
