@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ShoppingCart, LogOut, Plus, X, Wallet, Trash2 } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 import { authFetch } from '../../lib/api'
-import BrandLogo from '../../components/BrandLogo'
+import { HeaderLogo } from '../../components/BrandLogo'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
@@ -92,11 +92,13 @@ export default function EmployeeDashboard() {
     <div className={`min-h-screen ${employeeTheme.shellPage} flex flex-col`}>
       <header className={`${employeeTheme.header} shadow-lg sticky top-0 z-30`}>
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <BrandLogo size="sm" />
-            <div>
-              <div className="text-white font-bold text-base leading-tight">Real Health Juice Parlour</div>
-              <div className={`${employeeTheme.headerAccent} text-xs font-semibold tracking-wide`}>
+          <div className="flex items-center gap-3 min-w-0">
+            <HeaderLogo />
+            <div className="min-w-0">
+              <div className="text-white font-bold text-base leading-tight truncate">
+                Real Health Juice Parlour
+              </div>
+              <div className={`${employeeTheme.headerAccent} text-xs font-semibold tracking-wide truncate`}>
                 {user?.name ?? 'Staff'}
               </div>
             </div>

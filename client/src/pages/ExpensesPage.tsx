@@ -4,7 +4,7 @@ import { ArrowLeft, LogOut, Plus, Receipt } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { authFetch, readApiJson } from '../lib/api'
-import BrandLogo from '../components/BrandLogo'
+import { HeaderLogo } from '../components/BrandLogo'
 import { ownerTheme, employeeTheme } from '../theme/roles'
 import type { Expense } from '../types/expense'
 
@@ -117,8 +117,8 @@ export default function ExpensesPage() {
             >
               <ArrowLeft size={22} />
             </button>
-            <BrandLogo size="sm" />
-            <div>
+            <HeaderLogo />
+            <div className="min-w-0">
               <div className="text-white font-bold text-base">Expenses</div>
               <div className={`${theme.headerAccent} text-xs`}>
                 Cost of goods · {user?.name}

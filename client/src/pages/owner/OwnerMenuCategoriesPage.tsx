@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, LogOut, X, Trash2 } from 'lucide-react'
-import BrandLogo from '../../components/BrandLogo'
+import { HeaderLogo } from '../../components/BrandLogo'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
@@ -92,9 +92,12 @@ export default function OwnerMenuCategoriesPage() {
             <ArrowLeft size={22} />
             <span className="hidden sm:inline text-sm font-medium">Owner Portal</span>
           </button>
-          <div className="flex items-center gap-2 text-white">
-            <BrandLogo size="sm" />
-            <span className="font-bold">Menu Categories</span>
+          <div className="flex items-center gap-3 min-w-0 text-white">
+            <HeaderLogo />
+            <div className="min-w-0">
+              <div className="font-bold text-base leading-tight truncate">Menu Categories</div>
+              <div className={`${ownerTheme.headerAccent} text-xs truncate`}>Owner portal</div>
+            </div>
           </div>
           <button
             type="button"

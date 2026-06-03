@@ -4,7 +4,7 @@ import { ArrowLeft, LogOut, TrendingUp, Minus, Equal } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { authFetch } from '../../lib/api'
-import BrandLogo from '../../components/BrandLogo'
+import { HeaderLogo } from '../../components/BrandLogo'
 import { ownerTheme } from '../../theme/roles'
 import type { DailyProfitSummary } from '../../types/expense'
 
@@ -70,7 +70,7 @@ export default function NetProfitPage() {
             >
               <ArrowLeft size={22} />
             </button>
-            <BrandLogo size="sm" />
+            <HeaderLogo />
             <div>
               <div className="text-white font-bold text-base">Net Profit</div>
               <div className={`${ownerTheme.headerAccent} text-xs`}>Daily profit breakdown</div>

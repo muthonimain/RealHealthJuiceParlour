@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
-import BrandLogo from '../../components/BrandLogo'
+import { HeaderLogo } from '../../components/BrandLogo'
 import { ownerTheme } from '../../theme/roles'
 import { sumRevenueForWorkingMonth, workingMonthLabel } from '../../lib/workingMonth'
 
@@ -134,7 +134,7 @@ export default function EmployeeRecordsPage() {
             >
               <ArrowLeft size={20} />
             </button>
-            <BrandLogo size="sm" />
+            <HeaderLogo />
             <div>
               <div className="text-white font-bold text-base">Employee Records</div>
               <div className={`${ownerTheme.headerAccent} text-xs`}>Employee records — owner view</div>

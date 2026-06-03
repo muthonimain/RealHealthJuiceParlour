@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
-import BrandLogo from './BrandLogo'
+import { HeaderLogo } from './BrandLogo'
 import { useAuth } from '../context/AuthContext'
 import type { ReactNode } from 'react'
 
@@ -34,11 +34,15 @@ export default function DashboardShell({
       {/* Top Nav */}
       <header className={`${headerBg} shadow-lg`}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <BrandLogo size="sm" />
-            <div>
-              <div className="text-white font-bold text-lg leading-tight">Real Health Juice Parlour</div>
-              <div className={`text-xs font-semibold uppercase tracking-widest ${accentClass}`}>{title}</div>
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <HeaderLogo />
+            <div className="min-w-0">
+              <div className="text-white font-bold text-base sm:text-lg leading-tight truncate">
+                Real Health Juice Parlour
+              </div>
+              <div className={`text-xs font-semibold uppercase tracking-widest ${accentClass}`}>
+                {title}
+              </div>
             </div>
           </div>
 

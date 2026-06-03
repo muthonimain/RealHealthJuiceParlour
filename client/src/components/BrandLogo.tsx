@@ -9,10 +9,11 @@ const LOGO_PATHS = [
   '/branding/logo.webp',
 ]
 
-type LogoSize = 'sm' | 'md' | 'lg' | 'hero'
+type LogoSize = 'sm' | 'header' | 'md' | 'lg' | 'hero'
 
 const sizeClasses: Record<LogoSize, string> = {
-  sm: 'h-8 w-auto max-w-[120px]',
+  sm: 'h-8 w-auto max-w-[100px]',
+  header: 'h-full w-full object-contain object-center',
   md: 'h-12 w-auto max-w-[160px]',
   lg: 'h-28 w-auto max-w-[320px]',
   hero: 'w-full max-w-[min(92vw,28rem)] h-auto max-h-[min(42vh,260px)] object-contain',
@@ -20,6 +21,7 @@ const sizeClasses: Record<LogoSize, string> = {
 
 const iconSizes: Record<LogoSize, { leaf: number; drop: number }> = {
   sm: { leaf: 18, drop: 14 },
+  header: { leaf: 24, drop: 20 },
   md: { leaf: 22, drop: 18 },
   lg: { leaf: 32, drop: 28 },
   hero: { leaf: 40, drop: 34 },
@@ -28,6 +30,17 @@ const iconSizes: Record<LogoSize, { leaf: number; drop: number }> = {
 interface BrandLogoProps {
   size?: LogoSize
   className?: string
+}
+
+/** Logo sized for dark dashboard headers — white panel keeps the mark readable. */
+export function HeaderLogo({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`flex h-[3.25rem] w-[3.25rem] shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-md ring-1 ring-white/30 sm:h-14 sm:w-14 sm:p-2 ${className}`}
+    >
+      <BrandLogo size="header" />
+    </div>
+  )
 }
 
 export default function BrandLogo({ size = 'md', className = '' }: BrandLogoProps) {
