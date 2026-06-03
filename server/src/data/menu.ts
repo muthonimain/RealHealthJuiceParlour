@@ -124,7 +124,7 @@ export const menuData: MenuCategory[] = [
     id: 'gut-healing-drinks',
     name: 'Gut-Healing Drinks',
     emoji: '🍵',
-    sections: ['Flavored Kombucha', 'Plain Kombucha'],
+    sections: ['Flavored Kombucha', 'Plain Kombucha', 'Other Drinks'],
     items: [
       { id: 'gh-f1', name: 'Flavored Kombucha – Small', price: 100, section: 'Flavored Kombucha' },
       { id: 'gh-f2', name: 'Flavored Kombucha – Medium', price: 200, section: 'Flavored Kombucha' },
@@ -132,9 +132,9 @@ export const menuData: MenuCategory[] = [
       { id: 'gh-1', name: 'Plain Kombucha – Small', price: 100, section: 'Plain Kombucha' },
       { id: 'gh-2', name: 'Plain Kombucha – Medium', price: 200, section: 'Plain Kombucha' },
       { id: 'gh-3', name: 'Plain Kombucha – Large', price: 350, section: 'Plain Kombucha' },
-      { id: 'gh-4', name: 'Kefir Milk – Small', price: 250 },
-      { id: 'gh-5', name: 'Kefir Milk – Large', price: 500 },
-      { id: 'gh-6', name: 'Fermented Porridge', price: 150 },
+      { id: 'gh-4', name: 'Kefir Milk – Small', price: 250, section: 'Other Drinks' },
+      { id: 'gh-5', name: 'Kefir Milk – Large', price: 500, section: 'Other Drinks' },
+      { id: 'gh-6', name: 'Fermented Porridge', price: 150, section: 'Other Drinks' },
     ],
   },
   {

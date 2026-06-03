@@ -22,6 +22,11 @@ export function getMenuSectionGroups(category: MenuCategory): MenuSectionGroup[]
     ),
   }))
 
+  // Categories with explicit sections (e.g. Herbs → Powders, Seeds) show only those headings.
+  if (category.sections?.length) {
+    return groups
+  }
+
   const sectionKeys = new Set(titles.map((t) => t.trim().toLowerCase()))
   const other = category.items.filter((i) => {
     const s = (i.section ?? '').trim().toLowerCase()

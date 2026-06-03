@@ -93,11 +93,19 @@ async function runMenuMigrations(): Promise<void> {
   if (!herbsId) {
     const herbs = buildDefaultMenu().find((c) => c.id === 'herbs')
     if (herbs) await seedMenu([herbs])
+  } else {
+    await pool.query(
+      `UPDATE menu_items SET section = 'Powders'
+       WHERE category_id = $1
+         AND (section IS NULL OR TRIM(section) = '' OR LOWER(TRIM(section)) = 'more')`,
+      [herbsId]
+    )
   }
 
   const gutId = await applyCategorySections('gut-healing-drinks', 'gut-healing drinks', [
     'Flavored Kombucha',
     'Plain Kombucha',
+    'Other Drinks',
   ])
   if (gutId) {
     await pool.query(
@@ -124,6 +132,11 @@ async function runMenuMigrations(): Promise<void> {
         [item.id, gutId, item.name, item.price, 10 + i]
       )
     }
+    await pool.query(
+      `UPDATE menu_items SET section = 'Other Drinks'
+       WHERE category_id = $1 AND id IN ('gh-4', 'gh-5', 'gh-6')`,
+      [gutId]
+    )
   }
 }
 
