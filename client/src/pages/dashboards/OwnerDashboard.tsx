@@ -6,7 +6,6 @@ import {
   TrendingUp,
   Users,
   ShoppingBag,
-  DollarSign,
   Settings,
   BarChart2,
   Package,
@@ -14,6 +13,7 @@ import {
   Wallet,
   PieChart,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { sumRevenueForWorkingMonth, workingMonthLabel } from '../../lib/workingMonth'
 import { dataUnchanged } from '../../lib/stableData'
 
@@ -72,10 +72,16 @@ export default function OwnerDashboard() {
   return (
     <DashboardShell title="Owner Portal" subtitle={`Welcome back, ${user?.name ?? 'Owner'}`}>
       <ul className="rhjp-dash-stats">
-        {stats.map(({ label, value, icon: Icon, color, bg }) => (
+        {stats.map(({ label, value, icon: Icon, kshIcon, color, bg }) => (
           <li key={label} className="rhjp-dash-stat">
             <span className="rhjp-dash-stat-icon" style={{ backgroundColor: bg, color }}>
-              <Icon size={20} aria-hidden />
+              {kshIcon ? (
+                <span className="text-[11px] font-extrabold leading-none tracking-tight" aria-hidden>
+                  Ksh
+                </span>
+              ) : Icon ? (
+                <Icon size={20} aria-hidden />
+              ) : null}
             </span>
             <p className="rhjp-dash-stat-value">{value}</p>
             <p className="rhjp-dash-stat-label">{label}</p>
