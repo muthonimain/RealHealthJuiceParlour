@@ -89,7 +89,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
             <div className="bg-sky-700 px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2 text-white font-bold text-lg">
                 <ShoppingCart size={22} />
-                Diner's Order ({totalItems} {totalItems === 1 ? 'item' : 'items'})
+                Print Order ({totalItems} {totalItems === 1 ? 'item' : 'items'})
               </div>
               <button
                 onClick={onClose}
