@@ -78,6 +78,16 @@ router.get(
 )
 
 router.get(
+  '/reports/product-sales',
+  ...ownerOnly,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const monthParam = typeof req.query.month === 'string' ? req.query.month : ''
+    const monthKey = /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : toMonthKey()
+    res.json(await buildProductSalesReport(monthKey))
+  })
+)
+
+router.get(
   '/:id',
   asyncHandler(async (req: Request, res: Response) => {
     const order = await getOrderById(String(req.params.id))

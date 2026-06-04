@@ -33,11 +33,11 @@ export async function readApiJson<T = Record<string, unknown>>(res: Response): P
     if (text.trimStart().startsWith('<')) {
       if (res.status === 404) {
         throw new Error(
-          'Expenses API not found. Stop and restart the app with npm run dev from the project folder.'
+          'API endpoint not found. If you just deployed, wait for Render to finish, then hard-refresh the page.'
         )
       }
       throw new Error(
-        `Server returned an unexpected page (${res.status}). Restart the API server (npm run dev).`
+        `Server returned an unexpected page (${res.status}). Try again after the app finishes deploying.`
       )
     }
     throw new Error(text.slice(0, 200) || `Request failed (${res.status}).`)
