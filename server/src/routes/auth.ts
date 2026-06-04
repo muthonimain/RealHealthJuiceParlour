@@ -9,7 +9,7 @@ const env = (key: string, fallback: string) => (process.env[key] ?? '').trim() |
 const JWT_SECRET = env('JWT_SECRET', 'rhjp_dev_secret_change_in_production')
 const JWT_EXPIRES = '8h'
 
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response): Promise<void> => {
   const { role, username, password } = req.body as {
     role: string
     username: string
@@ -34,7 +34,7 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 
   if (role === 'employee') {
-    const employee = verifyEmployeeLogin(username, password)
+    const employee = await verifyEmployeeLogin(username, password)
     if (!employee) {
       res.status(401).json({ message: 'Invalid username or password.' })
       return

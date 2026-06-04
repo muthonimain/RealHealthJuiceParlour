@@ -29,7 +29,7 @@ async function buildSummaries(dateKey: string): Promise<EmployeeDaySummary[]> {
 
   const byEmployee = new Map<string, { name: string; orders: typeof orders; total: number }>()
 
-  for (const emp of listEmployees()) {
+  for (const emp of await listEmployees()) {
     byEmployee.set(emp.id, { name: emp.name, orders: [], total: 0 })
   }
 

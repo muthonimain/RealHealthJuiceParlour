@@ -13,6 +13,7 @@ import OwnerMenuCategoryPage from './pages/owner/OwnerMenuCategoryPage'
 import ExpensesPage from './pages/ExpensesPage'
 import NetProfitPage from './pages/owner/NetProfitPage'
 import SalesReportsPage from './pages/owner/SalesReportsPage'
+import StaffManagementPage from './pages/owner/StaffManagementPage'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -130,6 +131,14 @@ function App() {
               element={
                 <ProtectedRoute role="owner">
                   <SalesReportsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/owner/staff"
+              element={
+                <ProtectedRoute role="owner">
+                  <StaffManagementPage />
                 </ProtectedRoute>
               }
             />

@@ -15,11 +15,12 @@ import { listOwners } from '../data/owners'
 
 const router = Router()
 
-function staffDisplayName(userId: string, role: string): string {
+async function staffDisplayName(userId: string, role: string): Promise<string> {
   if (role === 'owner') {
     return listOwners().find((o) => o.id === userId)?.name ?? 'Owner'
   }
-  return listEmployees().find((e) => e.id === userId)?.name ?? 'Employee'
+  const employees = await listEmployees()
+  return employees.find((e) => e.id === userId)?.name ?? 'Employee'
 }
 
 router.use(requireAuth, requireRole('owner', 'employee'))
@@ -77,7 +78,7 @@ router.post(
       description: description.trim(),
       amount: Math.round(parsed),
       recordedById: userId,
-      recordedByName: staffDisplayName(userId, role),
+      recordedByName: await staffDisplayName(userId, role),
       recordedByRole: role,
       dateKey,
     })

@@ -64,3 +64,14 @@ CREATE TABLE IF NOT EXISTS clearances (
   cleared_by TEXT NOT NULL,
   PRIMARY KEY (employee_id, date_key)
 );
+
+CREATE TABLE IF NOT EXISTS employees (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  username TEXT NOT NULL,
+  password TEXT NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_employees_username_lower ON employees (LOWER(username));

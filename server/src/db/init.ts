@@ -8,6 +8,7 @@ import type { Order } from '../data/ordersStore'
 import type { Expense } from '../data/expenseStore'
 import type { DailyClearance } from '../data/clearanceStore'
 import { syncOrderNumberSequence } from '../lib/orderNumber'
+import { seedEmployeesFromEnvIfEmpty } from '../data/employeeStore'
 
 const PERSIST_DIR = path.join(__dirname, '../../persisted')
 
@@ -204,6 +205,7 @@ export async function initDatabase(): Promise<void> {
     )
   `)
   await syncOrderNumberSequence()
+  await seedEmployeesFromEnvIfEmpty()
 
   const { rows: menuCount } = await pool.query<{ count: string }>(
     'SELECT COUNT(*)::text AS count FROM menu_categories'
