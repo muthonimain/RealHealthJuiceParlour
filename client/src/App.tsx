@@ -12,6 +12,7 @@ import OwnerMenuCategoriesPage from './pages/owner/OwnerMenuCategoriesPage'
 import OwnerMenuCategoryPage from './pages/owner/OwnerMenuCategoryPage'
 import ExpensesPage from './pages/ExpensesPage'
 import NetProfitPage from './pages/owner/NetProfitPage'
+import SalesReportsPage from './pages/owner/SalesReportsPage'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -121,6 +122,14 @@ function App() {
               element={
                 <ProtectedRoute role="owner">
                   <NetProfitPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/owner/sales-reports"
+              element={
+                <ProtectedRoute role="owner">
+                  <SalesReportsPage />
                 </ProtectedRoute>
               }
             />

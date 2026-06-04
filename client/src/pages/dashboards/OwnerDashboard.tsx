@@ -42,7 +42,7 @@ const modules: {
   { label: 'Expenses', icon: Wallet, color: '#c2410c', bg: '#ffedd5', path: '/dashboard/owner/expenses' },
   { label: 'Net Profit', icon: PieChart, color: '#047857', bg: '#d1fae5', path: '/dashboard/owner/net-profit' },
   { label: 'Menu & Products', icon: Package, color: '#15803d', bg: '#dcfce7', path: '/dashboard/owner/menu' },
-  { label: 'Sales Reports', icon: BarChart2, color: '#7e22ce', bg: '#f3e8ff' },
+  { label: 'Sales Reports', icon: BarChart2, color: '#7e22ce', bg: '#f3e8ff', path: '/dashboard/owner/sales-reports' },
   { label: 'Staff Management', icon: Users, color: '#1d4ed8', bg: '#dbeafe' },
   { label: 'System Settings', icon: Settings, color: '#374151', bg: '#f3f4f6' },
 ]

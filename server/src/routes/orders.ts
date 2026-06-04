@@ -16,8 +16,10 @@ import {
   toMonthKey,
 } from '../lib/workingMonth'
 import { asyncHandler } from '../middleware/asyncHandler'
+import { buildProductSalesReport } from '../services/productSalesReport'
 
 const router = Router()
+const ownerOnly = [requireAuth, requireRole('owner')]
 
 router.get(
   '/stats/monthly',
@@ -86,8 +88,6 @@ router.get(
     res.json(order)
   })
 )
-
-const ownerOnly = [requireAuth, requireRole('owner')]
 
 router.patch(
   '/:id',
