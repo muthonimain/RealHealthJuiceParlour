@@ -205,6 +205,66 @@ export default function ExpensesPage() {
   const ringClass = isOwner ? 'focus:ring-amber-400' : employeeTheme.signInInputFocus
   const tableHead = isOwner ? 'bg-amber-50 text-amber-800' : employeeTheme.tableHead
 
+  const editFormFields = (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Date</label>
+        <input
+          type="date"
+          value={editDate}
+          onChange={(e) => setEditDate(e.target.value)}
+          required
+          className={`w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900 text-sm focus:ring-2 ${ringClass} outline-none`}
+        />
+      </div>
+      <div className="sm:col-span-2">
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
+        <input
+          type="text"
+          value={editDescription}
+          onChange={(e) => setEditDescription(e.target.value)}
+          required
+          className={`w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900 text-sm focus:ring-2 ${ringClass} outline-none`}
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Money out (Ksh)</label>
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value={editAmount}
+          onChange={(e) => setEditAmount(e.target.value)}
+          required
+          className={`w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900 text-sm focus:ring-2 ${ringClass} outline-none`}
+        />
+      </div>
+    </div>
+  )
+
+  const actionButtons = (exp: Expense) => (
+    <div className="flex items-center gap-1 shrink-0">
+      <button
+        type="button"
+        onClick={() => startEdit(exp)}
+        disabled={actionBusy}
+        title="Edit expense"
+        className={`p-2 rounded-lg transition-colors ${isOwner ? 'text-amber-700 hover:bg-amber-50' : 'text-teal-700 hover:bg-teal-50'} disabled:opacity-50`}
+      >
+        <Pencil size={16} />
+      </button>
+      <button
+        type="button"
+        onClick={() => handleDelete(exp.id)}
+        disabled={actionBusy}
+        title="Delete expense"
+        className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+      >
+        <Trash2 size={16} />
+      </button>
+    </div>
+  )
+
   const pageBody = (
     <>
         <div className="bg-white rounded-2xl shadow-sm p-5 mb-6 border border-gray-100">
