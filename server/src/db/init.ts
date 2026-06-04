@@ -7,6 +7,7 @@ import type { MenuCategory } from '../data/menuStore'
 import type { Order } from '../data/ordersStore'
 import type { Expense } from '../data/expenseStore'
 import type { DailyClearance } from '../data/clearanceStore'
+import { syncOrderNumberSequence } from '../lib/orderNumber'
 
 const PERSIST_DIR = path.join(__dirname, '../../persisted')
 
@@ -196,6 +197,13 @@ export async function initDatabase(): Promise<void> {
   requireDatabase()
   await runSchema()
   await runMenuMigrations()
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_number_seq (
+      year_suffix CHAR(2) PRIMARY KEY,
+      last_number INT NOT NULL DEFAULT 0
+    )
+  `)
+  await syncOrderNumberSequence()
 
   const { rows: menuCount } = await pool.query<{ count: string }>(
     'SELECT COUNT(*)::text AS count FROM menu_categories'

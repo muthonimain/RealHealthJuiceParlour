@@ -1,4 +1,5 @@
 import { pool } from '../db/pool'
+import { allocateOrderId } from '../lib/orderNumber'
 
 export interface OrderItem {
   id: string
@@ -47,7 +48,7 @@ function mapOrder(row: OrderRow): Order {
 }
 
 export async function createOrder(data: Omit<Order, 'id' | 'createdAt'>): Promise<Order> {
-  const id = `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+  const id = await allocateOrderId()
   const { rows } = await pool.query<OrderRow>(
     `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, grand_total)
      VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8)

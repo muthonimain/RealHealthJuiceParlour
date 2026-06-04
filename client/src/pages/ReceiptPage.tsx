@@ -32,12 +32,6 @@ function formatDate(iso: string) {
   }
 }
 
-/** Short receipt number — fits 80 mm paper without wrapping */
-function shortReceiptNo(id: string) {
-  if (id.length <= 12) return id
-  return id.slice(-10).toUpperCase()
-}
-
 function ReceiptCopy({
   order,
   copyLabel,
@@ -48,7 +42,6 @@ function ReceiptCopy({
   preview?: boolean
 }) {
   const { date, time } = formatDate(order.createdAt)
-  const receiptNo = shortReceiptNo(order.id)
 
   return (
     <article
@@ -64,7 +57,7 @@ function ReceiptCopy({
 
       <hr className="thermal-receipt__rule" />
 
-      <p className="thermal-receipt__meta">Receipt No: {receiptNo}</p>
+      <p className="thermal-receipt__meta">Order Number: {order.id}</p>
       <p className="thermal-receipt__meta">
         {date} {time}
       </p>

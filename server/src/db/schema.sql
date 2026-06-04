@@ -37,6 +37,12 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
 
+-- Sequential order numbers per year (RHJP26-0001, RHJP26-0002, …)
+CREATE TABLE IF NOT EXISTS order_number_seq (
+  year_suffix CHAR(2) PRIMARY KEY,
+  last_number INT NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS expenses (
   id TEXT PRIMARY KEY,
   date_key DATE NOT NULL,
