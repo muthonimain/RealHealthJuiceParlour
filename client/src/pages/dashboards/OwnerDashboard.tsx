@@ -14,7 +14,6 @@ import {
   Wallet,
   PieChart,
 } from 'lucide-react'
-import { ownerTheme } from '../../theme/roles'
 import { sumRevenueForWorkingMonth, workingMonthLabel } from '../../lib/workingMonth'
 import { dataUnchanged } from '../../lib/stableData'
 
@@ -30,13 +29,13 @@ const modules: {
   bg: string
   path?: string
 }[] = [
-  { label: 'Employee Records', icon: ClipboardList, color: 'text-amber-700', bg: 'bg-amber-100', path: '/dashboard/owner/employee-records' },
-  { label: 'Expenses', icon: Wallet, color: 'text-orange-700', bg: 'bg-orange-100', path: '/dashboard/owner/expenses' },
-  { label: 'Net Profit', icon: PieChart, color: 'text-emerald-700', bg: 'bg-emerald-100', path: '/dashboard/owner/net-profit' },
-  { label: 'Menu & Products', icon: Package, color: 'text-green-700', bg: 'bg-green-100', path: '/dashboard/owner/menu' },
-  { label: 'Sales Reports', icon: BarChart2, color: 'text-purple-700', bg: 'bg-purple-100' },
-  { label: 'Staff Management', icon: Users, color: 'text-blue-700', bg: 'bg-blue-100' },
-  { label: 'System Settings', icon: Settings, color: 'text-gray-700', bg: 'bg-gray-100' },
+  { label: 'Employee Records', icon: ClipboardList, color: '#b45309', bg: '#fef3c7', path: '/dashboard/owner/employee-records' },
+  { label: 'Expenses', icon: Wallet, color: '#c2410c', bg: '#ffedd5', path: '/dashboard/owner/expenses' },
+  { label: 'Net Profit', icon: PieChart, color: '#047857', bg: '#d1fae5', path: '/dashboard/owner/net-profit' },
+  { label: 'Menu & Products', icon: Package, color: '#15803d', bg: '#dcfce7', path: '/dashboard/owner/menu' },
+  { label: 'Sales Reports', icon: BarChart2, color: '#7e22ce', bg: '#f3e8ff' },
+  { label: 'Staff Management', icon: Users, color: '#1d4ed8', bg: '#dbeafe' },
+  { label: 'System Settings', icon: Settings, color: '#374151', bg: '#f3f4f6' },
 ]
 
 export default function OwnerDashboard() {
@@ -64,54 +63,45 @@ export default function OwnerDashboard() {
   const monthLabel = workingMonthLabel()
 
   const stats = [
-    { label: "Today's Revenue", value: `Ksh ${todayRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: "Today's Orders", value: String(todayOrders.length), icon: ShoppingBag, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Total Orders', value: String(orders.length), icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: `${monthLabel} revenue`, value: `Ksh ${monthRevenue.toLocaleString()}`, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: "Today's Revenue", value: `Ksh ${todayRevenue.toLocaleString()}`, icon: DollarSign, color: '#d97706', bg: '#fffbeb' },
+    { label: "Today's Orders", value: String(todayOrders.length), icon: ShoppingBag, color: '#16a34a', bg: '#f0fdf4' },
+    { label: 'Total Orders', value: String(orders.length), icon: TrendingUp, color: '#9333ea', bg: '#faf5ff' },
+    { label: `${monthLabel} revenue`, value: `Ksh ${monthRevenue.toLocaleString()}`, icon: Users, color: '#2563eb', bg: '#eff6ff' },
   ]
 
   return (
-    <DashboardShell
-      title="Owner Portal"
-      subtitle={`Welcome back, ${user?.name ?? 'Owner'}`}
-      accentClass={ownerTheme.headerAccent}
-      headerBg={ownerTheme.header}
-      pageBg={ownerTheme.shellPage}
-    >
-      <section className="grid grid-cols-2 gap-2 w-full mb-6">
+    <DashboardShell title="Owner Portal" subtitle={`Welcome back, ${user?.name ?? 'Owner'}`}>
+      <ul className="rhjp-dash-stats">
         {stats.map(({ label, value, icon: Icon, color, bg }) => (
-          <article key={label} className={ownerTheme.statCard}>
-            <div className={`${bg} inline-flex rounded-lg p-2 mb-2`}>
-              <Icon size={20} className={color} aria-hidden />
-            </div>
-            <p className="text-base font-bold text-gray-900 leading-tight m-0">{value}</p>
-            <p className="text-xs text-gray-600 mt-1 m-0 leading-snug">{label}</p>
-          </article>
+          <li key={label} className="rhjp-dash-stat">
+            <span className="rhjp-dash-stat-icon" style={{ backgroundColor: bg, color }}>
+              <Icon size={20} aria-hidden />
+            </span>
+            <p className="rhjp-dash-stat-value">{value}</p>
+            <p className="rhjp-dash-stat-label">{label}</p>
+          </li>
         ))}
-      </section>
+      </ul>
 
-      <section>
-        <h2 className={`text-base font-semibold ${ownerTheme.pageTitle} m-0 mb-3`}>Management Modules</h2>
-        <div className="grid grid-cols-2 gap-2 w-full">
-          {modules.map(({ label, icon: Icon, color, bg, path }) => (
+      <h2 className="rhjp-dash-modules-title">Management Modules</h2>
+      <ul className="rhjp-dash-modules">
+        {modules.map(({ label, icon: Icon, color, bg, path }) => (
+          <li key={label}>
             <button
-              key={label}
               type="button"
               disabled={!path}
               onClick={() => path && navigate(path)}
-              className={`${ownerTheme.moduleCard} flex flex-col items-center justify-center text-center gap-2 min-h-[7.5rem] disabled:opacity-60 ${path ? '' : 'opacity-70'}`}
+              className="rhjp-dash-module-btn"
             >
-              <span className={`${bg} inline-flex rounded-lg p-2.5`}>
-                <Icon size={22} className={color} aria-hidden />
+              <span className="rhjp-dash-module-icon" style={{ backgroundColor: bg, color }}>
+                <Icon size={22} aria-hidden />
               </span>
-              <span className="text-xs font-semibold text-gray-800 leading-tight px-1">{label}</span>
-              {path ? (
-                <span className={`text-[10px] ${ownerTheme.openLink} font-bold uppercase`}>Open →</span>
-              ) : null}
+              <span className="rhjp-dash-module-label">{label}</span>
+              {path ? <span className="rhjp-dash-module-link">Open →</span> : null}
             </button>
-          ))}
-        </div>
-      </section>
+          </li>
+        ))}
+      </ul>
     </DashboardShell>
   )
 }

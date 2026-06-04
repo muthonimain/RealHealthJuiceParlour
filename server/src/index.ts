@@ -54,7 +54,17 @@ app.get('/api/health', async (_req, res) => {
 if (isProd) {
   const clientDist = path.join(__dirname, '../../client/dist')
   const indexHtml = path.join(clientDist, 'index.html')
-  app.use(express.static(clientDist))
+  app.use(
+    express.static(clientDist, {
+      maxAge: '1y',
+      immutable: true,
+      setHeaders(res, filePath) {
+        if (filePath.endsWith('index.html')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+        }
+      },
+    })
+  )
   // Fallback for client-side routes — avoid app.get('*') / wildcards (Express 5 path-to-regexp)
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next()

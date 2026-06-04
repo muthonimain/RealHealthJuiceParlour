@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, LogOut } from 'lucide-react'
 import { HeaderLogo } from './BrandLogo'
 import { useAuth } from '../context/AuthContext'
-import { ownerTheme } from '../theme/roles'
+import { useMinWidth } from '../hooks/useMinWidth'
 
 interface OwnerPageShellProps {
   title: string
@@ -15,7 +15,7 @@ interface OwnerPageShellProps {
   headerNote?: ReactNode
 }
 
-/** Shared owner sub-page chrome — mobile-safe layout (no sticky/clip/gradients). */
+/** Shared owner sub-page chrome — mobile-safe layout (no logo image on small screens). */
 export default function OwnerPageShell({
   title,
   subtitle,
@@ -27,6 +27,7 @@ export default function OwnerPageShell({
 }: OwnerPageShellProps) {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const showLogo = useMinWidth(768)
 
   return (
     <div className="rhjp-owner-layout">
@@ -35,12 +36,18 @@ export default function OwnerPageShell({
           <button type="button" onClick={onBack} title={backTitle} className="rhjp-owner-icon-btn" aria-label={backTitle}>
             <ArrowLeft size={20} />
           </button>
-          <HeaderLogo compact />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-white font-bold text-sm leading-tight m-0 truncate">{title}</h1>
-            {subtitle ? (
-              <p className={`${ownerTheme.headerAccent} text-xs leading-tight m-0 mt-0.5 truncate`}>{subtitle}</p>
-            ) : null}
+          {!showLogo ? (
+            <div className="rhjp-owner-brand-mark" aria-hidden>
+              RH
+            </div>
+          ) : (
+            <div className="rhjp-owner-header-logo-wrap">
+              <HeaderLogo />
+            </div>
+          )}
+          <div className="rhjp-owner-header-text">
+            <h1>{title}</h1>
+            {subtitle ? <p>{subtitle}</p> : null}
           </div>
           <div className="flex shrink-0 items-center gap-0.5">
             {actions}

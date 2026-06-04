@@ -1,0 +1,310 @@
+/**
+ * Owner dashboard — plain CSS for reliable mobile rendering.
+ * Avoids GPU bugs from logo tiling, filters, and transform layers on Android Chrome.
+ */
+
+.rhjp-owner-layout {
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background-color: #fffbeb;
+  position: relative;
+}
+
+.rhjp-owner-layout * {
+  box-sizing: border-box;
+}
+
+.rhjp-owner-layout img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.rhjp-owner-header {
+  width: 100%;
+  background-color: #7f1d1d;
+  color: #fff;
+  border-bottom: 1px solid #450a0a;
+  position: relative;
+  z-index: 10;
+}
+
+.rhjp-owner-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 8px 12px;
+  min-width: 0;
+  width: 100%;
+}
+
+.rhjp-owner-brand-mark {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #7f1d1d;
+  font-weight: 800;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.rhjp-owner-header-logo-wrap {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.rhjp-owner-header-logo-wrap img {
+  width: 36px;
+  height: 36px;
+  max-width: 36px;
+  max-height: 36px;
+  object-fit: contain;
+}
+
+@media (min-width: 768px) {
+  .rhjp-owner-brand-mark {
+    display: none;
+  }
+
+  .rhjp-owner-header-logo-wrap {
+    display: flex;
+    width: 48px;
+    height: 48px;
+  }
+
+  .rhjp-owner-header-logo-wrap img {
+    width: 44px;
+    height: 44px;
+    max-width: 44px;
+    max-height: 44px;
+  }
+}
+
+.rhjp-owner-header-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.rhjp-owner-header-text h1,
+.rhjp-owner-header-text p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rhjp-owner-header-text h1 {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.rhjp-owner-header-text p {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #fde68a;
+  margin-top: 2px;
+}
+
+.rhjp-owner-icon-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.rhjp-owner-icon-btn:active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.rhjp-owner-main {
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 16px 12px 32px;
+  position: relative;
+  z-index: 1;
+}
+
+.rhjp-owner-welcome h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #450a0a;
+  line-height: 1.3;
+}
+
+.rhjp-owner-welcome p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: rgba(124, 45, 18, 0.75);
+}
+
+.rhjp-dash-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  margin: 20px 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.rhjp-dash-stat {
+  background: #ffffff;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 12px;
+  min-width: 0;
+  width: 100%;
+  position: relative;
+  transform: none;
+  filter: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.rhjp-dash-stat-icon {
+  display: inline-flex;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.rhjp-dash-stat-value {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.rhjp-dash-stat-label {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #4b5563;
+  line-height: 1.3;
+}
+
+.rhjp-dash-modules-title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #450a0a;
+}
+
+.rhjp-dash-modules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rhjp-dash-module-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 112px;
+  padding: 12px 8px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  background: #ffffff;
+  color: inherit;
+  cursor: pointer;
+  text-align: center;
+  font: inherit;
+  position: relative;
+  transform: none;
+  filter: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rhjp-dash-module-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.rhjp-dash-module-btn:not(:disabled):active {
+  background-color: #fffbeb;
+}
+
+.rhjp-dash-module-icon {
+  display: inline-flex;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.rhjp-dash-module-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1.25;
+  padding: 0 4px;
+}
+
+.rhjp-dash-module-link {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: #b91c1c;
+  text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .rhjp-dash-stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .rhjp-dash-stat-value {
+    font-size: 22px;
+  }
+
+  .rhjp-dash-modules {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .rhjp-dash-module-btn {
+    min-height: 130px;
+  }
+}

@@ -30,59 +30,6 @@
   }
 }
 
-@layer components {
-  /* Owner portal layout — plain CSS only (no clip/isolate/sticky on mobile) */
-  .rhjp-owner-layout {
-    width: 100%;
-    overflow-x: hidden;
-    background-color: #fffbeb;
-    min-height: 100dvh;
-  }
-
-  .rhjp-owner-header {
-    width: 100%;
-    background-color: #7f1d1d;
-    color: #fff;
-    border-bottom: 1px solid #450a0a;
-  }
-
-  .rhjp-owner-header-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    max-width: 80rem;
-    margin: 0 auto;
-    padding: 0.5rem 0.75rem;
-    min-width: 0;
-  }
-
-  .rhjp-owner-main {
-    width: 100%;
-    max-width: 80rem;
-    margin: 0 auto;
-    padding: 1rem 0.75rem 2rem;
-    box-sizing: border-box;
-  }
-
-  .rhjp-owner-icon-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    flex-shrink: 0;
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    color: rgb(255 255 255 / 0.9);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-  }
-
-  .rhjp-owner-icon-btn:active {
-    background-color: rgb(255 255 255 / 0.12);
-  }
-}
-
 @layer utilities {
   .touch-btn {
     min-height: 56px;

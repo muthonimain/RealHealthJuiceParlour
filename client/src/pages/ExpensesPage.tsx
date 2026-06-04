@@ -315,7 +315,7 @@ export default function ExpensesPage() {
           >
             <ArrowLeft size={20} />
           </button>
-          <HeaderLogo compact className="shrink-0" />
+          <HeaderLogo className="shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-white font-bold text-sm m-0 truncate">Expenses</p>
             <p className={`${theme.headerAccent} text-xs m-0 mt-0.5 truncate`}>

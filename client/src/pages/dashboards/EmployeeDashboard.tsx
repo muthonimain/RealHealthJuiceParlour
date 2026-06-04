@@ -92,7 +92,7 @@ export default function EmployeeDashboard() {
     <div className="min-h-dvh w-full overflow-x-hidden bg-sky-50">
       <header className="w-full bg-sky-800 text-white border-b border-sky-900">
         <div className="flex items-center gap-2 max-w-7xl mx-auto p-3 min-w-0 w-full box-border">
-          <HeaderLogo compact className="shrink-0" />
+          <HeaderLogo className="shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-white font-bold text-sm leading-tight m-0 truncate">
               Real Health Juice Parlour
