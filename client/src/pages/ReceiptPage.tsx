@@ -113,9 +113,24 @@ function ReceiptCopy({
       <hr className="thermal-receipt__rule" />
 
       <footer className="thermal-receipt__footer">
-        <p>Thank you for dining with us!</p>
-        <p>Healing Through Nature</p>
-        <p>Tel: 0729 125 413</p>
+        <p>Nutrition • Juice Therapy • Lifestyle</p>
+        <p>Medicine</p>
+        <p className="thermal-receipt__footer-spacer" aria-hidden="true">
+          &nbsp;
+        </p>
+        <p>Follow us:</p>
+        <p>Real Health Juice Parlour</p>
+        <p className="thermal-receipt__footer-spacer" aria-hidden="true">
+          &nbsp;
+        </p>
+        <p>Orders &amp; Wellness Support:</p>
+        <p>Juice Parlour: 0729 125 413</p>
+        <p>Delivery Team: 0794 650 556</p>
+        <p>Chief Juice Therapist: 0724 228 947</p>
+        <p className="thermal-receipt__footer-spacer" aria-hidden="true">
+          &nbsp;
+        </p>
+        <p className="thermal-receipt__footer-tagline">No Sugar .  No Preservatives  .  100% Natural</p>
       </footer>
     </article>
   )

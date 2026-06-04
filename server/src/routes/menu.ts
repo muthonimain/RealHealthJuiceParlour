@@ -33,11 +33,11 @@ router.get(
   })
 )
 
-const staffOnly = [requireAuth, requireRole('owner', 'employee')]
+const ownerOnly = [requireAuth, requireRole('owner')]
 
 router.post(
   '/categories',
-  ...staffOnly,
+  ...ownerOnly,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { name, emoji } = req.body as { name?: string; emoji?: string }
     if (!name?.trim()) {
@@ -50,7 +50,7 @@ router.post(
 
 router.patch(
   '/categories/:id',
-  ...staffOnly,
+  ...ownerOnly,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const category = await updateCategory(String(req.params.id), req.body)
     if (!category) {
@@ -63,7 +63,7 @@ router.patch(
 
 router.delete(
   '/categories/:id',
-  ...staffOnly,
+  ...ownerOnly,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!(await deleteCategory(String(req.params.id)))) {
       res.status(404).json({ message: 'Category not found' })
@@ -75,7 +75,7 @@ router.delete(
 
 router.post(
   '/categories/:id/items',
-  ...staffOnly,
+  ...ownerOnly,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { name, price, note, section } = req.body as {
       name?: string
@@ -103,7 +103,7 @@ router.post(
 
 router.patch(
   '/categories/:categoryId/items/:itemId',
-  ...staffOnly,
+  ...ownerOnly,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const item = await updateItem(
       String(req.params.categoryId),
@@ -120,7 +120,7 @@ router.patch(
 
 router.delete(
   '/categories/:categoryId/items/:itemId',
-  ...staffOnly,
+  ...ownerOnly,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!(await deleteItem(String(req.params.categoryId), String(req.params.itemId)))) {
       res.status(404).json({ message: 'Item not found' })

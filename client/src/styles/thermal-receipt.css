@@ -124,6 +124,20 @@
   line-height: 1.45;
 }
 
+.thermal-receipt__footer p {
+  margin: 0 0 2px;
+}
+
+.thermal-receipt__footer-spacer {
+  margin: 4px 0 !important;
+  line-height: 0.5;
+}
+
+.thermal-receipt__footer-tagline {
+  margin-top: 6px !important;
+  font-weight: 700;
+}
+
 .thermal-cut {
   margin: 10mm 0;
   padding: 4px 0;
