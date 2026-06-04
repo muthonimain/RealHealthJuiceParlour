@@ -22,9 +22,18 @@ interface Order {
   createdAt: string
 }
 
+type StatCard = {
+  label: string
+  value: string
+  color: string
+  bg: string
+  icon?: LucideIcon
+  kshIcon?: boolean
+}
+
 const modules: {
   label: string
-  icon: React.ComponentType<{ size?: number; className?: string }>
+  icon: LucideIcon
   color: string
   bg: string
   path?: string
@@ -62,8 +71,14 @@ export default function OwnerDashboard() {
   const monthRevenue = sumRevenueForWorkingMonth(orders)
   const monthLabel = workingMonthLabel()
 
-  const stats = [
-    { label: "Today's Revenue", value: `Ksh ${todayRevenue.toLocaleString()}`, icon: DollarSign, color: '#d97706', bg: '#fffbeb' },
+  const stats: StatCard[] = [
+    {
+      label: "Today's Revenue",
+      value: `Ksh ${todayRevenue.toLocaleString()}`,
+      kshIcon: true,
+      color: '#d97706',
+      bg: '#fffbeb',
+    },
     { label: "Today's Orders", value: String(todayOrders.length), icon: ShoppingBag, color: '#16a34a', bg: '#f0fdf4' },
     { label: 'Total Orders', value: String(orders.length), icon: TrendingUp, color: '#9333ea', bg: '#faf5ff' },
     { label: `${monthLabel} revenue`, value: `Ksh ${monthRevenue.toLocaleString()}`, icon: Users, color: '#2563eb', bg: '#eff6ff' },
