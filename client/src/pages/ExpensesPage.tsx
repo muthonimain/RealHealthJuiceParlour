@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, LogOut, Plus, Receipt } from 'lucide-react'
+import { ArrowLeft, LogOut, Plus, Receipt, Pencil, Trash2, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { authFetch, readApiJson } from '../lib/api'
 import { HeaderLogo } from '../components/BrandLogo'
@@ -37,6 +37,11 @@ export default function ExpensesPage() {
   const [moneyOut, setMoneyOut] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editDate, setEditDate] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editAmount, setEditAmount] = useState('')
+  const [actionBusy, setActionBusy] = useState(false)
 
   const loadExpenses = useCallback(async () => {
     try {
@@ -80,6 +85,79 @@ export default function ExpensesPage() {
       cancelled = true
     }
   }, [])
+
+  const startEdit = (exp: Expense) => {
+    setEditingId(exp.id)
+    setEditDate(exp.dateKey)
+    setEditDescription(exp.description)
+    setEditAmount(String(exp.amount))
+    setError('')
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setError('')
+  }
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingId) return
+    setError('')
+    const parsed = Number(editAmount)
+    if (!editDate) {
+      setError('Select a date.')
+      return
+    }
+    if (!editDescription.trim()) {
+      setError('Enter a description.')
+      return
+    }
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setError('Enter money out greater than 0.')
+      return
+    }
+
+    setActionBusy(true)
+    try {
+      const res = await authFetch(`/api/expenses/${editingId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          date: editDate,
+          description: editDescription.trim(),
+          amount: parsed,
+        }),
+      })
+      const data = await readApiJson<{ message?: string }>(res)
+      if (!res.ok) {
+        throw new Error(data.message || 'Could not update expense')
+      }
+      cancelEdit()
+      await loadExpenses()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update expense')
+    } finally {
+      setActionBusy(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this expense record? This cannot be undone.')) return
+    setError('')
+    setActionBusy(true)
+    try {
+      const res = await authFetch(`/api/expenses/${id}`, { method: 'DELETE' })
+      const data = await readApiJson<{ message?: string }>(res)
+      if (!res.ok) {
+        throw new Error(data.message || 'Could not delete expense')
+      }
+      if (editingId === id) cancelEdit()
+      await loadExpenses()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete expense')
+    } finally {
+      setActionBusy(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -223,16 +301,45 @@ export default function ExpensesPage() {
                   key={exp.id}
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
                 >
-                  <div className="flex justify-between gap-2 mb-1">
-                    <span className="font-semibold text-gray-900">{formatDateKey(exp.dateKey)}</span>
-                    <span className="font-bold text-gray-900 tabular-nums">
-                      Ksh {exp.amount.toLocaleString()}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700">{exp.description}</p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    {exp.recordedByName} · {formatTime(exp.createdAt)}
-                  </p>
+                  {editingId === exp.id ? (
+                    <form onSubmit={handleUpdate} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-800">Edit expense</span>
+                        <button
+                          type="button"
+                          onClick={cancelEdit}
+                          className="p-1.5 text-gray-400 hover:text-gray-600"
+                          title="Cancel"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                      {editFormFields}
+                      <button
+                        type="submit"
+                        disabled={actionBusy}
+                        className={`w-full ${btnClass} text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-60`}
+                      >
+                        {actionBusy ? 'Saving…' : 'Save changes'}
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="flex justify-between gap-2 mb-1">
+                        <span className="font-semibold text-gray-900">{formatDateKey(exp.dateKey)}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-900 tabular-nums">
+                            Ksh {exp.amount.toLocaleString()}
+                          </span>
+                          {actionButtons(exp)}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700">{exp.description}</p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        {exp.recordedByName} · {formatTime(exp.createdAt)}
+                      </p>
+                    </>
+                  )}
                 </article>
               ))}
               <div
@@ -252,24 +359,56 @@ export default function ExpensesPage() {
                     <th className={`text-right px-4 py-3 font-semibold ${tableHead}`}>Money out (Ksh)</th>
                     <th className={`text-left px-4 py-3 font-semibold ${tableHead}`}>Recorded by</th>
                     <th className={`text-left px-4 py-3 font-semibold ${tableHead}`}>Time</th>
+                    <th className={`text-center px-4 py-3 font-semibold ${tableHead}`}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {expenses.map((exp) => (
-                    <tr key={exp.id} className="border-b border-gray-50">
-                      <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800">
-                        {formatDateKey(exp.dateKey)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-700 max-w-xs">{exp.description}</td>
-                      <td className="px-4 py-3 text-right font-bold text-gray-900 tabular-nums">
-                        {exp.amount.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{exp.recordedByName}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
-                        {formatTime(exp.createdAt)}
-                      </td>
-                    </tr>
-                  ))}
+                  {expenses.map((exp) =>
+                    editingId === exp.id ? (
+                      <tr key={exp.id} className="border-b border-gray-100 bg-gray-50/80">
+                        <td colSpan={6} className="px-4 py-4">
+                          <form onSubmit={handleUpdate} className="space-y-3 max-w-3xl">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-gray-800">Edit expense</span>
+                              <button
+                                type="button"
+                                onClick={cancelEdit}
+                                className="p-1.5 text-gray-400 hover:text-gray-600"
+                                title="Cancel"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+                            {editFormFields}
+                            <button
+                              type="submit"
+                              disabled={actionBusy}
+                              className={`${btnClass} text-white font-semibold py-2 px-6 rounded-xl text-sm disabled:opacity-60`}
+                            >
+                              {actionBusy ? 'Saving…' : 'Save changes'}
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={exp.id} className="border-b border-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-800">
+                          {formatDateKey(exp.dateKey)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 max-w-xs">{exp.description}</td>
+                        <td className="px-4 py-3 text-right font-bold text-gray-900 tabular-nums">
+                          {exp.amount.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{exp.recordedByName}</td>
+                        <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+                          {formatTime(exp.createdAt)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-center">{actionButtons(exp)}</div>
+                        </td>
+                      </tr>
+                    )
+                  )}
                 </tbody>
                 <tfoot>
                   <tr className={isOwner ? 'bg-amber-50/80' : 'bg-teal-50/80'}>
@@ -279,7 +418,7 @@ export default function ExpensesPage() {
                     <td className="px-4 py-3 text-right font-bold text-gray-900 tabular-nums">
                       {total.toLocaleString()}
                     </td>
-                    <td colSpan={2} />
+                    <td colSpan={3} />
                   </tr>
                 </tfoot>
               </table>

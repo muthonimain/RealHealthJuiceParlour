@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { Printer, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
 import '../styles/thermal-receipt.css'
@@ -139,6 +140,10 @@ function ReceiptCopy({
 export default function ReceiptPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const backPath =
+    user?.role === 'owner' ? '/dashboard/owner/employee-records' : '/dashboard/employee'
+  const backLabel = user?.role === 'owner' ? 'Employee Records' : 'New Order'
   const [order, setOrder] = useState<Order | null>(null)
   const [error, setError] = useState('')
 
@@ -160,10 +165,10 @@ export default function ReceiptPage() {
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center gap-4">
         <p className="text-red-600 font-semibold">{error}</p>
         <button
-          onClick={() => navigate('/dashboard/employee')}
+          onClick={() => navigate(backPath)}
           className="bg-sky-600 text-white rounded-xl px-6 py-3 font-semibold"
         >
-          Back to Menu
+          Back to {backLabel}
         </button>
       </div>
     )
@@ -188,11 +193,11 @@ export default function ReceiptPage() {
           <div className="thermal-screen__toolbar">
             <button
               type="button"
-              onClick={() => navigate('/dashboard/employee')}
+              onClick={() => navigate(backPath)}
               className="flex items-center gap-2 text-white/80 hover:text-white py-2 px-3 rounded-lg"
             >
               <ArrowLeft size={18} />
-              <span className="text-sm">New Order</span>
+              <span className="text-sm">{backLabel}</span>
             </button>
             <button
               type="button"

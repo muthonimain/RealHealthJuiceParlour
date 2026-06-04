@@ -75,7 +75,7 @@ function App() {
             <Route
               path="/receipt/:orderId"
               element={
-                <ProtectedRoute role="employee">
+                <ProtectedRoute role={['owner', 'employee']}>
                   <ReceiptPage />
                 </ProtectedRoute>
               }

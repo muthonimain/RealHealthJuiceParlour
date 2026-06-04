@@ -4,12 +4,13 @@ import type { UserRole } from '../App'
 import type { ReactNode } from 'react'
 
 interface Props {
-  role: UserRole
+  role: UserRole | UserRole[]
   children: ReactNode
 }
 
 export default function ProtectedRoute({ role, children }: Props) {
   const { user, isLoading } = useAuth()
+  const allowed = Array.isArray(role) ? role : [role]
 
   if (isLoading) {
     return (
@@ -19,8 +20,8 @@ export default function ProtectedRoute({ role, children }: Props) {
     )
   }
 
-  if (!user || user.role !== role) {
-    const redirect = role === 'owner' ? '/owner-select' : '/employee-select'
+  if (!user || !allowed.includes(user.role)) {
+    const redirect = allowed.includes('owner') ? '/owner-select' : '/employee-select'
     return <Navigate to={redirect} replace />
   }
 

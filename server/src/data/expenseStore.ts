@@ -89,3 +89,35 @@ export async function createExpense(data: {
   )
   return mapExpense(rows[0])
 }
+
+export async function getExpenseById(id: string): Promise<Expense | undefined> {
+  const { rows } = await pool.query<ExpenseRow>('SELECT * FROM expenses WHERE id = $1', [id])
+  return rows[0] ? mapExpense(rows[0]) : undefined
+}
+
+export async function updateExpense(
+  id: string,
+  data: { description?: string; amount?: number; dateKey?: string }
+): Promise<Expense | undefined> {
+  const existing = await getExpenseById(id)
+  if (!existing) return undefined
+
+  const description = data.description?.trim() ?? existing.description
+  const amount =
+    data.amount !== undefined ? Math.round(Number(data.amount)) : existing.amount
+  const dateKey = data.dateKey ?? existing.dateKey
+
+  if (!description) return undefined
+  if (!Number.isFinite(amount) || amount <= 0) return undefined
+
+  const { rows } = await pool.query<ExpenseRow>(
+    `UPDATE expenses SET date_key = $2::date, description = $3, amount = $4 WHERE id = $1 RETURNING *`,
+    [id, dateKey, description, amount]
+  )
+  return rows[0] ? mapExpense(rows[0]) : undefined
+}
+
+export async function deleteExpense(id: string): Promise<boolean> {
+  const { rowCount } = await pool.query('DELETE FROM expenses WHERE id = $1', [id])
+  return (rowCount ?? 0) > 0
+}

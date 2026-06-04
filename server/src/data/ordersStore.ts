@@ -78,3 +78,54 @@ export async function getOrderById(id: string): Promise<Order | undefined> {
   const { rows } = await pool.query<OrderRow>('SELECT * FROM orders WHERE id = $1', [id])
   return rows[0] ? mapOrder(rows[0]) : undefined
 }
+
+export async function updateOrder(
+  id: string,
+  data: Partial<Omit<Order, 'id'>> & { createdAt?: string }
+): Promise<Order | undefined> {
+  const existing = await getOrderById(id)
+  if (!existing) return undefined
+
+  const items = data.items ?? existing.items
+  const subtotal = data.subtotal ?? existing.subtotal
+  const deliveryIncluded = data.deliveryIncluded ?? existing.deliveryIncluded
+  const deliveryAmount = data.deliveryAmount ?? existing.deliveryAmount
+  const grandTotal = data.grandTotal ?? existing.grandTotal
+  const employeeId = data.employeeId ?? existing.employeeId
+  const employeeName = data.employeeName ?? existing.employeeName
+  const createdAt = data.createdAt ?? existing.createdAt
+
+  if (!employeeName?.trim() || !items?.length) return undefined
+  if (subtotal < 0 || grandTotal < 0 || deliveryAmount < 0) return undefined
+
+  const { rows } = await pool.query<OrderRow>(
+    `UPDATE orders SET
+       employee_id = $2,
+       employee_name = $3,
+       items = $4::jsonb,
+       subtotal = $5,
+       delivery_included = $6,
+       delivery_amount = $7,
+       grand_total = $8,
+       created_at = $9::timestamptz
+     WHERE id = $1
+     RETURNING *`,
+    [
+      id,
+      employeeId ?? '',
+      employeeName.trim(),
+      JSON.stringify(items),
+      subtotal,
+      deliveryIncluded,
+      deliveryAmount,
+      grandTotal,
+      createdAt,
+    ]
+  )
+  return rows[0] ? mapOrder(rows[0]) : undefined
+}
+
+export async function deleteOrder(id: string): Promise<boolean> {
+  const { rowCount } = await pool.query('DELETE FROM orders WHERE id = $1', [id])
+  return (rowCount ?? 0) > 0
+}
