@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Printer, ArrowLeft, Leaf } from 'lucide-react'
+import { Printer, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
+import '../styles/thermal-receipt.css'
 
 interface OrderItem {
   id: string
@@ -31,80 +32,99 @@ function formatDate(iso: string) {
   }
 }
 
-function ReceiptCopy({ order }: { order: Order }) {
+/** Short receipt number — fits 80 mm paper without wrapping */
+function shortReceiptNo(id: string) {
+  if (id.length <= 12) return id
+  return id.slice(-10).toUpperCase()
+}
+
+function ReceiptCopy({
+  order,
+  copyLabel,
+  preview = false,
+}: {
+  order: Order
+  copyLabel?: string
+  preview?: boolean
+}) {
   const { date, time } = formatDate(order.createdAt)
-  const receiptNo = order.id
+  const receiptNo = shortReceiptNo(order.id)
 
   return (
-    <div className="bg-white rounded-2xl p-6 font-mono text-sm max-w-xs mx-auto border border-gray-200">
-      {/* Header */}
-      <div className="text-center mb-4">
-        <div className="flex items-center justify-center gap-1 mb-1">
-          <Leaf size={14} className="text-green-600" />
-        </div>
-        <div className="font-bold text-base uppercase tracking-wide">Real Health Juice Parlour</div>
-        <div className="text-xs text-gray-500 italic">Food is Medicine. Juice is Therapy.</div>
-        <div className="border-t border-dashed border-gray-300 my-2" />
-        <div className="text-xs text-gray-500">Receipt No: {receiptNo}</div>
-        <div className="text-xs text-gray-500">{date} &nbsp; {time}</div>
-        <div className="text-xs text-gray-500">Served by: <span className="font-semibold text-gray-700">{order.employeeName}</span></div>
-      </div>
+    <article
+      className={`thermal-receipt${preview ? ' thermal-receipt--preview' : ''}`}
+      aria-label={copyLabel ?? 'Receipt'}
+    >
+      {copyLabel ? <p className="thermal-receipt__copy-label">{copyLabel}</p> : null}
 
-      <div className="border-t border-dashed border-gray-300 my-3" />
+      <header>
+        <h1 className="thermal-receipt__title">Real Health Juice Parlour</h1>
+        <p className="thermal-receipt__tagline">Food is Medicine. Juice is Therapy.</p>
+      </header>
 
-      {/* Items */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-xs text-gray-400 font-semibold mb-1">
-          <span>ITEM</span>
-          <span>QTY &nbsp; AMOUNT</span>
-        </div>
-        {order.items.map((item) => (
-          <div key={item.id} className="flex justify-between text-xs">
-            <span className="flex-1 pr-2 leading-tight">{item.name}</span>
-            <span className="text-right whitespace-nowrap">
-              x{item.quantity} &nbsp;
-              {item.price === 0 ? 'On req.' : `Ksh ${(item.price * item.quantity).toLocaleString()}`}
-            </span>
-          </div>
-        ))}
-      </div>
+      <hr className="thermal-receipt__rule" />
 
-      <div className="border-t border-dashed border-gray-300 my-3" />
+      <p className="thermal-receipt__meta">Receipt No: {receiptNo}</p>
+      <p className="thermal-receipt__meta">
+        {date} {time}
+      </p>
+      <p className="thermal-receipt__meta">Served by: {order.employeeName}</p>
 
-      {/* Totals */}
-      <div className="space-y-1 text-xs">
-        <div className="flex justify-between">
-          <span className="text-gray-500">Subtotal</span>
+      <hr className="thermal-receipt__rule" />
+
+      <section>
+        {order.items.map((item) => {
+          const lineTotal = item.price * item.quantity
+          const unitLabel = item.price === 0 ? 'On req.' : `Ksh ${item.price.toLocaleString()}`
+          const totalLabel = item.price === 0 ? 'On req.' : `Ksh ${lineTotal.toLocaleString()}`
+
+          return (
+            <div key={item.id} className="thermal-receipt__item">
+              <p className="thermal-receipt__item-name">{item.name}</p>
+              <p className="thermal-receipt__item-row">
+                <span>
+                  {unitLabel} <span>×{item.quantity}</span>
+                </span>
+                <strong>Total {totalLabel}</strong>
+              </p>
+            </div>
+          )
+        })}
+      </section>
+
+      <hr className="thermal-receipt__rule" />
+
+      <section>
+        <p className="thermal-receipt__total-row">
+          <span>Subtotal</span>
           <span>Ksh {order.subtotal.toLocaleString()}</span>
-        </div>
-        {order.deliveryIncluded && (
+        </p>
+        {order.deliveryIncluded ? (
           <>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Delivery</span>
+            <p className="thermal-receipt__total-row">
+              <span>Delivery</span>
               <span>Ksh 50</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Packaging</span>
+            </p>
+            <p className="thermal-receipt__total-row">
+              <span>Packaging</span>
               <span>Ksh 30</span>
-            </div>
+            </p>
           </>
-        )}
-        <div className="border-t border-dashed border-gray-300 pt-1 mt-1" />
-        <div className="flex justify-between font-bold text-base">
+        ) : null}
+        <p className="thermal-receipt__grand-total">
           <span>TOTAL</span>
           <span>Ksh {order.grandTotal.toLocaleString()}</span>
-        </div>
-      </div>
+        </p>
+      </section>
 
-      <div className="border-t border-dashed border-gray-300 my-3" />
+      <hr className="thermal-receipt__rule" />
 
-      {/* Footer */}
-      <div className="text-center text-xs text-gray-500 space-y-0.5">
-        <div>Thank you for dining with us!</div>
-        <div>Healing Through Nature</div>
-        <div className="mt-1">Tel: 0729 125 413</div>
-      </div>
-    </div>
+      <footer className="thermal-receipt__footer">
+        <p>Thank you for dining with us!</p>
+        <p>Healing Through Nature</p>
+        <p>Tel: 0729 125 413</p>
+      </footer>
+    </article>
   )
 }
 
@@ -131,8 +151,10 @@ export default function ReceiptPage() {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center gap-4">
         <p className="text-red-600 font-semibold">{error}</p>
-        <button onClick={() => navigate('/dashboard/employee')}
-          className="bg-sky-600 text-white rounded-xl px-6 py-3 font-semibold">
+        <button
+          onClick={() => navigate('/dashboard/employee')}
+          className="bg-sky-600 text-white rounded-xl px-6 py-3 font-semibold"
+        >
           Back to Menu
         </button>
       </div>
@@ -149,65 +171,47 @@ export default function ReceiptPage() {
 
   return (
     <>
-      {/* Screen view */}
-      <div className="min-h-screen bg-gradient-to-br from-sky-950 to-blue-900 flex flex-col items-center py-8 px-4 print:hidden">
+      <div className="thermal-screen print:hidden">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md"
+          className="thermal-screen__preview-wrap"
         >
-          {/* Top bar */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="thermal-screen__toolbar">
             <button
+              type="button"
               onClick={() => navigate('/dashboard/employee')}
-              className="flex items-center gap-2 text-white/70 hover:text-white transition-colors py-2 px-3 rounded-xl hover:bg-white/10"
+              className="flex items-center gap-2 text-white/80 hover:text-white py-2 px-3 rounded-lg"
             >
               <ArrowLeft size={18} />
               <span className="text-sm">New Order</span>
             </button>
             <button
+              type="button"
               onClick={handlePrint}
-              className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl px-5 py-2.5 transition-all"
+              className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl px-4 py-2.5 text-sm"
             >
               <Printer size={18} />
-              Print
+              Print (80mm)
             </button>
           </div>
 
-          <p className="text-sky-300 text-center text-sm mb-5 font-medium uppercase tracking-widest">
-            Receipt Preview — 2 Copies
-          </p>
+          <p className="thermal-screen__hint">Thermal preview — 80 mm roll, 2 copies</p>
 
-          {/* Copy 1 */}
-          <div className="mb-4">
-            <p className="text-xs text-sky-400 text-center mb-2 uppercase tracking-widest">Customer Copy</p>
-            <ReceiptCopy order={order} />
-          </div>
+          <p className="thermal-screen__copy-title">Customer copy</p>
+          <ReceiptCopy order={order} copyLabel="Customer copy" preview />
 
-          {/* Cut line */}
-          <div className="flex items-center gap-2 my-4 px-4">
-            <div className="flex-1 border-t-2 border-dashed border-sky-700" />
-            <span className="text-sky-600 text-xs font-mono">✂ CUT HERE ✂</span>
-            <div className="flex-1 border-t-2 border-dashed border-sky-700" />
-          </div>
+          <div className="thermal-cut print:hidden my-6">— CUT HERE —</div>
 
-          {/* Copy 2 */}
-          <div>
-            <p className="text-xs text-sky-400 text-center mb-2 uppercase tracking-widest">Kitchen / Records Copy</p>
-            <ReceiptCopy order={order} />
-          </div>
+          <p className="thermal-screen__copy-title mt-6">Kitchen / records copy</p>
+          <ReceiptCopy order={order} copyLabel="Kitchen copy" preview />
         </motion.div>
       </div>
 
-      {/* Print-only layout — 2 receipts on paper */}
-      <div className="hidden print:block">
-        <div style={{ fontFamily: 'Courier New, monospace', fontSize: '12px', width: '280px', margin: '0 auto', padding: '8px' }}>
-          <ReceiptCopy order={order} />
-          <div style={{ borderTop: '2px dashed #999', margin: '16px 0', textAlign: 'center', fontSize: '10px', color: '#999', paddingTop: '4px' }}>
-            ✂ CUT HERE ✂
-          </div>
-          <ReceiptCopy order={order} />
-        </div>
+      <div className="thermal-print-root" aria-hidden>
+        <ReceiptCopy order={order} copyLabel="Customer copy" />
+        <div className="thermal-cut">— CUT HERE —</div>
+        <ReceiptCopy order={order} copyLabel="Kitchen copy" />
       </div>
     </>
   )
