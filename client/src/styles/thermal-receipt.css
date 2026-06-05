@@ -6,7 +6,7 @@
   --thermal-paper: 80mm;
   /* 68 mm: wider text on 80 mm roll while staying inside printable area. */
   --thermal-content: 68mm;
-  --thermal-font: 'Courier New', Courier, 'Liberation Mono', monospace;
+  --thermal-font: Verdana, Geneva, Tahoma, sans-serif;
 }
 
 .thermal-receipt {

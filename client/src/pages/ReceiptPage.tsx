@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Printer, ArrowLeft } from 'lucide-react'
@@ -154,8 +155,9 @@ export default function ReceiptPage() {
   const backLabel = user?.role === 'owner' ? 'Employee Records' : 'New Order'
   const [order, setOrder] = useState<Order | null>(null)
   const [error, setError] = useState('')
-  const [printing, setPrinting] = useState(false)
   const [printCopy, setPrintCopy] = useState<'customer' | 'kitchen' | null>(null)
+  const [awaitingKitchen, setAwaitingKitchen] = useState(false)
+  const printPendingRef = useRef(false)
   const printStepRef = useRef<'customer' | 'kitchen' | null>(null)
 
   useEffect(() => {
@@ -169,17 +171,29 @@ export default function ReceiptPage() {
       .catch(() => setError('Could not load receipt. The order may not exist.'))
   }, [orderId])
 
+  const queuePrint = (copy: 'customer' | 'kitchen') => {
+    printStepRef.current = copy
+    printPendingRef.current = true
+    flushSync(() => setPrintCopy(copy))
+  }
+
+  useLayoutEffect(() => {
+    if (!printPendingRef.current || !printCopy) return
+    printPendingRef.current = false
+    window.print()
+  }, [printCopy])
+
   useEffect(() => {
     const onAfterPrint = () => {
       if (printStepRef.current === 'customer') {
-        printStepRef.current = 'kitchen'
-        setPrintCopy('kitchen')
-        window.setTimeout(() => window.print(), 150)
+        printStepRef.current = null
+        flushSync(() => setPrintCopy(null))
+        setAwaitingKitchen(true)
         return
       }
       printStepRef.current = null
       setPrintCopy(null)
-      setPrinting(false)
+      setAwaitingKitchen(false)
     }
 
     window.addEventListener('afterprint', onAfterPrint)
@@ -187,12 +201,16 @@ export default function ReceiptPage() {
   }, [])
 
   const handlePrint = () => {
-    if (printing) return
-    setPrinting(true)
-    printStepRef.current = 'customer'
-    setPrintCopy('customer')
-    window.setTimeout(() => window.print(), 150)
+    if (printCopy) return
+    if (awaitingKitchen) {
+      queuePrint('kitchen')
+      return
+    }
+    setAwaitingKitchen(false)
+    queuePrint('customer')
   }
+
+  const printing = printCopy !== null
 
   if (error) {
     return (
@@ -237,10 +255,18 @@ export default function ReceiptPage() {
               type="button"
               onClick={handlePrint}
               disabled={printing}
-              className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl px-4 py-2.5 text-sm disabled:opacity-60"
+              className={`flex items-center gap-2 text-white font-bold rounded-xl px-4 py-2.5 text-sm disabled:opacity-60 ${
+                awaitingKitchen
+                  ? 'bg-amber-500 hover:bg-amber-400 animate-pulse'
+                  : 'bg-sky-500 hover:bg-sky-400'
+              }`}
             >
               <Printer size={18} />
-              {printing ? 'Printing…' : 'Print (80mm)'}
+              {printing
+                ? 'Printing…'
+                : awaitingKitchen
+                  ? 'Print kitchen copy'
+                  : 'Print (80mm)'}
             </button>
           </div>
 
@@ -249,7 +275,9 @@ export default function ReceiptPage() {
               ? printCopy === 'kitchen'
                 ? 'Printing kitchen copy…'
                 : 'Printing customer copy…'
-              : 'Prints 2 separate slips — customer, then kitchen'}
+              : awaitingKitchen
+                ? 'Customer copy done — tap the button above for kitchen copy'
+                : 'Prints 2 separate slips — customer, then kitchen'}
           </p>
 
           <p className="thermal-screen__copy-title">Customer copy</p>
