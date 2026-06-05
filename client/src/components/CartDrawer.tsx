@@ -152,13 +152,23 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
   const navigate = useNavigate()
   const [deliveryFee, setDeliveryFee] = useState<DeliveryOption | null>(null)
   const [packagingFee, setPackagingFee] = useState<PackagingOption | null>(null)
+  const [specialDeliveryOpen, setSpecialDeliveryOpen] = useState(false)
+  const [specialDeliveryFee, setSpecialDeliveryFee] = useState<SpecialDeliveryOption | null>(null)
+  const [boxAndTapes, setBoxAndTapes] = useState(false)
   const [includePaybill, setIncludePaybill] = useState(false)
   const [error, setError] = useState('')
 
   const deliveryAmount = deliveryFee ?? 0
   const packagingAmount = packagingFee ?? 0
-  const hasExtras = deliveryAmount > 0 || packagingAmount > 0
-  const grandTotal = totalPrice + deliveryAmount + packagingAmount
+  const specialDeliveryAmount = specialDeliveryOpen ? (specialDeliveryFee ?? 0) : 0
+  const boxAndTapesAmount = boxAndTapes ? BOX_AND_TAPES_AMOUNT : 0
+  const hasExtras =
+    deliveryAmount > 0 ||
+    packagingAmount > 0 ||
+    specialDeliveryAmount > 0 ||
+    boxAndTapesAmount > 0
+  const grandTotal =
+    totalPrice + deliveryAmount + packagingAmount + specialDeliveryAmount + boxAndTapesAmount
 
   const toggleDelivery = (amount: DeliveryOption) => {
     setDeliveryFee((prev) => (prev === amount ? null : amount))
