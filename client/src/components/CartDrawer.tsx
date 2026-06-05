@@ -276,14 +276,16 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => {
                     clearCart()
                     setDeliveryFee(null)
                     setPackagingFee(null)
                     setIncludePaybill(false)
                   }}
-                  className="w-full text-sm text-gray-400 hover:text-red-500 py-2 transition-colors"
+                  className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-base rounded-2xl py-3.5 transition-all flex items-center justify-center gap-2 border-2 border-red-700"
                 >
+                  <Trash2 size={18} />
                   Clear Order
                 </button>
               </div>
