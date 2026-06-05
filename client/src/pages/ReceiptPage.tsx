@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Printer, ArrowLeft } from 'lucide-react'
@@ -145,6 +145,9 @@ export default function ReceiptPage() {
   const backLabel = user?.role === 'owner' ? 'Employee Records' : 'New Order'
   const [order, setOrder] = useState<Order | null>(null)
   const [error, setError] = useState('')
+  const [printing, setPrinting] = useState(false)
+  const [printCopy, setPrintCopy] = useState<'customer' | 'kitchen' | null>(null)
+  const printStepRef = useRef<'customer' | 'kitchen' | null>(null)
 
   useEffect(() => {
     if (!orderId) return
@@ -157,7 +160,30 @@ export default function ReceiptPage() {
       .catch(() => setError('Could not load receipt. The order may not exist.'))
   }, [orderId])
 
-  const handlePrint = () => window.print()
+  useEffect(() => {
+    const onAfterPrint = () => {
+      if (printStepRef.current === 'customer') {
+        printStepRef.current = 'kitchen'
+        setPrintCopy('kitchen')
+        window.setTimeout(() => window.print(), 150)
+        return
+      }
+      printStepRef.current = null
+      setPrintCopy(null)
+      setPrinting(false)
+    }
+
+    window.addEventListener('afterprint', onAfterPrint)
+    return () => window.removeEventListener('afterprint', onAfterPrint)
+  }, [])
+
+  const handlePrint = () => {
+    if (printing) return
+    setPrinting(true)
+    printStepRef.current = 'customer'
+    setPrintCopy('customer')
+    window.setTimeout(() => window.print(), 150)
+  }
 
   if (error) {
     return (
@@ -201,14 +227,21 @@ export default function ReceiptPage() {
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl px-4 py-2.5 text-sm"
+              disabled={printing}
+              className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl px-4 py-2.5 text-sm disabled:opacity-60"
             >
               <Printer size={18} />
-              Print (80mm)
+              {printing ? 'Printing…' : 'Print (80mm)'}
             </button>
           </div>
 
-          <p className="thermal-screen__hint">Thermal preview — 80 mm roll, 2 copies</p>
+          <p className="thermal-screen__hint">
+            {printing
+              ? printCopy === 'kitchen'
+                ? 'Printing kitchen copy…'
+                : 'Printing customer copy…'
+              : 'Prints 2 separate slips — customer, then kitchen'}
+          </p>
 
           <p className="thermal-screen__copy-title">Customer copy</p>
           <ReceiptCopy order={order} copyLabel="Customer copy" preview />
@@ -220,14 +253,14 @@ export default function ReceiptPage() {
         </motion.div>
       </div>
 
-      <div className="thermal-print-root" aria-hidden>
-        <div className="thermal-print-sheet">
-          <ReceiptCopy order={order} copyLabel="Customer copy" />
+      {printCopy ? (
+        <div className="thermal-print-root" aria-hidden>
+          <ReceiptCopy
+            order={order}
+            copyLabel={printCopy === 'customer' ? 'Customer copy' : 'Kitchen copy'}
+          />
         </div>
-        <div className="thermal-print-sheet thermal-print-sheet--last">
-          <ReceiptCopy order={order} copyLabel="Kitchen copy" />
-        </div>
-      </div>
+      ) : null}
     </>
   )
 }
