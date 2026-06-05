@@ -18,6 +18,8 @@ export interface Order {
   deliveryIncluded: boolean
   deliveryAmount: number
   packagingAmount: number
+  specialDeliveryAmount: number
+  boxAndTapesAmount: number
   includePaybill: boolean
   grandTotal: number
   createdAt: string
@@ -32,6 +34,8 @@ interface OrderRow {
   delivery_included: boolean
   delivery_amount: number
   packaging_amount: number
+  special_delivery_amount: number
+  box_and_tapes_amount: number
   include_paybill: boolean
   grand_total: number
   created_at: Date
@@ -47,6 +51,8 @@ function mapOrder(row: OrderRow): Order {
     deliveryIncluded: row.delivery_included,
     deliveryAmount: row.delivery_amount,
     packagingAmount: row.packaging_amount ?? 0,
+    specialDeliveryAmount: row.special_delivery_amount ?? 0,
+    boxAndTapesAmount: row.box_and_tapes_amount ?? 0,
     includePaybill: row.include_paybill ?? false,
     grandTotal: row.grand_total,
     createdAt: new Date(row.created_at).toISOString(),
@@ -71,11 +77,11 @@ export async function createOrder(
   const generatedAt = resolveGeneratedAt(data.generatedAt)
   const { rows } = await pool.query<OrderRow>(
     generatedAt
-      ? `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, packaging_amount, include_paybill, grand_total, created_at)
-         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11::timestamptz)
+      ? `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, packaging_amount, special_delivery_amount, box_and_tapes_amount, include_paybill, grand_total, created_at)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz)
          RETURNING *`
-      : `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, packaging_amount, include_paybill, grand_total)
-         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10)
+      : `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, packaging_amount, special_delivery_amount, box_and_tapes_amount, include_paybill, grand_total)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12)
          RETURNING *`,
     generatedAt
       ? [
@@ -87,6 +93,8 @@ export async function createOrder(
           data.deliveryIncluded,
           data.deliveryAmount,
           data.packagingAmount ?? 0,
+          data.specialDeliveryAmount ?? 0,
+          data.boxAndTapesAmount ?? 0,
           data.includePaybill ?? false,
           data.grandTotal,
           generatedAt,
@@ -100,6 +108,8 @@ export async function createOrder(
           data.deliveryIncluded,
           data.deliveryAmount,
           data.packagingAmount ?? 0,
+          data.specialDeliveryAmount ?? 0,
+          data.boxAndTapesAmount ?? 0,
           data.includePaybill ?? false,
           data.grandTotal,
         ]
@@ -131,6 +141,8 @@ export async function updateOrder(
   const deliveryIncluded = data.deliveryIncluded ?? existing.deliveryIncluded
   const deliveryAmount = data.deliveryAmount ?? existing.deliveryAmount
   const packagingAmount = data.packagingAmount ?? existing.packagingAmount
+  const specialDeliveryAmount = data.specialDeliveryAmount ?? existing.specialDeliveryAmount
+  const boxAndTapesAmount = data.boxAndTapesAmount ?? existing.boxAndTapesAmount
   const includePaybill = data.includePaybill ?? existing.includePaybill
   const grandTotal = data.grandTotal ?? existing.grandTotal
   const employeeId = data.employeeId ?? existing.employeeId
@@ -138,7 +150,16 @@ export async function updateOrder(
   const createdAt = data.createdAt ?? existing.createdAt
 
   if (!employeeName?.trim() || !items?.length) return undefined
-  if (subtotal < 0 || grandTotal < 0 || deliveryAmount < 0 || packagingAmount < 0) return undefined
+  if (
+    subtotal < 0 ||
+    grandTotal < 0 ||
+    deliveryAmount < 0 ||
+    packagingAmount < 0 ||
+    specialDeliveryAmount < 0 ||
+    boxAndTapesAmount < 0
+  ) {
+    return undefined
+  }
 
   const { rows } = await pool.query<OrderRow>(
     `UPDATE orders SET
@@ -149,9 +170,11 @@ export async function updateOrder(
        delivery_included = $6,
        delivery_amount = $7,
        packaging_amount = $8,
-       include_paybill = $9,
-       grand_total = $10,
-       created_at = $11::timestamptz
+       special_delivery_amount = $9,
+       box_and_tapes_amount = $10,
+       include_paybill = $11,
+       grand_total = $12,
+       created_at = $13::timestamptz
      WHERE id = $1
      RETURNING *`,
     [
@@ -163,6 +186,8 @@ export async function updateOrder(
       deliveryIncluded,
       deliveryAmount,
       packagingAmount,
+      specialDeliveryAmount,
+      boxAndTapesAmount,
       includePaybill,
       grandTotal,
       createdAt,

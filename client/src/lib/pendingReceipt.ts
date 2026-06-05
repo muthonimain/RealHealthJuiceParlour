@@ -11,6 +11,8 @@ export interface PendingReceiptPayload {
   deliveryIncluded: boolean
   deliveryAmount: number
   packagingAmount: number
+  specialDeliveryAmount: number
+  boxAndTapesAmount: number
   includePaybill: boolean
   grandTotal: number
 }
@@ -24,6 +26,8 @@ export interface ReceiptPreviewOrder {
   deliveryIncluded: boolean
   deliveryAmount: number
   packagingAmount: number
+  specialDeliveryAmount: number
+  boxAndTapesAmount: number
   includePaybill: boolean
   grandTotal: number
   createdAt: string
@@ -59,6 +63,8 @@ export function pendingToPreviewOrder(payload: PendingReceiptPayload): ReceiptPr
     deliveryIncluded: payload.deliveryIncluded,
     deliveryAmount: payload.deliveryAmount,
     packagingAmount: payload.packagingAmount,
+    specialDeliveryAmount: payload.specialDeliveryAmount,
+    boxAndTapesAmount: payload.boxAndTapesAmount,
     includePaybill: payload.includePaybill,
     grandTotal: payload.grandTotal,
     createdAt: new Date().toISOString(),

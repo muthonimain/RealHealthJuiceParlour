@@ -46,6 +46,8 @@ router.post(
       deliveryIncluded,
       deliveryAmount,
       packagingAmount,
+      specialDeliveryAmount,
+      boxAndTapesAmount,
       includePaybill,
       grandTotal,
       generatedAt,
@@ -57,6 +59,8 @@ router.post(
       deliveryIncluded: boolean
       deliveryAmount: number
       packagingAmount?: number
+      specialDeliveryAmount?: number
+      boxAndTapesAmount?: number
       includePaybill?: boolean
       grandTotal: number
       generatedAt?: string
@@ -75,6 +79,8 @@ router.post(
       deliveryIncluded,
       deliveryAmount,
       packagingAmount: packagingAmount ?? 0,
+      specialDeliveryAmount: specialDeliveryAmount ?? 0,
+      boxAndTapesAmount: boxAndTapesAmount ?? 0,
       includePaybill: includePaybill ?? false,
       grandTotal,
       generatedAt,
@@ -128,6 +134,8 @@ router.patch(
       deliveryIncluded?: boolean
       deliveryAmount?: number
       packagingAmount?: number
+      specialDeliveryAmount?: number
+      boxAndTapesAmount?: number
       includePaybill?: boolean
       grandTotal?: number
       createdAt?: string
@@ -175,6 +183,8 @@ router.patch(
       deliveryIncluded: body.deliveryIncluded,
       deliveryAmount,
       packagingAmount,
+      specialDeliveryAmount: body.specialDeliveryAmount,
+      boxAndTapesAmount: body.boxAndTapesAmount,
       includePaybill: body.includePaybill,
       grandTotal,
       createdAt: body.createdAt,

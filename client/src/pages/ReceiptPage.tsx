@@ -32,6 +32,8 @@ interface Order {
   deliveryIncluded: boolean
   deliveryAmount: number
   packagingAmount?: number
+  specialDeliveryAmount?: number
+  boxAndTapesAmount?: number
   includePaybill?: boolean
   grandTotal: number
   createdAt: string
@@ -126,6 +128,28 @@ function ReceiptCopy({
             </p>
             <p className="thermal-receipt__item-total">
               Total Ksh {(order.packagingAmount ?? 0).toLocaleString()}
+            </p>
+          </div>
+        ) : null}
+        {(order.specialDeliveryAmount ?? 0) > 0 ? (
+          <div className="thermal-receipt__item">
+            <p className="thermal-receipt__item-name">Special Delivery</p>
+            <p className="thermal-receipt__item-unit">
+              Ksh {(order.specialDeliveryAmount ?? 0).toLocaleString()} ×1
+            </p>
+            <p className="thermal-receipt__item-total">
+              Total Ksh {(order.specialDeliveryAmount ?? 0).toLocaleString()}
+            </p>
+          </div>
+        ) : null}
+        {(order.boxAndTapesAmount ?? 0) > 0 ? (
+          <div className="thermal-receipt__item">
+            <p className="thermal-receipt__item-name">Box and Tapes</p>
+            <p className="thermal-receipt__item-unit">
+              Ksh {(order.boxAndTapesAmount ?? 0).toLocaleString()} ×1
+            </p>
+            <p className="thermal-receipt__item-total">
+              Total Ksh {(order.boxAndTapesAmount ?? 0).toLocaleString()}
             </p>
           </div>
         ) : null}

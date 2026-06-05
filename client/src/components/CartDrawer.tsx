@@ -9,10 +9,13 @@ import { savePendingReceipt, PENDING_RECEIPT_ROUTE_ID } from '../lib/pendingRece
 import {
   DELIVERY_OPTIONS,
   PACKAGING_OPTIONS,
+  SPECIAL_DELIVERY_OPTIONS,
+  BOX_AND_TAPES_AMOUNT,
   DELIVERY_PAYBILL,
   DELIVERY_ACCOUNT,
   type DeliveryOption,
   type PackagingOption,
+  type SpecialDeliveryOption,
 } from '../constants/orderFees'
 
 interface Props {
@@ -73,6 +76,76 @@ function FeeCheckboxRow({
   )
 }
 
+function SpecialDeliveriesSection({
+  specialDeliveryOpen,
+  onSpecialDeliveryOpenChange,
+  specialDeliveryFee,
+  onSpecialDeliverySelect,
+  boxAndTapes,
+  onBoxAndTapesChange,
+}: {
+  specialDeliveryOpen: boolean
+  onSpecialDeliveryOpenChange: (open: boolean) => void
+  specialDeliveryFee: SpecialDeliveryOption | null
+  onSpecialDeliverySelect: (amount: SpecialDeliveryOption) => void
+  boxAndTapes: boolean
+  onBoxAndTapesChange: (checked: boolean) => void
+}) {
+  return (
+    <div className="bg-violet-50 border border-violet-200 rounded-2xl px-4 py-3 space-y-3">
+      <p className="text-sm font-bold text-violet-900">Special Deliveries</p>
+
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={specialDeliveryOpen}
+            onChange={(e) => onSpecialDeliveryOpenChange(e.target.checked)}
+            className="w-4 h-4 accent-violet-600 cursor-pointer"
+          />
+          <span className="text-sm font-semibold text-gray-800">Special Delivery</span>
+        </label>
+        {specialDeliveryOpen ? (
+          <div className="flex flex-wrap gap-2 pl-6">
+            {SPECIAL_DELIVERY_OPTIONS.map((amount) => {
+              const checked = specialDeliveryFee === amount
+              return (
+                <label
+                  key={amount}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer select-none text-sm font-semibold transition-colors ${
+                    checked
+                      ? 'bg-violet-600 border-violet-600 text-white'
+                      : 'bg-white border-violet-200 text-gray-700 hover:bg-violet-100'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => onSpecialDeliverySelect(amount)}
+                    className="w-4 h-4 accent-violet-600 cursor-pointer"
+                  />
+                  Ksh {amount}
+                </label>
+              )
+            })}
+          </div>
+        ) : null}
+      </div>
+
+      <label className="flex items-center gap-2 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={boxAndTapes}
+          onChange={(e) => onBoxAndTapesChange(e.target.checked)}
+          className="w-4 h-4 accent-violet-600 cursor-pointer"
+        />
+        <span className="text-sm font-semibold text-gray-800">Box and Tapes</span>
+        <span className="text-sm font-bold text-violet-800">Ksh {BOX_AND_TAPES_AMOUNT}</span>
+      </label>
+    </div>
+  )
+}
+
 export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Props) {
   const { items, totalItems, totalPrice, increment, decrement, removeItem, clearCart } = useCart()
   const { user } = useAuth()
@@ -95,11 +168,20 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
     setPackagingFee((prev) => (prev === amount ? null : amount))
   }
 
+  const toggleSpecialDelivery = (amount: SpecialDeliveryOption) => {
+    setSpecialDeliveryFee((prev) => (prev === amount ? null : amount))
+  }
+
+  const handleSpecialDeliveryOpenChange = (open: boolean) => {
+    setSpecialDeliveryOpen(open)
+    if (!open) setSpecialDeliveryFee(null)
+  }
+
   useEffect(() => {
-    if (deliveryAmount > 0) {
+    if (deliveryAmount > 0 || specialDeliveryAmount > 0) {
       setIncludePaybill(true)
     }
-  }, [deliveryAmount])
+  }, [deliveryAmount, specialDeliveryAmount])
 
   const handleGenerateReceipt = () => {
     setError('')
@@ -111,12 +193,17 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
       deliveryIncluded: hasExtras,
       deliveryAmount,
       packagingAmount,
+      specialDeliveryAmount,
+      boxAndTapesAmount,
       includePaybill,
       grandTotal,
     })
     clearCart()
     setDeliveryFee(null)
     setPackagingFee(null)
+    setSpecialDeliveryOpen(false)
+    setSpecialDeliveryFee(null)
+    setBoxAndTapes(false)
     setIncludePaybill(false)
     onClose()
     navigate(`/receipt/${PENDING_RECEIPT_ROUTE_ID}`)
@@ -222,6 +309,15 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                   onSelect={(amount) => togglePackaging(amount as PackagingOption)}
                 />
 
+                <SpecialDeliveriesSection
+                  specialDeliveryOpen={specialDeliveryOpen}
+                  onSpecialDeliveryOpenChange={handleSpecialDeliveryOpenChange}
+                  specialDeliveryFee={specialDeliveryFee}
+                  onSpecialDeliverySelect={toggleSpecialDelivery}
+                  boxAndTapes={boxAndTapes}
+                  onBoxAndTapesChange={setBoxAndTapes}
+                />
+
                 <label className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -257,6 +353,18 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                       <span>Ksh {packagingAmount.toLocaleString()}</span>
                     </div>
                   )}
+                  {specialDeliveryAmount > 0 && (
+                    <div className="flex justify-between text-sm text-violet-700">
+                      <span>Special Delivery</span>
+                      <span>Ksh {specialDeliveryAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {boxAndTapesAmount > 0 && (
+                    <div className="flex justify-between text-sm text-violet-700">
+                      <span>Box and Tapes</span>
+                      <span>Ksh {boxAndTapesAmount.toLocaleString()}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center pt-1 border-t border-gray-100">
                     <span className="font-semibold text-gray-700">Grand Total</span>
                     <span className="text-2xl font-bold text-gray-900">
@@ -281,6 +389,9 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                     clearCart()
                     setDeliveryFee(null)
                     setPackagingFee(null)
+                    setSpecialDeliveryOpen(false)
+                    setSpecialDeliveryFee(null)
+                    setBoxAndTapes(false)
                     setIncludePaybill(false)
                   }}
                   className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-base rounded-2xl py-3.5 transition-all flex items-center justify-center gap-2 border-2 border-red-700"
