@@ -139,9 +139,9 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="fixed right-0 top-0 h-full w-full max-w-sm bg-white z-50 flex flex-col shadow-2xl"
+            className="fixed right-0 top-0 bottom-0 w-full max-w-sm bg-white z-50 flex flex-col min-h-0 max-h-dvh shadow-2xl"
           >
-            <div className="bg-sky-700 px-5 py-4 flex items-center justify-between">
+            <div className="shrink-0 bg-sky-700 px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2 text-white font-bold text-lg">
                 <ShoppingCart size={22} />
                 Print Order ({totalItems} {totalItems === 1 ? 'item' : 'items'})
@@ -155,9 +155,10 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+              <div className="p-4 space-y-3">
               {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+                <div className="flex flex-col items-center justify-center min-h-[12rem] text-gray-400 gap-3">
                   <ShoppingCart size={48} className="opacity-30" />
                   <p className="text-sm">No items added yet</p>
                 </div>
@@ -202,10 +203,10 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                   </div>
                 ))
               )}
-            </div>
+              </div>
 
             {items.length > 0 && (
-              <div className="border-t border-gray-100 p-4 space-y-3">
+              <div className="border-t border-gray-100 p-4 pb-6 space-y-3">
                 <FeeCheckboxRow
                   label="Delivery"
                   icon={Truck}
@@ -287,6 +288,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                 </button>
               </div>
             )}
+            </div>
           </motion.div>
         </>
       )}
