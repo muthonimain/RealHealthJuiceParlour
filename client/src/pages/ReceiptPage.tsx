@@ -36,12 +36,16 @@ function formatGeneratedAt(iso: string) {
     year: 'numeric',
     timeZone: RECEIPT_TIMEZONE,
   })
-  const time = d.toLocaleTimeString('en-KE', {
-    hour: '2-digit',
+  const parts = new Intl.DateTimeFormat('en-KE', {
+    hour: 'numeric',
     minute: '2-digit',
-    second: '2-digit',
+    hour12: true,
     timeZone: RECEIPT_TIMEZONE,
-  })
+  }).formatToParts(d)
+  const hour = parts.find((p) => p.type === 'hour')?.value ?? ''
+  const minute = parts.find((p) => p.type === 'minute')?.value ?? ''
+  const dayPeriod = (parts.find((p) => p.type === 'dayPeriod')?.value ?? '').toLowerCase()
+  const time = `${hour}:${minute}${dayPeriod}`
   return `${date} ${time}`
 }
 

@@ -4,8 +4,8 @@
  */
 :root {
   --thermal-paper: 80mm;
-  /* 68 mm: wider text on 80 mm roll while staying inside printable area. */
-  --thermal-content: 68mm;
+  /* 72 mm, left-aligned — uses roll width without crowding prices on the right. */
+  --thermal-content: 72mm;
   --thermal-font: Verdana, Geneva, Tahoma, sans-serif;
 }
 
@@ -13,8 +13,8 @@
   box-sizing: border-box;
   width: var(--thermal-content);
   max-width: 100%;
-  margin: 0 auto;
-  padding: 3mm 1mm;
+  margin: 0;
+  padding: 2mm 3mm 2mm 0;
   font-family: var(--thermal-font);
   font-size: 14px;
   font-weight: 700;
@@ -261,8 +261,8 @@
   .thermal-receipt {
     width: var(--thermal-content);
     max-width: var(--thermal-content);
-    margin: 0 auto;
-    padding: 2mm 1mm;
+    margin: 0 !important;
+    padding: 2mm 4mm 2mm 0 !important;
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
