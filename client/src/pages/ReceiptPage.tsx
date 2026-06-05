@@ -12,7 +12,11 @@ import {
 } from '../lib/pendingReceipt'
 import { Printer, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { DELIVERY_PAYBILL, DELIVERY_ACCOUNT } from '../constants/orderFees'
+import {
+  DELIVERY_PAYBILL,
+  DELIVERY_ACCOUNT,
+  SPECIAL_DELIVERY_RECEIPT_LABEL,
+} from '../constants/orderFees'
 import '../styles/thermal-receipt.css'
 
 interface OrderItem {
@@ -133,7 +137,7 @@ function ReceiptCopy({
         ) : null}
         {(order.specialDeliveryAmount ?? 0) > 0 ? (
           <div className="thermal-receipt__item">
-            <p className="thermal-receipt__item-name">Special Delivery</p>
+            <p className="thermal-receipt__item-name">{SPECIAL_DELIVERY_RECEIPT_LABEL}</p>
             <p className="thermal-receipt__item-unit">
               Ksh {(order.specialDeliveryAmount ?? 0).toLocaleString()} ×1
             </p>

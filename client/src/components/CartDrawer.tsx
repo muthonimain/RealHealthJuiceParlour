@@ -11,6 +11,8 @@ import {
   PACKAGING_OPTIONS,
   SPECIAL_DELIVERY_OPTIONS,
   BOX_AND_TAPES_AMOUNT,
+  SPECIAL_DELIVERY_CHECKBOX_LABEL,
+  SPECIAL_DELIVERY_RECEIPT_LABEL,
   DELIVERY_PAYBILL,
   DELIVERY_ACCOUNT,
   type DeliveryOption,
@@ -103,7 +105,7 @@ function SpecialDeliveriesSection({
             onChange={(e) => onSpecialDeliveryOpenChange(e.target.checked)}
             className="w-4 h-4 accent-violet-600 cursor-pointer"
           />
-          <span className="text-sm font-semibold text-gray-800">Special Delivery</span>
+          <span className="text-sm font-semibold text-gray-800">{SPECIAL_DELIVERY_CHECKBOX_LABEL}</span>
         </label>
         {specialDeliveryOpen ? (
           <div className="flex flex-wrap gap-2 pl-6">
@@ -365,7 +367,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                   )}
                   {specialDeliveryAmount > 0 && (
                     <div className="flex justify-between text-sm text-violet-700">
-                      <span>Special Delivery</span>
+                      <span>{SPECIAL_DELIVERY_RECEIPT_LABEL}</span>
                       <span>Ksh {specialDeliveryAmount.toLocaleString()}</span>
                     </div>
                   )}
