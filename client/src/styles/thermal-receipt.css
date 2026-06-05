@@ -4,8 +4,8 @@
  */
 :root {
   --thermal-paper: 80mm;
-  /* 58 mm fits inside the printable area of most 80 mm rolls (avoids right-edge clipping). */
-  --thermal-content: 58mm;
+  /* 68 mm: wider text on 80 mm roll while staying inside printable area. */
+  --thermal-content: 68mm;
   --thermal-font: 'Courier New', Courier, 'Liberation Mono', monospace;
 }
 
@@ -16,7 +16,7 @@
   margin: 0 auto;
   padding: 3mm 1mm;
   font-family: var(--thermal-font);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.35;
   color: #000;
@@ -182,6 +182,17 @@
   display: none;
 }
 
+/* Each sheet = one physical page → printer cuts between customer & kitchen copies. */
+.thermal-print-sheet {
+  break-after: page;
+  page-break-after: always;
+}
+
+.thermal-print-sheet--last {
+  break-after: auto;
+  page-break-after: auto;
+}
+
 .thermal-screen {
   min-height: 100dvh;
   background: linear-gradient(160deg, #0c4a6e, #1e3a8a);
@@ -221,6 +232,7 @@
 
 @media print {
   @page {
+    /* Auto height = one page per receipt copy; cutter fires after each page. */
     size: var(--thermal-paper) auto;
     margin: 0;
   }
@@ -294,8 +306,17 @@
     box-shadow: none !important;
   }
 
+  .thermal-print-sheet {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+
+  .thermal-print-sheet--last {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
   .thermal-cut {
-    page-break-inside: avoid;
-    page-break-after: always;
+    display: none !important;
   }
 }

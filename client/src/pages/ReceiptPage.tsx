@@ -221,9 +221,12 @@ export default function ReceiptPage() {
       </div>
 
       <div className="thermal-print-root" aria-hidden>
-        <ReceiptCopy order={order} copyLabel="Customer copy" />
-        <div className="thermal-cut">— CUT HERE —</div>
-        <ReceiptCopy order={order} copyLabel="Kitchen copy" />
+        <div className="thermal-print-sheet">
+          <ReceiptCopy order={order} copyLabel="Customer copy" />
+        </div>
+        <div className="thermal-print-sheet thermal-print-sheet--last">
+          <ReceiptCopy order={order} copyLabel="Kitchen copy" />
+        </div>
       </div>
     </>
   )
