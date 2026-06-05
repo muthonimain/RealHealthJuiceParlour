@@ -25,12 +25,23 @@ interface Order {
   createdAt: string
 }
 
-function formatDate(iso: string) {
+const RECEIPT_TIMEZONE = 'Africa/Nairobi'
+
+function formatGeneratedAt(iso: string) {
   const d = new Date(iso)
-  return {
-    date: d.toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' }),
-    time: d.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' }),
-  }
+  const date = d.toLocaleDateString('en-KE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: RECEIPT_TIMEZONE,
+  })
+  const time = d.toLocaleTimeString('en-KE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: RECEIPT_TIMEZONE,
+  })
+  return `${date} ${time}`
 }
 
 function ReceiptCopy({
@@ -42,7 +53,7 @@ function ReceiptCopy({
   copyLabel?: string
   preview?: boolean
 }) {
-  const { date, time } = formatDate(order.createdAt)
+  const generatedAt = formatGeneratedAt(order.createdAt)
 
   return (
     <article
@@ -59,9 +70,7 @@ function ReceiptCopy({
       <hr className="thermal-receipt__rule" />
 
       <p className="thermal-receipt__meta">Order Number: {order.id}</p>
-      <p className="thermal-receipt__meta">
-        {date} {time}
-      </p>
+      <p className="thermal-receipt__meta">Generated: {generatedAt}</p>
       <p className="thermal-receipt__meta">Served by: {order.employeeName}</p>
 
       <hr className="thermal-receipt__rule" />

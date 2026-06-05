@@ -50,6 +50,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
           deliveryIncluded: withDelivery,
           deliveryAmount: withDelivery ? DELIVERY_TOTAL : 0,
           grandTotal,
+          generatedAt: new Date().toISOString(),
         }),
       })
 

@@ -47,22 +47,52 @@ function mapOrder(row: OrderRow): Order {
   }
 }
 
-export async function createOrder(data: Omit<Order, 'id' | 'createdAt'>): Promise<Order> {
+function resolveGeneratedAt(raw?: string): string | null {
+  if (!raw || typeof raw !== 'string') return null
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) return null
+  const now = Date.now()
+  const ts = parsed.getTime()
+  // Accept client clock within 5 min past or 1 min future (minor skew).
+  if (ts > now + 60_000 || ts < now - 5 * 60_000) return null
+  return parsed.toISOString()
+}
+
+export async function createOrder(
+  data: Omit<Order, 'id' | 'createdAt'> & { generatedAt?: string }
+): Promise<Order> {
   const id = await allocateOrderId()
+  const generatedAt = resolveGeneratedAt(data.generatedAt)
   const { rows } = await pool.query<OrderRow>(
-    `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, grand_total)
-     VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8)
-     RETURNING *`,
-    [
-      id,
-      data.employeeId ?? '',
-      data.employeeName,
-      JSON.stringify(data.items),
-      data.subtotal,
-      data.deliveryIncluded,
-      data.deliveryAmount,
-      data.grandTotal,
-    ]
+    generatedAt
+      ? `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, grand_total, created_at)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9::timestamptz)
+         RETURNING *`
+      : `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, grand_total)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8)
+         RETURNING *`,
+    generatedAt
+      ? [
+          id,
+          data.employeeId ?? '',
+          data.employeeName,
+          JSON.stringify(data.items),
+          data.subtotal,
+          data.deliveryIncluded,
+          data.deliveryAmount,
+          data.grandTotal,
+          generatedAt,
+        ]
+      : [
+          id,
+          data.employeeId ?? '',
+          data.employeeName,
+          JSON.stringify(data.items),
+          data.subtotal,
+          data.deliveryIncluded,
+          data.deliveryAmount,
+          data.grandTotal,
+        ]
   )
   return mapOrder(rows[0])
 }

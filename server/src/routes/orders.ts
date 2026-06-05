@@ -38,16 +38,25 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    const { employeeId, employeeName, items, subtotal, deliveryIncluded, deliveryAmount, grandTotal } =
-      req.body as {
-        employeeId: string
-        employeeName: string
-        items: OrderItem[]
-        subtotal: number
-        deliveryIncluded: boolean
-        deliveryAmount: number
-        grandTotal: number
-      }
+    const {
+      employeeId,
+      employeeName,
+      items,
+      subtotal,
+      deliveryIncluded,
+      deliveryAmount,
+      grandTotal,
+      generatedAt,
+    } = req.body as {
+      employeeId: string
+      employeeName: string
+      items: OrderItem[]
+      subtotal: number
+      deliveryIncluded: boolean
+      deliveryAmount: number
+      grandTotal: number
+      generatedAt?: string
+    }
 
     if (!employeeName || !items?.length) {
       res.status(400).json({ message: 'employeeName and items are required.' })
@@ -62,6 +71,7 @@ router.post(
       deliveryIncluded,
       deliveryAmount,
       grandTotal,
+      generatedAt,
     })
 
     await revokeClearanceIfSuperseded(employeeId ?? '', employeeName, order.createdAt)
