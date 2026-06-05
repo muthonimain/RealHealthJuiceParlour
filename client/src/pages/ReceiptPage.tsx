@@ -75,12 +75,10 @@ function ReceiptCopy({
           return (
             <div key={item.id} className="thermal-receipt__item">
               <p className="thermal-receipt__item-name">{item.name}</p>
-              <p className="thermal-receipt__item-row">
-                <span>
-                  {unitLabel} <span>×{item.quantity}</span>
-                </span>
-                <strong>Total {totalLabel}</strong>
+              <p className="thermal-receipt__item-unit">
+                {unitLabel} ×{item.quantity}
               </p>
+              <p className="thermal-receipt__item-total">Total {totalLabel}</p>
             </div>
           )
         })}
@@ -131,7 +129,8 @@ function ReceiptCopy({
         <p className="thermal-receipt__footer-spacer" aria-hidden="true">
           &nbsp;
         </p>
-        <p className="thermal-receipt__footer-tagline">No Sugar .  No Preservatives  .  100% Natural</p>
+        <p className="thermal-receipt__footer-tagline">No Sugar . No Preservatives</p>
+        <p className="thermal-receipt__footer-tagline">100% Natural</p>
       </footer>
     </article>
   )
