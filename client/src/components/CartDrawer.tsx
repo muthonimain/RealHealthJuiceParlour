@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Plus, Minus, ShoppingCart, Trash2, Printer, Truck, Package } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -78,6 +78,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
   const navigate = useNavigate()
   const [deliveryFee, setDeliveryFee] = useState<DeliveryOption | null>(null)
   const [packagingFee, setPackagingFee] = useState<PackagingOption | null>(null)
+  const [includePaybill, setIncludePaybill] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -93,6 +94,12 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
   const togglePackaging = (amount: PackagingOption) => {
     setPackagingFee((prev) => (prev === amount ? null : amount))
   }
+
+  useEffect(() => {
+    if (deliveryAmount > 0) {
+      setIncludePaybill(true)
+    }
+  }, [deliveryAmount])
 
   const handleGenerateReceipt = async () => {
     setIsSubmitting(true)
@@ -112,6 +119,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
           deliveryIncluded: hasExtras,
           deliveryAmount,
           packagingAmount,
+          includePaybill,
           grandTotal,
           generatedAt: new Date().toISOString(),
         }),
@@ -122,6 +130,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
       clearCart()
       setDeliveryFee(null)
       setPackagingFee(null)
+      setIncludePaybill(false)
       onClose()
       navigate(`/receipt/${order.id}`)
     } catch (e: unknown) {
@@ -229,25 +238,23 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                   onSelect={(amount) => togglePackaging(amount as PackagingOption)}
                 />
 
-                {deliveryAmount > 0 ? (
-                  <label className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 cursor-default select-none">
-                    <input
-                      type="checkbox"
-                      checked
-                      readOnly
-                      className="w-4 h-4 mt-0.5 accent-emerald-600 cursor-default"
-                      aria-label="Include M-Pesa paybill on receipt"
-                    />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-800">M-Pesa Paybill on receipt</p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        Paybill <span className="font-bold text-gray-900">{DELIVERY_PAYBILL}</span>
-                        {' · '}
-                        Account <span className="font-bold text-gray-900">{DELIVERY_ACCOUNT}</span>
-                      </p>
-                    </div>
-                  </label>
-                ) : null}
+                <label className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={includePaybill}
+                    onChange={(e) => setIncludePaybill(e.target.checked)}
+                    className="w-4 h-4 mt-0.5 accent-emerald-600 cursor-pointer"
+                    aria-label="Include M-Pesa paybill on receipt"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-800">Include M-Pesa Paybill on receipt</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Paybill <span className="font-bold text-gray-900">{DELIVERY_PAYBILL}</span>
+                      {' · '}
+                      Account <span className="font-bold text-gray-900">{DELIVERY_ACCOUNT}</span>
+                    </p>
+                  </div>
+                </label>
 
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm text-gray-500">
@@ -296,6 +303,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                     clearCart()
                     setDeliveryFee(null)
                     setPackagingFee(null)
+                    setIncludePaybill(false)
                   }}
                   className="w-full text-sm text-gray-400 hover:text-red-500 py-2 transition-colors"
                 >

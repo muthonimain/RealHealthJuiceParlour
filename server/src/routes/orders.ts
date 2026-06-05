@@ -46,6 +46,7 @@ router.post(
       deliveryIncluded,
       deliveryAmount,
       packagingAmount,
+      includePaybill,
       grandTotal,
       generatedAt,
     } = req.body as {
@@ -56,6 +57,7 @@ router.post(
       deliveryIncluded: boolean
       deliveryAmount: number
       packagingAmount?: number
+      includePaybill?: boolean
       grandTotal: number
       generatedAt?: string
     }
@@ -73,6 +75,7 @@ router.post(
       deliveryIncluded,
       deliveryAmount,
       packagingAmount: packagingAmount ?? 0,
+      includePaybill: includePaybill ?? false,
       grandTotal,
       generatedAt,
     })
@@ -125,6 +128,7 @@ router.patch(
       deliveryIncluded?: boolean
       deliveryAmount?: number
       packagingAmount?: number
+      includePaybill?: boolean
       grandTotal?: number
       createdAt?: string
     }
@@ -171,6 +175,7 @@ router.patch(
       deliveryIncluded: body.deliveryIncluded,
       deliveryAmount,
       packagingAmount,
+      includePaybill: body.includePaybill,
       grandTotal,
       createdAt: body.createdAt,
     })

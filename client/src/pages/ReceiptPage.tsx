@@ -24,6 +24,7 @@ interface Order {
   deliveryIncluded: boolean
   deliveryAmount: number
   packagingAmount?: number
+  includePaybill?: boolean
   grandTotal: number
   createdAt: string
 }
@@ -135,11 +136,11 @@ function ReceiptCopy({
         </p>
       </section>
 
-      {order.deliveryAmount > 0 ? (
+      {order.includePaybill ? (
         <>
           <hr className="thermal-receipt__rule" />
           <section className="thermal-receipt__payment">
-            <p className="thermal-receipt__payment-title">M-Pesa Payment (Delivery)</p>
+            <p className="thermal-receipt__payment-title">M-Pesa Payment</p>
             <p className="thermal-receipt__payment-row">
               <span>Paybill</span>
               <span>{DELIVERY_PAYBILL}</span>

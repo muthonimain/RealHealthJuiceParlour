@@ -208,6 +208,9 @@ export async function initDatabase(): Promise<void> {
   await pool.query(
     `ALTER TABLE orders ADD COLUMN IF NOT EXISTS packaging_amount INT NOT NULL DEFAULT 0`
   )
+  await pool.query(
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS include_paybill BOOLEAN NOT NULL DEFAULT FALSE`
+  )
   await seedEmployeesFromEnvIfEmpty()
 
   const { rows: menuCount } = await pool.query<{ count: string }>(
