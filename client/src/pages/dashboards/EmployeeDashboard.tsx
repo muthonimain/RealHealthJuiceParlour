@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ShoppingCart, LogOut, Wallet, ArrowLeft, AlertCircle, User } from 'lucide-react'
-import { HeaderLogo, BrandLogo } from '../../components/BrandLogo'
+import BrandLogo, { HeaderLogo } from '../../components/BrandLogo'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
