@@ -16,3 +16,12 @@ export interface ProductSalesReport {
   topProducts: ProductSalesRow[]
   leastProducts: ProductSalesRow[]
 }
+
+export interface DailyProductSalesReport {
+  dateKey: string
+  dateLabel: string
+  orderCount: number
+  totalUnitsSold: number
+  uniqueProductsSold: number
+  products: ProductSalesRow[]
+}

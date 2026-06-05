@@ -1,6 +1,6 @@
 import { getAllOrders } from '../data/ordersStore'
 import type { OrderItem } from '../data/ordersStore'
-import { toMonthKey, workingMonthLabel, countOrdersForWorkingMonth } from '../lib/workingMonth'
+import { toDayKey, dayLabel, isOnDay, toMonthKey, workingMonthLabel, countOrdersForWorkingMonth } from '../lib/workingMonth'
 
 export interface ProductSalesRow {
   productId: string
@@ -19,6 +19,15 @@ export interface ProductSalesReport {
   uniqueProductsSold: number
   topProducts: ProductSalesRow[]
   leastProducts: ProductSalesRow[]
+}
+
+export interface DailyProductSalesReport {
+  dateKey: string
+  dateLabel: string
+  orderCount: number
+  totalUnitsSold: number
+  uniqueProductsSold: number
+  products: ProductSalesRow[]
 }
 
 const TOP_LIMIT = 10
@@ -63,6 +72,45 @@ function aggregateProducts(
   }
 }
 
+function sortByQuantityDesc(rows: ProductSalesRow[]): ProductSalesRow[] {
+  return [...rows].sort((a, b) => {
+    if (b.quantitySold !== a.quantitySold) return b.quantitySold - a.quantitySold
+    return b.revenue - a.revenue
+  })
+}
+
+export async function buildDailyProductSalesReport(dateKey?: string): Promise<DailyProductSalesReport> {
+  const key = dateKey && /^\d{4}-\d{2}-\d{2}$/.test(dateKey) ? dateKey : toDayKey()
+  const allOrders = await getAllOrders()
+  const dayOrders = allOrders.filter((o) => isOnDay(o.createdAt, key))
+
+  const map = new Map<string, ProductSalesRow & { orderIds: Set<string> }>()
+
+  for (const order of dayOrders) {
+    aggregateProducts(order.items, order.id, map)
+  }
+
+  const rows: ProductSalesRow[] = Array.from(map.values()).map((r) => ({
+    productId: r.productId,
+    name: r.name,
+    categoryName: r.categoryName,
+    quantitySold: r.quantitySold,
+    revenue: r.revenue,
+    orderCount: r.orderIds.size,
+  }))
+
+  const referenceDate = new Date(`${key}T12:00:00`)
+
+  return {
+    dateKey: key,
+    dateLabel: dayLabel(referenceDate),
+    orderCount: dayOrders.length,
+    totalUnitsSold: rows.reduce((sum, r) => sum + r.quantitySold, 0),
+    uniqueProductsSold: rows.length,
+    products: sortByQuantityDesc(rows),
+  }
+}
+
 export async function buildProductSalesReport(monthKey: string): Promise<ProductSalesReport> {
   const allOrders = await getAllOrders()
   const monthOrders = allOrders.filter((o) => toMonthKey(o.createdAt) === monthKey)
@@ -82,10 +130,7 @@ export async function buildProductSalesReport(monthKey: string): Promise<Product
     orderCount: r.orderIds.size,
   }))
 
-  const byQuantityDesc = [...rows].sort((a, b) => {
-    if (b.quantitySold !== a.quantitySold) return b.quantitySold - a.quantitySold
-    return b.revenue - a.revenue
-  })
+  const byQuantityDesc = sortByQuantityDesc(rows)
 
   const byQuantityAsc = [...rows].sort((a, b) => {
     if (a.quantitySold !== b.quantitySold) return a.quantitySold - b.quantitySold

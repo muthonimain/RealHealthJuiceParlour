@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Wallet,
   PieChart,
+  ListOrdered,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { sumRevenueForWorkingMonth, workingMonthLabel } from '../../lib/workingMonth'
@@ -39,6 +40,7 @@ const modules: {
   path?: string
 }[] = [
   { label: 'Staff Records', icon: ClipboardList, color: '#b45309', bg: '#fef3c7', path: '/dashboard/owner/employee-records' },
+  { label: 'Items Sold Today', icon: ListOrdered, color: '#0369a1', bg: '#e0f2fe', path: '/dashboard/owner/items-sold-today' },
   { label: 'Expenses', icon: Wallet, color: '#c2410c', bg: '#ffedd5', path: '/dashboard/owner/expenses' },
   { label: 'Net Profit', icon: PieChart, color: '#047857', bg: '#d1fae5', path: '/dashboard/owner/net-profit' },
   { label: 'Menu & Products', icon: Package, color: '#15803d', bg: '#dcfce7', path: '/dashboard/owner/menu' },

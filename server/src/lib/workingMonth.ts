@@ -1,5 +1,27 @@
 /** Calendar working month (YYYY-MM). Revenue accumulates daily and resets on the 1st. */
 
+const KENYA_TZ = 'Africa/Nairobi'
+
+export function toDayKey(isoOrDate: Date | string = new Date()): string {
+  const d = typeof isoOrDate === 'string' ? new Date(isoOrDate) : isoOrDate
+  return d.toLocaleDateString('en-CA', { timeZone: KENYA_TZ })
+}
+
+export function dayLabel(isoOrDate: Date | string = new Date()): string {
+  const d = typeof isoOrDate === 'string' ? new Date(isoOrDate) : isoOrDate
+  return d.toLocaleDateString('en-KE', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: KENYA_TZ,
+  })
+}
+
+export function isOnDay(createdAt: string, dayKey: string): boolean {
+  return toDayKey(createdAt) === dayKey
+}
+
 export function toMonthKey(isoOrDate: Date | string = new Date()): string {
   const d = typeof isoOrDate === 'string' ? new Date(isoOrDate) : isoOrDate
   const y = d.getFullYear()

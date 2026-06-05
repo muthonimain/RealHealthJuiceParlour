@@ -16,7 +16,7 @@ import {
   toMonthKey,
 } from '../lib/workingMonth'
 import { asyncHandler } from '../middleware/asyncHandler'
-import { buildProductSalesReport } from '../services/productSalesReport'
+import { buildDailyProductSalesReport, buildProductSalesReport } from '../services/productSalesReport'
 
 const router = Router()
 const ownerOnly = [requireAuth, requireRole('owner')]
@@ -106,6 +106,16 @@ router.get(
     const monthParam = typeof req.query.month === 'string' ? req.query.month : ''
     const monthKey = /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : toMonthKey()
     res.json(await buildProductSalesReport(monthKey))
+  })
+)
+
+router.get(
+  '/reports/items-sold-today',
+  ...ownerOnly,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const dateParam = typeof req.query.date === 'string' ? req.query.date : ''
+    const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : undefined
+    res.json(await buildDailyProductSalesReport(dateKey))
   })
 )
 
