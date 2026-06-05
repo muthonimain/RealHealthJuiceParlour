@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import { savePendingReceipt, PENDING_RECEIPT_ROUTE_ID } from '../lib/pendingReceipt'
 import {
   DELIVERY_OPTIONS,
   PACKAGING_OPTIONS,
@@ -79,7 +80,6 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
   const [deliveryFee, setDeliveryFee] = useState<DeliveryOption | null>(null)
   const [packagingFee, setPackagingFee] = useState<PackagingOption | null>(null)
   const [includePaybill, setIncludePaybill] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
   const deliveryAmount = deliveryFee ?? 0
@@ -101,42 +101,25 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
     }
   }, [deliveryAmount])
 
-  const handleGenerateReceipt = async () => {
-    setIsSubmitting(true)
+  const handleGenerateReceipt = () => {
     setError('')
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user?.token ?? ''}`,
-        },
-        body: JSON.stringify({
-          employeeId: user?.id ?? '',
-          employeeName: user?.name ?? employeeName,
-          items,
-          subtotal: totalPrice,
-          deliveryIncluded: hasExtras,
-          deliveryAmount,
-          packagingAmount,
-          includePaybill,
-          grandTotal,
-          generatedAt: new Date().toISOString(),
-        }),
-      })
-
-      if (!res.ok) throw new Error('Failed to save order.')
-      const order = await res.json()
-      clearCart()
-      setDeliveryFee(null)
-      setPackagingFee(null)
-      setIncludePaybill(false)
-      onClose()
-      navigate(`/receipt/${order.id}`)
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Could not save order. Try again.')
-      setIsSubmitting(false)
-    }
+    savePendingReceipt({
+      employeeId: user?.id ?? '',
+      employeeName: user?.name ?? employeeName,
+      items,
+      subtotal: totalPrice,
+      deliveryIncluded: hasExtras,
+      deliveryAmount,
+      packagingAmount,
+      includePaybill,
+      grandTotal,
+    })
+    clearCart()
+    setDeliveryFee(null)
+    setPackagingFee(null)
+    setIncludePaybill(false)
+    onClose()
+    navigate(`/receipt/${PENDING_RECEIPT_ROUTE_ID}`)
   }
 
   return (
@@ -285,17 +268,10 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
 
                 <button
                   onClick={handleGenerateReceipt}
-                  disabled={isSubmitting}
-                  className="w-full bg-sky-600 hover:bg-sky-700 active:bg-sky-800 disabled:opacity-60 text-white font-bold text-lg rounded-2xl py-4 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-bold text-lg rounded-2xl py-4 transition-all flex items-center justify-center gap-2"
                 >
-                  {isSubmitting ? (
-                    <div className="w-5 h-5 rounded-full border-4 border-white border-t-transparent animate-spin" />
-                  ) : (
-                    <>
-                      <Printer size={20} />
-                      Generate Receipt
-                    </>
-                  )}
+                  <Printer size={20} />
+                  Generate Receipt
                 </button>
 
                 <button

@@ -2,6 +2,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { getAuthHeaders } from '../lib/api'
+import {
+  clearPendingReceipt,
+  loadPendingReceipt,
+  PENDING_RECEIPT_ROUTE_ID,
+  pendingToPreviewOrder,
+  type PendingReceiptPayload,
+} from '../lib/pendingReceipt'
 import { Printer, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { DELIVERY_PAYBILL, DELIVERY_ACCOUNT } from '../constants/orderFees'
@@ -188,14 +196,30 @@ export default function ReceiptPage() {
     user?.role === 'owner' ? '/dashboard/owner/employee-records' : '/dashboard/employee'
   const backLabel = user?.role === 'owner' ? 'Staff Records' : 'New Order'
   const [order, setOrder] = useState<Order | null>(null)
+  const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState('')
+  const [recording, setRecording] = useState(false)
   const [printCopy, setPrintCopy] = useState<'customer' | 'kitchen' | null>(null)
   const [awaitingKitchen, setAwaitingKitchen] = useState(false)
   const printPendingRef = useRef(false)
   const printStepRef = useRef<'customer' | 'kitchen' | null>(null)
+  const recordedRef = useRef(false)
 
   useEffect(() => {
     if (!orderId) return
+
+    if (orderId === PENDING_RECEIPT_ROUTE_ID) {
+      const payload = loadPendingReceipt()
+      if (!payload) {
+        setError('No order to preview. Start a new order from the menu.')
+        return
+      }
+      setOrder(pendingToPreviewOrder(payload))
+      setIsPending(true)
+      return
+    }
+
+    setIsPending(false)
     fetch(`/api/orders/${orderId}`)
       .then((r) => {
         if (!r.ok) throw new Error('Order not found.')
@@ -204,6 +228,32 @@ export default function ReceiptPage() {
       .then(setOrder)
       .catch(() => setError('Could not load receipt. The order may not exist.'))
   }, [orderId])
+
+  const recordSale = async (payload: PendingReceiptPayload): Promise<Order> => {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({
+        ...payload,
+        generatedAt: new Date().toISOString(),
+      }),
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error((data as { message?: string }).message || 'Failed to record sale.')
+    }
+
+    const saved = (await res.json()) as Order
+    clearPendingReceipt()
+    recordedRef.current = true
+    setIsPending(false)
+    navigate(`/receipt/${saved.id}`, { replace: true })
+    return saved
+  }
 
   const queuePrint = (copy: 'customer' | 'kitchen') => {
     printStepRef.current = copy
@@ -234,12 +284,34 @@ export default function ReceiptPage() {
     return () => window.removeEventListener('afterprint', onAfterPrint)
   }, [])
 
-  const handlePrint = () => {
-    if (printCopy) return
+  const handlePrint = async () => {
+    if (printCopy || recording) return
+
     if (awaitingKitchen) {
       queuePrint('kitchen')
       return
     }
+
+    if (isPending && !recordedRef.current) {
+      const payload = loadPendingReceipt()
+      if (!payload) {
+        setError('No order to record. Start a new order from the menu.')
+        return
+      }
+
+      setRecording(true)
+      setError('')
+      try {
+        const saved = await recordSale(payload)
+        flushSync(() => setOrder(saved))
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Could not record sale. Try again.')
+        setRecording(false)
+        return
+      }
+      setRecording(false)
+    }
+
     setAwaitingKitchen(false)
     queuePrint('customer')
   }
@@ -287,8 +359,8 @@ export default function ReceiptPage() {
             </button>
             <button
               type="button"
-              onClick={handlePrint}
-              disabled={printing}
+              onClick={() => void handlePrint()}
+              disabled={printing || recording}
               className={`flex items-center gap-2 text-white font-bold rounded-xl px-4 py-2.5 text-sm disabled:opacity-60 ${
                 awaitingKitchen
                   ? 'bg-amber-500 hover:bg-amber-400 animate-pulse'
@@ -296,22 +368,28 @@ export default function ReceiptPage() {
               }`}
             >
               <Printer size={18} />
-              {printing
-                ? 'Printing…'
-                : awaitingKitchen
-                  ? 'Print kitchen copy'
-                  : 'Print (80mm)'}
+              {recording
+                ? 'Recording sale…'
+                : printing
+                  ? 'Printing…'
+                  : awaitingKitchen
+                    ? 'Print kitchen copy'
+                    : 'Print (80mm)'}
             </button>
           </div>
 
           <p className="thermal-screen__hint">
-            {printing
-              ? printCopy === 'kitchen'
-                ? 'Printing kitchen copy…'
-                : 'Printing customer copy…'
-              : awaitingKitchen
-                ? 'Customer copy done — tap the button above for kitchen copy'
-                : 'Prints 2 separate slips — customer, then kitchen'}
+            {recording
+              ? 'Saving this sale before printing…'
+              : printing
+                ? printCopy === 'kitchen'
+                  ? 'Printing kitchen copy…'
+                  : 'Printing customer copy…'
+                : awaitingKitchen
+                  ? 'Customer copy done — tap the button above for kitchen copy'
+                  : isPending
+                    ? 'Revenue is recorded when you print the customer copy'
+                    : 'Prints 2 separate slips — customer, then kitchen'}
           </p>
 
           <p className="thermal-screen__copy-title">Customer copy</p>
