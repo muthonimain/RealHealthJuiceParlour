@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShoppingCart, LogOut, Wallet } from 'lucide-react'
-import { HeaderLogo } from '../../components/BrandLogo'
+import { ShoppingCart, LogOut, Wallet, ArrowLeft, AlertCircle, User } from 'lucide-react'
+import { HeaderLogo, BrandLogo } from '../../components/BrandLogo'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
@@ -10,28 +10,148 @@ import type { MenuCategory } from '../../types/menu'
 import CartDrawer from '../../components/CartDrawer'
 import { employeeTheme } from '../../theme/roles'
 
+interface EmployeeInfo {
+  id: string
+  name: string
+  username: string
+}
+
 const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 const item: Variants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
 
 export default function EmployeeDashboard() {
-  const { user, logout } = useAuth()
+  const { user, selectEmployee, logout } = useAuth()
   const { totalItems, totalPrice } = useCart()
   const navigate = useNavigate()
   const [cartOpen, setCartOpen] = useState(false)
   const [menuData, setMenuData] = useState<MenuCategory[]>([])
   const [menuLoading, setMenuLoading] = useState(true)
+  const [employees, setEmployees] = useState<EmployeeInfo[]>([])
+  const [employeesLoading, setEmployeesLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [selectError, setSelectError] = useState('')
+  const [isSelecting, setIsSelecting] = useState(false)
+
+  const isEmployee = user?.role === 'employee'
 
   useEffect(() => {
+    if (!isEmployee) {
+      setMenuLoading(false)
+      return
+    }
+
     fetch('/api/menu/categories')
       .then((r) => r.json())
       .then(setMenuData)
       .catch(() => {})
       .finally(() => setMenuLoading(false))
-  }, [])
+  }, [isEmployee])
 
-  const handleLogout = () => {
+  useEffect(() => {
+    if (isEmployee) {
+      setEmployeesLoading(false)
+      return
+    }
+
+    fetch('/api/employees')
+      .then((r) => r.json())
+      .then((data: EmployeeInfo[]) => setEmployees(data))
+      .catch(() => setLoadError('Could not load employee list. Is the server running?'))
+      .finally(() => setEmployeesLoading(false))
+  }, [isEmployee])
+
+  const handleSelectEmployee = async (emp: EmployeeInfo) => {
+    setIsSelecting(true)
+    setSelectError('')
+    try {
+      await selectEmployee(emp.id)
+    } catch (err: unknown) {
+      setSelectError(err instanceof Error ? err.message : 'Could not select employee. Try again.')
+    } finally {
+      setIsSelecting(false)
+    }
+  }
+
+  const handleSwitchEmployee = () => {
     logout()
-    navigate('/')
+  }
+
+  if (!isEmployee) {
+    return (
+      <div className={`min-h-screen ${employeeTheme.page} flex flex-col items-center justify-center px-6 py-10`}>
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => navigate('/')}
+          className={`absolute top-6 left-6 flex items-center gap-2 transition-colors py-3 px-4 rounded-xl ${employeeTheme.back}`}
+        >
+          <ArrowLeft size={20} />
+          <span className="text-sm font-medium">Back</span>
+        </motion.button>
+
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center w-full max-w-2xl mx-auto mb-10 flex flex-col items-center"
+        >
+          <div className="w-full flex justify-center mb-5 px-2">
+            <BrandLogo size="hero" className="drop-shadow-md" />
+          </div>
+          <p className={`${employeeTheme.subtitle} text-lg font-semibold tracking-wide`}>Employee dashboard</p>
+          <p className={`${employeeTheme.hint} text-sm mt-2`}>Tap your name to continue</p>
+        </motion.div>
+
+        {loadError && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-3 text-sm flex items-center gap-2">
+            <AlertCircle size={16} />
+            {loadError}
+          </div>
+        )}
+
+        {selectError && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-3 text-sm flex items-center gap-2">
+            <AlertCircle size={16} />
+            {selectError}
+          </div>
+        )}
+
+        {employeesLoading ? (
+          <p className={`${employeeTheme.hint} text-sm`}>Loading staff…</p>
+        ) : employees.length === 0 ? (
+          <p className={`${employeeTheme.hint} text-sm text-center`}>No employees set up yet. Ask the owner to add staff.</p>
+        ) : (
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-2 gap-4 w-full max-w-2xl"
+          >
+            {employees.map((emp) => (
+              <motion.button
+                key={emp.id}
+                type="button"
+                variants={item}
+                whileTap={{ scale: 0.95 }}
+                disabled={isSelecting}
+                onClick={() => handleSelectEmployee(emp)}
+                className={`${employeeTheme.signInCard} p-6 flex flex-col items-center gap-3 min-h-[140px] transition-all disabled:opacity-60`}
+              >
+                <div className={`${employeeTheme.signInCardIconBg} rounded-2xl p-4`}>
+                  <User size={36} className={employeeTheme.signInCardIcon} />
+                </div>
+                <span className={`${employeeTheme.signInCardName} font-bold text-base text-center leading-tight`}>
+                  {emp.name}
+                </span>
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+
+        <p className={`mt-10 ${employeeTheme.footer} text-xs text-center`}>
+          Real Health Juice Parlour &copy; {new Date().getFullYear()}
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -44,7 +164,7 @@ export default function EmployeeDashboard() {
               Real Health Juice Parlour
             </p>
             <p className={`${employeeTheme.headerAccent} text-xs font-semibold m-0 mt-0.5 truncate`}>
-              {user?.name ?? 'Staff'}
+              {user.name}
             </p>
           </div>
 
@@ -65,12 +185,12 @@ export default function EmployeeDashboard() {
 
             <button
               type="button"
-              onClick={handleLogout}
-              title="Logout"
+              onClick={handleSwitchEmployee}
+              title="Switch employee"
               className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2.5 text-sm font-semibold transition-all"
             >
               <LogOut size={16} />
-              <span>Logout</span>
+              <span>Switch</span>
             </button>
           </div>
         </div>
@@ -154,7 +274,7 @@ export default function EmployeeDashboard() {
         </motion.div>
       ) : null}
 
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} employeeName={user?.name} />
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} employeeName={user.name} />
     </div>
   )
 }

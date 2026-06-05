@@ -51,8 +51,9 @@ export default function LoginPage() {
   const passwordRef = useRef<HTMLInputElement>(null)
 
   if (role === 'owner') return <Navigate to="/owner-select" replace />
+  if (role === 'employee') return <Navigate to="/dashboard/employee" replace />
 
-  const validRole: UserRole | null = role === 'employee' ? 'employee' : null
+  const validRole: UserRole | null = null
 
   if (!validRole) return <Navigate to="/" replace />
 

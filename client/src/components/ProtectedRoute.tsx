@@ -21,7 +21,7 @@ export default function ProtectedRoute({ role, children }: Props) {
   }
 
   if (!user || !allowed.includes(user.role)) {
-    const redirect = allowed.includes('owner') ? '/owner-select' : '/employee-select'
+    const redirect = allowed.includes('owner') ? '/owner-select' : '/dashboard/employee'
     return <Navigate to={redirect} replace />
   }
 

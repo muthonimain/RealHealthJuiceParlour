@@ -12,6 +12,7 @@ interface User {
 interface AuthContextType {
   user: User | null
   login: (role: UserRole, username: string, password: string) => Promise<void>
+  selectEmployee: (employeeId: string) => Promise<void>
   logout: () => void
   isLoading: boolean
 }
@@ -52,13 +53,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('rhjp_user', JSON.stringify(userData))
   }
 
+  const selectEmployee = async (employeeId: string) => {
+    const res = await fetch('/api/auth/employee-select', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employeeId }),
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.message || 'Could not select employee')
+    }
+
+    const data = await res.json()
+    const userData: User = { ...data.user, token: data.token }
+    setUser(userData)
+    localStorage.setItem('rhjp_user', JSON.stringify(userData))
+  }
+
   const logout = () => {
     setUser(null)
     localStorage.removeItem('rhjp_user')
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, selectEmployee, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   )

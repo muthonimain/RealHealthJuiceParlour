@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { verifyOwnerLogin } from '../data/owners'
-import { verifyEmployeeLogin } from '../data/employees'
+import { verifyEmployeeLogin, getEmployeeById } from '../data/employees'
 
 const router = Router()
 const env = (key: string, fallback: string) => (process.env[key] ?? '').trim() || fallback
@@ -46,6 +46,24 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
   }
 
   res.status(400).json({ message: 'Invalid role.' })
+})
+
+router.post('/employee-select', async (req: Request, res: Response): Promise<void> => {
+  const { employeeId } = req.body as { employeeId?: string }
+
+  if (!employeeId?.trim()) {
+    res.status(400).json({ message: 'Employee id is required.' })
+    return
+  }
+
+  const employee = await getEmployeeById(employeeId.trim())
+  if (!employee) {
+    res.status(404).json({ message: 'Employee not found.' })
+    return
+  }
+
+  const token = jwt.sign({ id: employee.id, role: 'employee' }, JWT_SECRET, { expiresIn: JWT_EXPIRES })
+  res.json({ token, user: { id: employee.id, name: employee.name, role: 'employee' } })
 })
 
 export default router

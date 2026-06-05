@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
-import EmployeeSelectPage from './pages/EmployeeSelectPage'
 import OwnerSelectPage from './pages/OwnerSelectPage'
 import OwnerDashboard from './pages/dashboards/OwnerDashboard'
 import EmployeeDashboard from './pages/dashboards/EmployeeDashboard'
@@ -31,11 +30,11 @@ function App() {
             {/* Owner: select Carol or Kariuki, then password */}
             <Route path="/owner-select" element={<OwnerSelectPage />} />
 
-            {/* Legacy login route (employee only) */}
+            {/* Legacy login route (owner redirect only) */}
             <Route path="/login/:role" element={<LoginPage />} />
 
-            {/* Employee: select name first, then password */}
-            <Route path="/employee-select" element={<EmployeeSelectPage />} />
+            {/* Legacy employee sign-in route */}
+            <Route path="/employee-select" element={<Navigate to="/dashboard/employee" replace />} />
 
             {/* Owner dashboard */}
             <Route
@@ -47,15 +46,8 @@ function App() {
               }
             />
 
-            {/* Employee dashboards */}
-            <Route
-              path="/dashboard/employee"
-              element={
-                <ProtectedRoute role="employee">
-                  <EmployeeDashboard />
-                </ProtectedRoute>
-              }
-            />
+            {/* Employee dashboard: pick name, then menu categories */}
+            <Route path="/dashboard/employee" element={<EmployeeDashboard />} />
             <Route
               path="/dashboard/employee/menu/:categoryId"
               element={

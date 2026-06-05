@@ -39,7 +39,7 @@ const roles: {
     iconBg: 'bg-sky-100',
     iconColor: 'text-sky-600',
     textColor: 'text-sky-800',
-    path: '/employee-select',
+    path: '/dashboard/employee',
   },
 ]
 
