@@ -112,7 +112,9 @@ export default function NetProfitPage() {
 
               <div className="flex items-center gap-2 text-emerald-700 text-xs py-1 font-semibold">
                 <Equal size={14} />
-                <span>Net profit = gross profit − Ksh 5,550</span>
+                <span>
+                  Net profit = gross profit − Ksh {summary.dailyOperationalCost.toLocaleString()}
+                </span>
               </div>
               <Line label="Net profit" value={summary.netProfit} highlight negative />
             </div>
