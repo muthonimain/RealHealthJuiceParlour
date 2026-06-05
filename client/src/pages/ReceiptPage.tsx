@@ -346,6 +346,18 @@ export default function ReceiptPage() {
 
   const printing = printCopy !== null
 
+  const screenHint = recording
+    ? 'Saving this sale before printing…'
+    : printing
+      ? printCopy === 'kitchen'
+        ? 'Printing kitchen copy…'
+        : 'Printing customer copy…'
+      : awaitingKitchen
+        ? 'Customer copy done — tap the button above for kitchen copy'
+        : isPending
+          ? null
+          : 'Prints 2 separate slips — customer, then kitchen'
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center gap-4">
@@ -406,19 +418,7 @@ export default function ReceiptPage() {
             </button>
           </div>
 
-          <p className="thermal-screen__hint">
-            {recording
-              ? 'Saving this sale before printing…'
-              : printing
-                ? printCopy === 'kitchen'
-                  ? 'Printing kitchen copy…'
-                  : 'Printing customer copy…'
-                : awaitingKitchen
-                  ? 'Customer copy done — tap the button above for kitchen copy'
-                  : isPending
-                    ? 'Revenue is recorded when you print the customer copy'
-                    : 'Prints 2 separate slips — customer, then kitchen'}
-          </p>
+          {screenHint ? <p className="thermal-screen__hint">{screenHint}</p> : null}
 
           <p className="thermal-screen__copy-title">Customer copy</p>
           <ReceiptCopy order={order} copyLabel="Customer copy" preview />
