@@ -520,6 +520,50 @@
   flex-wrap: wrap;
 }
 
+.rhjp-order-records-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.rhjp-order-records-table {
+  width: 100%;
+  min-width: 56rem;
+  border-collapse: collapse;
+}
+
+.rhjp-order-records-table th:not(.rhjp-order-records-items),
+.rhjp-order-records-table td:not(.rhjp-order-records-items) {
+  white-space: nowrap;
+}
+
+.rhjp-order-records-items {
+  white-space: normal;
+  max-width: 12rem;
+}
+
+.rhjp-order-records-table th:last-child,
+.rhjp-order-records-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #fff;
+  box-shadow: -6px 0 10px rgba(0, 0, 0, 0.06);
+}
+
+.rhjp-order-records-table thead th:last-child {
+  background: #fffbeb;
+  z-index: 2;
+}
+
+.rhjp-order-records-table tbody tr:hover td:last-child {
+  background: #f9fafb;
+}
+
 @media (min-width: 640px) {
   .rhjp-staff-form-grid {
     grid-template-columns: repeat(3, 1fr);

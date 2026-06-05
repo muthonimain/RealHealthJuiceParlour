@@ -611,14 +611,16 @@ export default function EmployeeRecordsPage() {
               })}
             </div>
 
-            <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="hidden md:block rhjp-order-records-wrap">
+              <table className="rhjp-order-records-table text-sm">
                 <thead>
                   <tr className="bg-amber-50 border-b border-amber-100">
                     <th className="text-left px-4 py-3 text-amber-800 font-semibold">Order No.</th>
                     <th className="text-left px-4 py-3 text-amber-800 font-semibold">Date & Time</th>
                     <th className="text-left px-4 py-3 text-amber-800 font-semibold">Staff</th>
-                    <th className="text-left px-4 py-3 text-amber-800 font-semibold">Items</th>
+                    <th className="rhjp-order-records-items text-left px-4 py-3 text-amber-800 font-semibold">
+                      Items
+                    </th>
                     <th className="text-right px-4 py-3 text-amber-800 font-semibold">Subtotal</th>
                     <th className="text-center px-4 py-3 text-amber-800 font-semibold">Delivery</th>
                     <th className="text-right px-4 py-3 text-amber-800 font-semibold">Total</th>
@@ -660,7 +662,7 @@ export default function EmployeeRecordsPage() {
                             {order.employeeName}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-gray-600 max-w-xs">
+                        <td className="rhjp-order-records-items px-4 py-3 text-gray-600">
                           <div className="truncate text-xs">{itemsSummary}</div>
                           <div className="text-xs text-gray-400 mt-0.5">
                             {order.items.length} item{order.items.length !== 1 ? 's' : ''}
