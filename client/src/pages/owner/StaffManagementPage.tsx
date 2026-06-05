@@ -157,12 +157,12 @@ export default function StaffManagementPage() {
   return (
     <OwnerPageShell
       title="Staff Management"
-      subtitle="Employee sign-in names & passwords"
+      subtitle="Staff sign-in names & passwords"
       onBack={() => navigate('/dashboard/owner')}
-      backTitle="Back to owner dashboard"
+      backTitle="Back to therapist dashboard"
     >
       <p className="rhjp-staff-hint">
-        Changes apply immediately. New or updated staff appear on the employee sign-in screen.
+        Changes apply immediately. New or updated staff appear on the staff dashboard.
       </p>
 
       <form onSubmit={handleAdd} className="rhjp-staff-card rhjp-staff-card--add">
@@ -170,7 +170,7 @@ export default function StaffManagementPage() {
           <span className="rhjp-staff-card-icon" aria-hidden>
             <Plus size={20} />
           </span>
-          <h2>Add employee</h2>
+          <h2>Add staff</h2>
         </div>
         <div className="rhjp-staff-form-grid">
           <div>
@@ -212,7 +212,7 @@ export default function StaffManagementPage() {
           </div>
         </div>
         <button type="submit" disabled={actionBusy} className="rhjp-staff-btn rhjp-staff-btn--primary">
-          {actionBusy ? 'Saving…' : 'Add employee'}
+          {actionBusy ? 'Saving…' : 'Add staff'}
         </button>
       </form>
 

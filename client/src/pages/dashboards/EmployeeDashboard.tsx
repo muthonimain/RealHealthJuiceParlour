@@ -97,7 +97,7 @@ export default function EmployeeDashboard() {
           <div className="w-full flex justify-center mb-5 px-2">
             <BrandLogo size="hero" className="drop-shadow-md" />
           </div>
-          <p className={`${employeeTheme.subtitle} text-lg font-semibold tracking-wide`}>Employee dashboard</p>
+          <p className={`${employeeTheme.subtitle} text-lg font-semibold tracking-wide`}>Staff dashboard</p>
           <p className={`${employeeTheme.hint} text-sm mt-2`}>Tap your name to continue</p>
         </motion.div>
 
@@ -118,7 +118,7 @@ export default function EmployeeDashboard() {
         {employeesLoading ? (
           <p className={`${employeeTheme.hint} text-sm`}>Loading staff…</p>
         ) : employees.length === 0 ? (
-          <p className={`${employeeTheme.hint} text-sm text-center`}>No employees set up yet. Ask the owner to add staff.</p>
+          <p className={`${employeeTheme.hint} text-sm text-center`}>No staff set up yet. Ask the therapist to add staff.</p>
         ) : (
           <motion.div
             variants={container}
@@ -186,7 +186,7 @@ export default function EmployeeDashboard() {
             <button
               type="button"
               onClick={handleSwitchEmployee}
-              title="Switch employee"
+              title="Switch staff"
               className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2.5 text-sm font-semibold transition-all"
             >
               <LogOut size={16} />
@@ -222,7 +222,7 @@ export default function EmployeeDashboard() {
         {menuLoading ? (
           <p className={`text-center ${employeeTheme.pageHint} py-12`}>Loading menu…</p>
         ) : menuData.length === 0 ? (
-          <p className={`text-center ${employeeTheme.pageHint} py-12`}>No menu categories yet. Ask the owner to set up the menu.</p>
+          <p className={`text-center ${employeeTheme.pageHint} py-12`}>No menu categories yet. Ask the therapist to set up the menu.</p>
         ) : (
           <motion.div
             variants={container}

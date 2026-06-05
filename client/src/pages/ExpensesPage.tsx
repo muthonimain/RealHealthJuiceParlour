@@ -492,9 +492,9 @@ export default function ExpensesPage() {
     return (
       <OwnerPageShell
         title="Expenses"
-        subtitle={`Cost of goods · ${user?.name ?? 'Owner'}`}
+        subtitle={`Cost of goods · ${user?.name ?? 'Therapist'}`}
         onBack={() => navigate(dashboardPath)}
-        backTitle="Back to owner dashboard"
+        backTitle="Back to therapist dashboard"
       >
         {pageBody}
       </OwnerPageShell>

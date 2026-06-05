@@ -137,7 +137,7 @@ export default function SalesReportsPage() {
       title="Sales Reports"
       subtitle="Monthly product performance"
       onBack={() => navigate('/dashboard/owner')}
-      backTitle="Back to owner dashboard"
+      backTitle="Back to therapist dashboard"
     >
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
         <div>

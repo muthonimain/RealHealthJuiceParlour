@@ -38,7 +38,7 @@ const modules: {
   bg: string
   path?: string
 }[] = [
-  { label: 'Employee Records', icon: ClipboardList, color: '#b45309', bg: '#fef3c7', path: '/dashboard/owner/employee-records' },
+  { label: 'Staff Records', icon: ClipboardList, color: '#b45309', bg: '#fef3c7', path: '/dashboard/owner/employee-records' },
   { label: 'Expenses', icon: Wallet, color: '#c2410c', bg: '#ffedd5', path: '/dashboard/owner/expenses' },
   { label: 'Net Profit', icon: PieChart, color: '#047857', bg: '#d1fae5', path: '/dashboard/owner/net-profit' },
   { label: 'Menu & Products', icon: Package, color: '#15803d', bg: '#dcfce7', path: '/dashboard/owner/menu' },
@@ -85,7 +85,7 @@ export default function OwnerDashboard() {
   ]
 
   return (
-    <DashboardShell title="Owner Portal" subtitle={`Welcome back, ${user?.name ?? 'Owner'}`}>
+    <DashboardShell title="Therapist Portal" subtitle={`Welcome back, ${user?.name ?? 'Therapist'}`}>
       <ul className="rhjp-dash-stats">
         {stats.map(({ label, value, icon: Icon, kshIcon, color, bg }) => (
           <li key={label} className="rhjp-dash-stat">

@@ -94,23 +94,191 @@ interface ItemRow {
   price: number
   note: string | null
   section: string | null
+  sort_order: number
+}
+
+interface ItemWithOrder {
+  item: MenuItem
+  sortOrder: number
+}
+
+function normalizeNameKey(name: string): string {
+  return name.trim().toLowerCase()
+}
+
+function normalizeSectionKey(section?: string): string {
+  return (section ?? '').trim().toLowerCase()
+}
+
+function rowToMenuItem(row: ItemRow): MenuItem {
+  return {
+    id: row.id,
+    name: row.name,
+    price: row.price,
+    note: row.note ?? undefined,
+    section: row.section ?? undefined,
+  }
+}
+
+/** Keep same-named items adjacent while preserving each name group's menu position. */
+function sortItemsByNameGroups(rows: ItemWithOrder[]): MenuItem[] {
+  if (rows.length <= 1) return rows.map((r) => r.item)
+
+  const groups = new Map<string, ItemWithOrder[]>()
+  for (const row of rows) {
+    const key = normalizeNameKey(row.item.name)
+    const list = groups.get(key) ?? []
+    list.push(row)
+    groups.set(key, list)
+  }
+
+  const grouped = [...groups.entries()].map(([key, items]) => ({
+    key,
+    position: Math.min(...items.map((i) => i.sortOrder)),
+    items: items.sort((a, b) => a.sortOrder - b.sortOrder),
+  }))
+
+  grouped.sort((a, b) => a.position - b.position || a.key.localeCompare(b.key))
+
+  return grouped.flatMap((g) => g.items.map((r) => r.item))
+}
+
+function computeInsertSortOrder(
+  rows: ItemWithOrder[],
+  name: string,
+  section?: string
+): number {
+  const nameKey = normalizeNameKey(name)
+  const sectionKey = normalizeSectionKey(section)
+
+  const matches = rows.filter(
+    (r) =>
+      normalizeNameKey(r.item.name) === nameKey &&
+      normalizeSectionKey(r.item.section) === sectionKey
+  )
+
+  if (matches.length === 0) return rows.length
+
+  return Math.max(...matches.map((m) => m.sortOrder)) + 1
+}
+
+async function loadCategoryItemsWithOrder(categoryId: string): Promise<ItemWithOrder[]> {
+  const { rows } = await pool.query<ItemRow>(
+    'SELECT * FROM menu_items WHERE category_id = $1 ORDER BY sort_order',
+    [categoryId]
+  )
+  return rows.map((row, index) => ({
+    item: rowToMenuItem(row),
+    sortOrder: row.sort_order ?? index,
+  }))
+}
+
+async function insertItemAtSortOrder(
+  categoryId: string,
+  item: MenuItem,
+  targetSortOrder: number
+): Promise<void> {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query(
+      `UPDATE menu_items SET sort_order = sort_order + 1
+       WHERE category_id = $1 AND sort_order >= $2`,
+      [categoryId, targetSortOrder]
+    )
+    await client.query(
+      `INSERT INTO menu_items (id, category_id, name, price, note, section, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        item.id,
+        categoryId,
+        item.name,
+        item.price,
+        item.note ?? null,
+        item.section ?? null,
+        targetSortOrder,
+      ]
+    )
+    await client.query('COMMIT')
+  } catch (e) {
+    await client.query('ROLLBACK')
+    throw e
+  } finally {
+    client.release()
+  }
+}
+
+async function repositionItemByName(categoryId: string, item: MenuItem): Promise<void> {
+  const rows = await loadCategoryItemsWithOrder(categoryId)
+  const remaining = rows.filter((r) => r.item.id !== item.id)
+  const targetSortOrder = computeInsertSortOrder(remaining, item.name, item.section)
+
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query('DELETE FROM menu_items WHERE category_id = $1 AND id = $2', [
+      categoryId,
+      item.id,
+    ])
+
+    await client.query(
+      `UPDATE menu_items SET sort_order = sort_order + 1
+       WHERE category_id = $1 AND sort_order >= $2`,
+      [categoryId, targetSortOrder]
+    )
+
+    await client.query(
+      `INSERT INTO menu_items (id, category_id, name, price, note, section, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        item.id,
+        categoryId,
+        item.name,
+        item.price,
+        item.note ?? null,
+        item.section ?? null,
+        targetSortOrder,
+      ]
+    )
+
+    const { rows: afterRows } = await client.query<ItemRow>(
+      'SELECT * FROM menu_items WHERE category_id = $1 ORDER BY sort_order',
+      [categoryId]
+    )
+    for (let i = 0; i < afterRows.length; i++) {
+      await client.query('UPDATE menu_items SET sort_order = $3 WHERE category_id = $1 AND id = $2', [
+        categoryId,
+        afterRows[i].id,
+        i,
+      ])
+    }
+
+    await client.query('COMMIT')
+  } catch (e) {
+    await client.query('ROLLBACK')
+    throw e
+  } finally {
+    client.release()
+  }
 }
 
 async function loadItemsByCategory(): Promise<Map<string, MenuItem[]>> {
   const { rows } = await pool.query<ItemRow>(
     'SELECT * FROM menu_items ORDER BY category_id, sort_order'
   )
-  const map = new Map<string, MenuItem[]>()
+  const byCategory = new Map<string, ItemWithOrder[]>()
   for (const row of rows) {
-    const list = map.get(row.category_id) ?? []
+    const list = byCategory.get(row.category_id) ?? []
     list.push({
-      id: row.id,
-      name: row.name,
-      price: row.price,
-      note: row.note ?? undefined,
-      section: row.section ?? undefined,
+      item: rowToMenuItem(row),
+      sortOrder: row.sort_order,
     })
-    map.set(row.category_id, list)
+    byCategory.set(row.category_id, list)
+  }
+
+  const map = new Map<string, MenuItem[]>()
+  for (const [categoryId, items] of byCategory) {
+    map.set(categoryId, sortItemsByNameGroups(items))
   }
   return map
 }
@@ -253,11 +421,9 @@ export async function addItem(
     section,
   }
 
-  await pool.query(
-    `INSERT INTO menu_items (id, category_id, name, price, note, section, sort_order)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [item.id, categoryId, item.name, item.price, item.note ?? null, item.section ?? null, cat.items.length]
-  )
+  const existingRows = await loadCategoryItemsWithOrder(categoryId)
+  const targetSortOrder = computeInsertSortOrder(existingRows, item.name, item.section)
+  await insertItemAtSortOrder(categoryId, item, targetSortOrder)
 
   return item
 }
@@ -280,12 +446,20 @@ export async function updateItem(
     section = match ?? section
   }
 
-  await pool.query(
-    'UPDATE menu_items SET name = $3, price = $4, note = $5, section = $6 WHERE category_id = $1 AND id = $2',
-    [categoryId, itemId, name, price, note ?? null, section ?? null]
-  )
+  const updated: MenuItem = { id: itemId, name, price, note, section }
+  const nameChanged = normalizeNameKey(name) !== normalizeNameKey(existing.name)
+  const sectionChanged = normalizeSectionKey(section) !== normalizeSectionKey(existing.section)
 
-  return { id: itemId, name, price, note, section }
+  if (nameChanged || sectionChanged) {
+    await repositionItemByName(categoryId, updated)
+  } else {
+    await pool.query(
+      'UPDATE menu_items SET name = $3, price = $4, note = $5, section = $6 WHERE category_id = $1 AND id = $2',
+      [categoryId, itemId, name, price, note ?? null, section ?? null]
+    )
+  }
+
+  return updated
 }
 
 export async function deleteItem(categoryId: string, itemId: string): Promise<boolean> {

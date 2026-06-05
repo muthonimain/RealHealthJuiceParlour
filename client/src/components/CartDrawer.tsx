@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext'
 import {
   DELIVERY_OPTIONS,
   PACKAGING_OPTIONS,
+  DELIVERY_PAYBILL,
+  DELIVERY_ACCOUNT,
   type DeliveryOption,
   type PackagingOption,
 } from '../constants/orderFees'
@@ -70,7 +72,7 @@ function FeeCheckboxRow({
   )
 }
 
-export default function CartDrawer({ open, onClose, employeeName = 'Employee' }: Props) {
+export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Props) {
   const { items, totalItems, totalPrice, increment, decrement, removeItem, clearCart } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -226,6 +228,26 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
                   selected={packagingFee}
                   onSelect={(amount) => togglePackaging(amount as PackagingOption)}
                 />
+
+                {deliveryAmount > 0 ? (
+                  <label className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 cursor-default select-none">
+                    <input
+                      type="checkbox"
+                      checked
+                      readOnly
+                      className="w-4 h-4 mt-0.5 accent-emerald-600 cursor-default"
+                      aria-label="Include M-Pesa paybill on receipt"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-800">M-Pesa Paybill on receipt</p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Paybill <span className="font-bold text-gray-900">{DELIVERY_PAYBILL}</span>
+                        {' · '}
+                        Account <span className="font-bold text-gray-900">{DELIVERY_ACCOUNT}</span>
+                      </p>
+                    </div>
+                  </label>
+                ) : null}
 
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm text-gray-500">

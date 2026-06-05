@@ -78,9 +78,9 @@ export default function OwnerMenuCategoriesPage() {
   return (
     <OwnerPageShell
       title="Menu Categories"
-      subtitle="Owner portal"
+      subtitle="Therapist portal"
       onBack={() => navigate('/dashboard/owner')}
-      backTitle="Back to owner portal"
+      backTitle="Back to therapist portal"
       headerNote={
         <p className={`text-center ${ownerTheme.headerAccent} text-xs pb-2 px-3`}>
           {user?.name} — tap + to add a menu

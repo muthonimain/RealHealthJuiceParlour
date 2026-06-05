@@ -19,7 +19,7 @@ const roles: {
 }[] = [
   {
     key: 'owner',
-    label: 'Owner',
+    label: 'Therapist',
     description: 'Full system access, reports & settings',
     icon: Crown,
     bg: 'bg-amber-50',
@@ -31,7 +31,7 @@ const roles: {
   },
   {
     key: 'employee',
-    label: 'Employee',
+    label: 'Staff',
     description: 'Process orders, handle transactions',
     icon: Users,
     bg: 'bg-sky-50',

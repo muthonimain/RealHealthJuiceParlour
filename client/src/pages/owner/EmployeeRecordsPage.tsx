@@ -316,7 +316,7 @@ export default function EmployeeRecordsPage() {
           />
         </div>
         <div className="col-span-2 sm:col-span-1">
-          <label className="block text-xs font-semibold text-gray-600 mb-1">Employee</label>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">Staff</label>
           <input
             type="text"
             value={editEmployeeName}
@@ -379,10 +379,10 @@ export default function EmployeeRecordsPage() {
 
   return (
     <OwnerPageShell
-      title="Employee Records"
+      title="Staff Records"
       subtitle="Daily totals & orders"
       onBack={() => navigate('/dashboard/owner')}
-      backTitle="Back to owner dashboard"
+      backTitle="Back to therapist dashboard"
       actions={
         <button
           type="button"
@@ -395,11 +395,11 @@ export default function EmployeeRecordsPage() {
         </button>
       }
     >
-        <p className="text-sm text-gray-500 mb-4">{todayLabel()} — daily employee totals</p>
+        <p className="text-sm text-gray-500 mb-4">{todayLabel()} — daily staff totals</p>
 
-        {/* Employee banners */}
+        {/* Staff banners */}
         <section className="mb-8">
-          <h2 className="text-lg font-bold text-gray-800 mb-3">Today&apos;s Employee Summary</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-3">Today&apos;s Staff Summary</h2>
           {loading ? (
             <div className="flex justify-center py-10">
               <div className="w-8 h-8 rounded-full border-4 border-amber-500 border-t-transparent animate-spin" />
@@ -445,7 +445,7 @@ export default function EmployeeRecordsPage() {
                         </div>
                         <div>
                           <div className="font-bold text-lg text-gray-900">{summary.employeeName}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Employee</div>
+                          <div className="text-xs text-gray-500 mt-0.5">Staff</div>
                         </div>
                       </div>
 
@@ -498,7 +498,7 @@ export default function EmployeeRecordsPage() {
                         ) : (
                           <>
                             <CheckCircle2 size={18} />
-                            Clear Employee — Day Complete
+                            Clear Staff — Day Complete
                           </>
                         )}
                       </button>
@@ -617,7 +617,7 @@ export default function EmployeeRecordsPage() {
                   <tr className="bg-amber-50 border-b border-amber-100">
                     <th className="text-left px-4 py-3 text-amber-800 font-semibold">Order No.</th>
                     <th className="text-left px-4 py-3 text-amber-800 font-semibold">Date & Time</th>
-                    <th className="text-left px-4 py-3 text-amber-800 font-semibold">Employee</th>
+                    <th className="text-left px-4 py-3 text-amber-800 font-semibold">Staff</th>
                     <th className="text-left px-4 py-3 text-amber-800 font-semibold">Items</th>
                     <th className="text-right px-4 py-3 text-amber-800 font-semibold">Subtotal</th>
                     <th className="text-center px-4 py-3 text-amber-800 font-semibold">Delivery</th>
@@ -703,7 +703,7 @@ export default function EmployeeRecordsPage() {
 
         {user && (
           <p className="text-center text-gray-400 text-xs mt-6">
-            Logged in as <span className="font-semibold">{user.name}</span> (Owner) · Refreshes every 15 seconds
+            Logged in as <span className="font-semibold">{user.name}</span> (Therapist) · Refreshes every 15 seconds
           </p>
         )}
     </OwnerPageShell>

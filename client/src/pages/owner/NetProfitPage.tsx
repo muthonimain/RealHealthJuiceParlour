@@ -63,7 +63,7 @@ export default function NetProfitPage() {
       title="Net Profit"
       subtitle="Daily profit breakdown"
       onBack={() => navigate('/dashboard/owner')}
-      backTitle="Back to owner dashboard"
+      backTitle="Back to therapist dashboard"
     >
       <div className="max-w-2xl mx-auto w-full">
         <p className="text-sm text-gray-500 mb-6">{todayHeading()}</p>

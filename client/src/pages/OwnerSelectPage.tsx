@@ -83,7 +83,7 @@ export default function OwnerSelectPage() {
         <div className="w-full flex justify-center mb-5 px-2">
           <BrandLogo size="hero" className="drop-shadow-md" />
         </div>
-        <p className={`${ownerTheme.subtitle} text-lg font-semibold tracking-wide`}>Owner sign in</p>
+        <p className={`${ownerTheme.subtitle} text-lg font-semibold tracking-wide`}>Therapist sign in</p>
         <p className={`${ownerTheme.hint} text-sm mt-2`}>Select your account to continue</p>
       </motion.div>
 

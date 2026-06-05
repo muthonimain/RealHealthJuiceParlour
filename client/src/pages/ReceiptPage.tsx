@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Printer, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { DELIVERY_PAYBILL, DELIVERY_ACCOUNT } from '../constants/orderFees'
 import '../styles/thermal-receipt.css'
 
 interface OrderItem {
@@ -134,6 +135,23 @@ function ReceiptCopy({
         </p>
       </section>
 
+      {order.deliveryAmount > 0 ? (
+        <>
+          <hr className="thermal-receipt__rule" />
+          <section className="thermal-receipt__payment">
+            <p className="thermal-receipt__payment-title">M-Pesa Payment (Delivery)</p>
+            <p className="thermal-receipt__payment-row">
+              <span>Paybill</span>
+              <span>{DELIVERY_PAYBILL}</span>
+            </p>
+            <p className="thermal-receipt__payment-row">
+              <span>Account</span>
+              <span>{DELIVERY_ACCOUNT}</span>
+            </p>
+          </section>
+        </>
+      ) : null}
+
       <hr className="thermal-receipt__rule" />
 
       <footer className="thermal-receipt__footer">
@@ -167,7 +185,7 @@ export default function ReceiptPage() {
   const { user } = useAuth()
   const backPath =
     user?.role === 'owner' ? '/dashboard/owner/employee-records' : '/dashboard/employee'
-  const backLabel = user?.role === 'owner' ? 'Employee Records' : 'New Order'
+  const backLabel = user?.role === 'owner' ? 'Staff Records' : 'New Order'
   const [order, setOrder] = useState<Order | null>(null)
   const [error, setError] = useState('')
   const [printCopy, setPrintCopy] = useState<'customer' | 'kitchen' | null>(null)
