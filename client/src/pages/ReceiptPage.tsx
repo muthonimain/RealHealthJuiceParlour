@@ -75,12 +75,12 @@ function ReceiptCopy({
           return (
             <div key={item.id} className="thermal-receipt__item">
               <p className="thermal-receipt__item-name">{item.name}</p>
-              <p className="thermal-receipt__item-row">
-                <span>
-                  {unitLabel} <span>×{item.quantity}</span>
-                </span>
-                <strong>Total {totalLabel}</strong>
-              </p>
+              <div className="thermal-receipt__item-row">
+                <p className="thermal-receipt__item-unit">
+                  {unitLabel} ×{item.quantity}
+                </p>
+                <p className="thermal-receipt__item-total">Total {totalLabel}</p>
+              </div>
             </div>
           )
         })}
