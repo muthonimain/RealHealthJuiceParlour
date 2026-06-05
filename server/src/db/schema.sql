@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS orders (
   subtotal INT NOT NULL,
   delivery_included BOOLEAN NOT NULL DEFAULT FALSE,
   delivery_amount INT NOT NULL DEFAULT 0,
+  packaging_amount INT NOT NULL DEFAULT 0,
   grand_total INT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

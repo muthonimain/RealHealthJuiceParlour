@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { X, Plus, Minus, ShoppingCart, Trash2, Printer, Truck } from 'lucide-react'
+import { X, Plus, Minus, ShoppingCart, Trash2, Printer, Truck, Package } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import {
+  DELIVERY_OPTIONS,
+  PACKAGING_OPTIONS,
+  type DeliveryOption,
+  type PackagingOption,
+} from '../constants/orderFees'
 
 interface Props {
   open: boolean
@@ -12,25 +18,79 @@ interface Props {
   employeeName?: string
 }
 
-const DELIVERY_FEE = 50
-const PACKAGING_FEE = 30
-const DELIVERY_TOTAL = DELIVERY_FEE + PACKAGING_FEE
-
 const drawer: Variants = {
   hidden: { x: '100%' },
   visible: { x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } },
   exit: { x: '100%', transition: { duration: 0.2 } },
 }
 
+function FeeCheckboxRow({
+  label,
+  icon: Icon,
+  options,
+  selected,
+  onSelect,
+}: {
+  label: string
+  icon: typeof Truck
+  options: readonly number[]
+  selected: number | null
+  onSelect: (amount: number) => void
+}) {
+  return (
+    <div className="bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <Icon size={18} className="text-orange-500 shrink-0" />
+        <span className="text-sm font-semibold text-gray-800">{label}</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {options.map((amount) => {
+          const checked = selected === amount
+          return (
+            <label
+              key={amount}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer select-none text-sm font-semibold transition-colors ${
+                checked
+                  ? 'bg-orange-500 border-orange-500 text-white'
+                  : 'bg-white border-orange-200 text-gray-700 hover:bg-orange-100'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => onSelect(amount)}
+                className="w-4 h-4 accent-orange-500 cursor-pointer"
+              />
+              Ksh {amount}
+            </label>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function CartDrawer({ open, onClose, employeeName = 'Employee' }: Props) {
   const { items, totalItems, totalPrice, increment, decrement, removeItem, clearCart } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [withDelivery, setWithDelivery] = useState(false)
+  const [deliveryFee, setDeliveryFee] = useState<DeliveryOption | null>(null)
+  const [packagingFee, setPackagingFee] = useState<PackagingOption | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const grandTotal = totalPrice + (withDelivery ? DELIVERY_TOTAL : 0)
+  const deliveryAmount = deliveryFee ?? 0
+  const packagingAmount = packagingFee ?? 0
+  const hasExtras = deliveryAmount > 0 || packagingAmount > 0
+  const grandTotal = totalPrice + deliveryAmount + packagingAmount
+
+  const toggleDelivery = (amount: DeliveryOption) => {
+    setDeliveryFee((prev) => (prev === amount ? null : amount))
+  }
+
+  const togglePackaging = (amount: PackagingOption) => {
+    setPackagingFee((prev) => (prev === amount ? null : amount))
+  }
 
   const handleGenerateReceipt = async () => {
     setIsSubmitting(true)
@@ -47,8 +107,9 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
           employeeName: user?.name ?? employeeName,
           items,
           subtotal: totalPrice,
-          deliveryIncluded: withDelivery,
-          deliveryAmount: withDelivery ? DELIVERY_TOTAL : 0,
+          deliveryIncluded: hasExtras,
+          deliveryAmount,
+          packagingAmount,
           grandTotal,
           generatedAt: new Date().toISOString(),
         }),
@@ -57,6 +118,8 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
       if (!res.ok) throw new Error('Failed to save order.')
       const order = await res.json()
       clearCart()
+      setDeliveryFee(null)
+      setPackagingFee(null)
       onClose()
       navigate(`/receipt/${order.id}`)
     } catch (e: unknown) {
@@ -69,7 +132,6 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -78,7 +140,6 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
             className="fixed inset-0 bg-black/40 z-40"
           />
 
-          {/* Drawer */}
           <motion.div
             variants={drawer}
             initial="hidden"
@@ -86,7 +147,6 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
             exit="exit"
             className="fixed right-0 top-0 h-full w-full max-w-sm bg-white z-50 flex flex-col shadow-2xl"
           >
-            {/* Header */}
             <div className="bg-sky-700 px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2 text-white font-bold text-lg">
                 <ShoppingCart size={22} />
@@ -101,7 +161,6 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
               </button>
             </div>
 
-            {/* Items */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
@@ -123,17 +182,26 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => decrement(item.id)} title="Decrease quantity"
-                        className="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 flex items-center justify-center">
+                      <button
+                        onClick={() => decrement(item.id)}
+                        title="Decrease quantity"
+                        className="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                      >
                         <Minus size={16} />
                       </button>
                       <span className="w-6 text-center font-bold text-gray-900">{item.quantity}</span>
-                      <button onClick={() => increment(item.id)} title="Increase quantity"
-                        className="w-9 h-9 rounded-xl bg-sky-100 hover:bg-sky-200 flex items-center justify-center text-sky-700">
+                      <button
+                        onClick={() => increment(item.id)}
+                        title="Increase quantity"
+                        className="w-9 h-9 rounded-xl bg-sky-100 hover:bg-sky-200 flex items-center justify-center text-sky-700"
+                      >
                         <Plus size={16} />
                       </button>
-                      <button onClick={() => removeItem(item.id)} title="Remove item"
-                        className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 ml-1">
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        title="Remove item"
+                        className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 ml-1"
+                      >
                         <Trash2 size={15} />
                       </button>
                     </div>
@@ -142,59 +210,73 @@ export default function CartDrawer({ open, onClose, employeeName = 'Employee' }:
               )}
             </div>
 
-            {/* Footer */}
             {items.length > 0 && (
               <div className="border-t border-gray-100 p-4 space-y-3">
-                {/* Delivery Checkbox */}
-                <label className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 cursor-pointer select-none">
-                  <input type="checkbox" checked={withDelivery}
-                    onChange={(e) => setWithDelivery(e.target.checked)}
-                    className="w-5 h-5 accent-orange-500 cursor-pointer" />
-                  <div className="flex items-center gap-2 flex-1">
-                    <Truck size={18} className="text-orange-500 shrink-0" />
-                    <div>
-                      <div className="text-sm font-semibold text-gray-800">Delivery + Packaging</div>
-                      <div className="text-xs text-gray-500">Delivery Ksh {DELIVERY_FEE} + Packaging Ksh {PACKAGING_FEE}</div>
-                    </div>
-                  </div>
-                  <span className="font-bold text-orange-600 text-sm">+Ksh {DELIVERY_TOTAL}</span>
-                </label>
+                <FeeCheckboxRow
+                  label="Delivery"
+                  icon={Truck}
+                  options={DELIVERY_OPTIONS}
+                  selected={deliveryFee}
+                  onSelect={(amount) => toggleDelivery(amount as DeliveryOption)}
+                />
+                <FeeCheckboxRow
+                  label="Packaging"
+                  icon={Package}
+                  options={PACKAGING_OPTIONS}
+                  selected={packagingFee}
+                  onSelect={(amount) => togglePackaging(amount as PackagingOption)}
+                />
 
-                {/* Totals */}
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm text-gray-500">
                     <span>Subtotal</span>
                     <span>Ksh {totalPrice.toLocaleString()}</span>
                   </div>
-                  {withDelivery && (
+                  {deliveryAmount > 0 && (
                     <div className="flex justify-between text-sm text-orange-600">
-                      <span>Delivery + Packaging</span>
-                      <span>Ksh {DELIVERY_TOTAL}</span>
+                      <span>Delivery</span>
+                      <span>Ksh {deliveryAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {packagingAmount > 0 && (
+                    <div className="flex justify-between text-sm text-orange-600">
+                      <span>Packaging</span>
+                      <span>Ksh {packagingAmount.toLocaleString()}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center pt-1 border-t border-gray-100">
                     <span className="font-semibold text-gray-700">Grand Total</span>
-                    <span className="text-2xl font-bold text-gray-900">Ksh {grandTotal.toLocaleString()}</span>
+                    <span className="text-2xl font-bold text-gray-900">
+                      Ksh {grandTotal.toLocaleString()}
+                    </span>
                   </div>
                 </div>
 
-                {error && (
-                  <p className="text-red-500 text-xs text-center">{error}</p>
-                )}
+                {error && <p className="text-red-500 text-xs text-center">{error}</p>}
 
-                {/* Generate Receipt */}
                 <button
                   onClick={handleGenerateReceipt}
                   disabled={isSubmitting}
                   className="w-full bg-sky-600 hover:bg-sky-700 active:bg-sky-800 disabled:opacity-60 text-white font-bold text-lg rounded-2xl py-4 transition-all flex items-center justify-center gap-2"
                 >
-                  {isSubmitting
-                    ? <div className="w-5 h-5 rounded-full border-4 border-white border-t-transparent animate-spin" />
-                    : <><Printer size={20} />Generate Receipt</>}
+                  {isSubmitting ? (
+                    <div className="w-5 h-5 rounded-full border-4 border-white border-t-transparent animate-spin" />
+                  ) : (
+                    <>
+                      <Printer size={20} />
+                      Generate Receipt
+                    </>
+                  )}
                 </button>
 
-                <button onClick={clearCart}
-                  className="w-full text-sm text-gray-400 hover:text-red-500 py-2 transition-colors">
+                <button
+                  onClick={() => {
+                    clearCart()
+                    setDeliveryFee(null)
+                    setPackagingFee(null)
+                  }}
+                  className="w-full text-sm text-gray-400 hover:text-red-500 py-2 transition-colors"
+                >
                   Clear Order
                 </button>
               </div>

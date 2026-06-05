@@ -22,6 +22,7 @@ interface Order {
   subtotal: number
   deliveryIncluded: boolean
   deliveryAmount: number
+  packagingAmount?: number
   grandTotal: number
   createdAt: string
 }
@@ -96,6 +97,28 @@ function ReceiptCopy({
             </div>
           )
         })}
+        {order.deliveryAmount > 0 ? (
+          <div className="thermal-receipt__item">
+            <p className="thermal-receipt__item-name">Delivery</p>
+            <p className="thermal-receipt__item-unit">
+              Ksh {order.deliveryAmount.toLocaleString()} ×1
+            </p>
+            <p className="thermal-receipt__item-total">
+              Total Ksh {order.deliveryAmount.toLocaleString()}
+            </p>
+          </div>
+        ) : null}
+        {(order.packagingAmount ?? 0) > 0 ? (
+          <div className="thermal-receipt__item">
+            <p className="thermal-receipt__item-name">Packaging</p>
+            <p className="thermal-receipt__item-unit">
+              Ksh {(order.packagingAmount ?? 0).toLocaleString()} ×1
+            </p>
+            <p className="thermal-receipt__item-total">
+              Total Ksh {(order.packagingAmount ?? 0).toLocaleString()}
+            </p>
+          </div>
+        ) : null}
       </section>
 
       <hr className="thermal-receipt__rule" />
@@ -105,18 +128,6 @@ function ReceiptCopy({
           <span>Subtotal</span>
           <span>Ksh {order.subtotal.toLocaleString()}</span>
         </p>
-        {order.deliveryIncluded ? (
-          <>
-            <p className="thermal-receipt__total-row">
-              <span>Delivery</span>
-              <span>Ksh 50</span>
-            </p>
-            <p className="thermal-receipt__total-row">
-              <span>Packaging</span>
-              <span>Ksh 30</span>
-            </p>
-          </>
-        ) : null}
         <p className="thermal-receipt__grand-total">
           <span>TOTAL</span>
           <span>Ksh {order.grandTotal.toLocaleString()}</span>

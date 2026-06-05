@@ -45,6 +45,7 @@ router.post(
       subtotal,
       deliveryIncluded,
       deliveryAmount,
+      packagingAmount,
       grandTotal,
       generatedAt,
     } = req.body as {
@@ -54,6 +55,7 @@ router.post(
       subtotal: number
       deliveryIncluded: boolean
       deliveryAmount: number
+      packagingAmount?: number
       grandTotal: number
       generatedAt?: string
     }
@@ -70,6 +72,7 @@ router.post(
       subtotal,
       deliveryIncluded,
       deliveryAmount,
+      packagingAmount: packagingAmount ?? 0,
       grandTotal,
       generatedAt,
     })
@@ -121,6 +124,7 @@ router.patch(
       subtotal?: number
       deliveryIncluded?: boolean
       deliveryAmount?: number
+      packagingAmount?: number
       grandTotal?: number
       createdAt?: string
     }
@@ -139,6 +143,8 @@ router.patch(
     const subtotal = body.subtotal !== undefined ? Number(body.subtotal) : undefined
     const grandTotal = body.grandTotal !== undefined ? Number(body.grandTotal) : undefined
     const deliveryAmount = body.deliveryAmount !== undefined ? Number(body.deliveryAmount) : undefined
+    const packagingAmount =
+      body.packagingAmount !== undefined ? Number(body.packagingAmount) : undefined
 
     if (subtotal !== undefined && (!Number.isFinite(subtotal) || subtotal < 0)) {
       res.status(400).json({ message: 'Invalid subtotal.' })
@@ -152,6 +158,10 @@ router.patch(
       res.status(400).json({ message: 'Invalid delivery amount.' })
       return
     }
+    if (packagingAmount !== undefined && (!Number.isFinite(packagingAmount) || packagingAmount < 0)) {
+      res.status(400).json({ message: 'Invalid packaging amount.' })
+      return
+    }
 
     const order = await updateOrder(id, {
       employeeId: body.employeeId,
@@ -160,6 +170,7 @@ router.patch(
       subtotal,
       deliveryIncluded: body.deliveryIncluded,
       deliveryAmount,
+      packagingAmount,
       grandTotal,
       createdAt: body.createdAt,
     })
