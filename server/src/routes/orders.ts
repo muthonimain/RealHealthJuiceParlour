@@ -46,6 +46,8 @@ router.post(
       deliveryIncluded,
       deliveryAmount,
       packagingAmount,
+      packaging30Count,
+      packaging50Count,
       specialDeliveryAmount,
       boxAndTapesAmount,
       includePaybill,
@@ -59,6 +61,8 @@ router.post(
       deliveryIncluded: boolean
       deliveryAmount: number
       packagingAmount?: number
+      packaging30Count?: number
+      packaging50Count?: number
       specialDeliveryAmount?: number
       boxAndTapesAmount?: number
       includePaybill?: boolean
@@ -79,6 +83,8 @@ router.post(
       deliveryIncluded,
       deliveryAmount,
       packagingAmount: packagingAmount ?? 0,
+      packaging30Count: packaging30Count ?? 0,
+      packaging50Count: packaging50Count ?? 0,
       specialDeliveryAmount: specialDeliveryAmount ?? 0,
       boxAndTapesAmount: boxAndTapesAmount ?? 0,
       includePaybill: includePaybill ?? false,

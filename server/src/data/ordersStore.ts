@@ -18,6 +18,8 @@ export interface Order {
   deliveryIncluded: boolean
   deliveryAmount: number
   packagingAmount: number
+  packaging30Count: number
+  packaging50Count: number
   specialDeliveryAmount: number
   boxAndTapesAmount: number
   includePaybill: boolean
@@ -34,6 +36,8 @@ interface OrderRow {
   delivery_included: boolean
   delivery_amount: number
   packaging_amount: number
+  packaging_30_count: number
+  packaging_50_count: number
   special_delivery_amount: number
   box_and_tapes_amount: number
   include_paybill: boolean
@@ -51,6 +55,8 @@ function mapOrder(row: OrderRow): Order {
     deliveryIncluded: row.delivery_included,
     deliveryAmount: row.delivery_amount,
     packagingAmount: row.packaging_amount ?? 0,
+    packaging30Count: row.packaging_30_count ?? 0,
+    packaging50Count: row.packaging_50_count ?? 0,
     specialDeliveryAmount: row.special_delivery_amount ?? 0,
     boxAndTapesAmount: row.box_and_tapes_amount ?? 0,
     includePaybill: row.include_paybill ?? false,
@@ -77,11 +83,11 @@ export async function createOrder(
   const generatedAt = resolveGeneratedAt(data.generatedAt)
   const { rows } = await pool.query<OrderRow>(
     generatedAt
-      ? `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, packaging_amount, special_delivery_amount, box_and_tapes_amount, include_paybill, grand_total, created_at)
-         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz)
+      ? `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, packaging_amount, packaging_30_count, packaging_50_count, special_delivery_amount, box_and_tapes_amount, include_paybill, grand_total, created_at)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::timestamptz)
          RETURNING *`
-      : `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, packaging_amount, special_delivery_amount, box_and_tapes_amount, include_paybill, grand_total)
-         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12)
+      : `INSERT INTO orders (id, employee_id, employee_name, items, subtotal, delivery_included, delivery_amount, packaging_amount, packaging_30_count, packaging_50_count, special_delivery_amount, box_and_tapes_amount, include_paybill, grand_total)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          RETURNING *`,
     generatedAt
       ? [
@@ -93,6 +99,8 @@ export async function createOrder(
           data.deliveryIncluded,
           data.deliveryAmount,
           data.packagingAmount ?? 0,
+          data.packaging30Count ?? 0,
+          data.packaging50Count ?? 0,
           data.specialDeliveryAmount ?? 0,
           data.boxAndTapesAmount ?? 0,
           data.includePaybill ?? false,
@@ -108,6 +116,8 @@ export async function createOrder(
           data.deliveryIncluded,
           data.deliveryAmount,
           data.packagingAmount ?? 0,
+          data.packaging30Count ?? 0,
+          data.packaging50Count ?? 0,
           data.specialDeliveryAmount ?? 0,
           data.boxAndTapesAmount ?? 0,
           data.includePaybill ?? false,
@@ -141,6 +151,8 @@ export async function updateOrder(
   const deliveryIncluded = data.deliveryIncluded ?? existing.deliveryIncluded
   const deliveryAmount = data.deliveryAmount ?? existing.deliveryAmount
   const packagingAmount = data.packagingAmount ?? existing.packagingAmount
+  const packaging30Count = data.packaging30Count ?? existing.packaging30Count
+  const packaging50Count = data.packaging50Count ?? existing.packaging50Count
   const specialDeliveryAmount = data.specialDeliveryAmount ?? existing.specialDeliveryAmount
   const boxAndTapesAmount = data.boxAndTapesAmount ?? existing.boxAndTapesAmount
   const includePaybill = data.includePaybill ?? existing.includePaybill
@@ -170,11 +182,13 @@ export async function updateOrder(
        delivery_included = $6,
        delivery_amount = $7,
        packaging_amount = $8,
-       special_delivery_amount = $9,
-       box_and_tapes_amount = $10,
-       include_paybill = $11,
-       grand_total = $12,
-       created_at = $13::timestamptz
+       packaging_30_count = $9,
+       packaging_50_count = $10,
+       special_delivery_amount = $11,
+       box_and_tapes_amount = $12,
+       include_paybill = $13,
+       grand_total = $14,
+       created_at = $15::timestamptz
      WHERE id = $1
      RETURNING *`,
     [
@@ -186,6 +200,8 @@ export async function updateOrder(
       deliveryIncluded,
       deliveryAmount,
       packagingAmount,
+      packaging30Count,
+      packaging50Count,
       specialDeliveryAmount,
       boxAndTapesAmount,
       includePaybill,

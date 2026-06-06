@@ -11,3 +11,11 @@ export const DELIVERY_ACCOUNT = '248899'
 export type DeliveryOption = (typeof DELIVERY_OPTIONS)[number]
 export type PackagingOption = (typeof PACKAGING_OPTIONS)[number]
 export type SpecialDeliveryOption = (typeof SPECIAL_DELIVERY_OPTIONS)[number]
+
+export type PackagingCounts = Record<PackagingOption, number>
+
+export const EMPTY_PACKAGING_COUNTS: PackagingCounts = { 30: 0, 50: 0 }
+
+export function packagingTotal(counts: PackagingCounts): number {
+  return PACKAGING_OPTIONS.reduce((sum, amount) => sum + amount * (counts[amount] ?? 0), 0)
+}

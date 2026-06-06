@@ -17,7 +17,10 @@ import {
   DELIVERY_ACCOUNT,
   type DeliveryOption,
   type PackagingOption,
+  type PackagingCounts,
   type SpecialDeliveryOption,
+  EMPTY_PACKAGING_COUNTS,
+  packagingTotal,
 } from '../constants/orderFees'
 
 interface Props {
@@ -71,6 +74,57 @@ function FeeCheckboxRow({
               />
               Ksh {amount}
             </label>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function PackagingCounterRow({
+  counts,
+  onChange,
+}: {
+  counts: PackagingCounts
+  onChange: (amount: PackagingOption, next: number) => void
+}) {
+  return (
+    <div className="bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <Package size={18} className="text-orange-500 shrink-0" />
+        <span className="text-sm font-semibold text-gray-800">Packaging</span>
+      </div>
+      <p className="text-xs text-gray-500 -mt-1">Add one package per item — tap + for each soup or product packed</p>
+      <div className="space-y-2">
+        {PACKAGING_OPTIONS.map((amount) => {
+          const count = counts[amount]
+          return (
+            <div
+              key={amount}
+              className="flex items-center justify-between gap-3 bg-white border border-orange-200 rounded-xl px-3 py-2.5"
+            >
+              <span className="text-sm font-bold text-gray-800">Ksh {amount}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onChange(amount, Math.max(0, count - 1))}
+                  disabled={count === 0}
+                  title={`Remove Ksh ${amount} packaging`}
+                  className="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 disabled:opacity-40 flex items-center justify-center"
+                >
+                  <Minus size={16} />
+                </button>
+                <span className="w-8 text-center font-bold text-gray-900 tabular-nums">{count}</span>
+                <button
+                  type="button"
+                  onClick={() => onChange(amount, count + 1)}
+                  title={`Add Ksh ${amount} packaging`}
+                  className="w-9 h-9 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-700 flex items-center justify-center"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            </div>
           )
         })}
       </div>
@@ -153,7 +207,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
   const { user } = useAuth()
   const navigate = useNavigate()
   const [deliveryFee, setDeliveryFee] = useState<DeliveryOption | null>(null)
-  const [packagingFee, setPackagingFee] = useState<PackagingOption | null>(null)
+  const [packagingCounts, setPackagingCounts] = useState<PackagingCounts>(EMPTY_PACKAGING_COUNTS)
   const [specialDeliveryOpen, setSpecialDeliveryOpen] = useState(false)
   const [specialDeliveryFee, setSpecialDeliveryFee] = useState<SpecialDeliveryOption | null>(null)
   const [boxAndTapes, setBoxAndTapes] = useState(false)
@@ -161,7 +215,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
   const [error, setError] = useState('')
 
   const deliveryAmount = deliveryFee ?? 0
-  const packagingAmount = packagingFee ?? 0
+  const packagingAmount = packagingTotal(packagingCounts)
   const specialDeliveryAmount = specialDeliveryOpen ? (specialDeliveryFee ?? 0) : 0
   const boxAndTapesAmount = boxAndTapes ? BOX_AND_TAPES_AMOUNT : 0
   const hasExtras =
@@ -176,8 +230,8 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
     setDeliveryFee((prev) => (prev === amount ? null : amount))
   }
 
-  const togglePackaging = (amount: PackagingOption) => {
-    setPackagingFee((prev) => (prev === amount ? null : amount))
+  const setPackagingCount = (amount: PackagingOption, next: number) => {
+    setPackagingCounts((prev) => ({ ...prev, [amount]: next }))
   }
 
   const toggleSpecialDelivery = (amount: SpecialDeliveryOption) => {
@@ -205,6 +259,8 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
       deliveryIncluded: hasExtras,
       deliveryAmount,
       packagingAmount,
+      packaging30Count: packagingCounts[30],
+      packaging50Count: packagingCounts[50],
       specialDeliveryAmount,
       boxAndTapesAmount,
       includePaybill,
@@ -212,7 +268,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
     })
     clearCart()
     setDeliveryFee(null)
-    setPackagingFee(null)
+    setPackagingCounts(EMPTY_PACKAGING_COUNTS)
     setSpecialDeliveryOpen(false)
     setSpecialDeliveryFee(null)
     setBoxAndTapes(false)
@@ -313,13 +369,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                   selected={deliveryFee}
                   onSelect={(amount) => toggleDelivery(amount as DeliveryOption)}
                 />
-                <FeeCheckboxRow
-                  label="Packaging"
-                  icon={Package}
-                  options={PACKAGING_OPTIONS}
-                  selected={packagingFee}
-                  onSelect={(amount) => togglePackaging(amount as PackagingOption)}
-                />
+                <PackagingCounterRow counts={packagingCounts} onChange={setPackagingCount} />
 
                 <SpecialDeliveriesSection
                   specialDeliveryOpen={specialDeliveryOpen}
@@ -359,10 +409,16 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                       <span>Ksh {deliveryAmount.toLocaleString()}</span>
                     </div>
                   )}
-                  {packagingAmount > 0 && (
+                  {packagingCounts[30] > 0 && (
                     <div className="flex justify-between text-sm text-orange-600">
-                      <span>Packaging</span>
-                      <span>Ksh {packagingAmount.toLocaleString()}</span>
+                      <span>Packaging (Ksh 30 ×{packagingCounts[30]})</span>
+                      <span>Ksh {(30 * packagingCounts[30]).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {packagingCounts[50] > 0 && (
+                    <div className="flex justify-between text-sm text-orange-600">
+                      <span>Packaging (Ksh 50 ×{packagingCounts[50]})</span>
+                      <span>Ksh {(50 * packagingCounts[50]).toLocaleString()}</span>
                     </div>
                   )}
                   {specialDeliveryAmount > 0 && (
@@ -400,7 +456,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                   onClick={() => {
                     clearCart()
                     setDeliveryFee(null)
-                    setPackagingFee(null)
+                    setPackagingCounts(EMPTY_PACKAGING_COUNTS)
                     setSpecialDeliveryOpen(false)
                     setSpecialDeliveryFee(null)
                     setBoxAndTapes(false)

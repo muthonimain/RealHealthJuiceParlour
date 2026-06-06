@@ -36,6 +36,8 @@ interface Order {
   deliveryIncluded: boolean
   deliveryAmount: number
   packagingAmount?: number
+  packaging30Count?: number
+  packaging50Count?: number
   specialDeliveryAmount?: number
   boxAndTapesAmount?: number
   includePaybill?: boolean
@@ -64,6 +66,45 @@ function formatGeneratedAt(iso: string) {
   const dayPeriod = (parts.find((p) => p.type === 'dayPeriod')?.value ?? '').toLowerCase()
   const time = `${hour}:${minute}${dayPeriod}`
   return `${date} ${time}`
+}
+
+function PackagingReceiptLines({ order }: { order: Order }) {
+  const count30 = order.packaging30Count ?? 0
+  const count50 = order.packaging50Count ?? 0
+  const legacyTotal = order.packagingAmount ?? 0
+
+  if (count30 > 0 || count50 > 0) {
+    return (
+      <>
+        {count30 > 0 ? (
+          <div className="thermal-receipt__item">
+            <p className="thermal-receipt__item-name">Packaging (Ksh 30)</p>
+            <p className="thermal-receipt__item-unit">Ksh 30 ×{count30}</p>
+            <p className="thermal-receipt__item-total">Total Ksh {(30 * count30).toLocaleString()}</p>
+          </div>
+        ) : null}
+        {count50 > 0 ? (
+          <div className="thermal-receipt__item">
+            <p className="thermal-receipt__item-name">Packaging (Ksh 50)</p>
+            <p className="thermal-receipt__item-unit">Ksh 50 ×{count50}</p>
+            <p className="thermal-receipt__item-total">Total Ksh {(50 * count50).toLocaleString()}</p>
+          </div>
+        ) : null}
+      </>
+    )
+  }
+
+  if (legacyTotal > 0) {
+    return (
+      <div className="thermal-receipt__item">
+        <p className="thermal-receipt__item-name">Packaging</p>
+        <p className="thermal-receipt__item-unit">Ksh {legacyTotal.toLocaleString()} ×1</p>
+        <p className="thermal-receipt__item-total">Total Ksh {legacyTotal.toLocaleString()}</p>
+      </div>
+    )
+  }
+
+  return null
 }
 
 function ReceiptCopy({
@@ -124,17 +165,7 @@ function ReceiptCopy({
             </p>
           </div>
         ) : null}
-        {(order.packagingAmount ?? 0) > 0 ? (
-          <div className="thermal-receipt__item">
-            <p className="thermal-receipt__item-name">Packaging</p>
-            <p className="thermal-receipt__item-unit">
-              Ksh {(order.packagingAmount ?? 0).toLocaleString()} ×1
-            </p>
-            <p className="thermal-receipt__item-total">
-              Total Ksh {(order.packagingAmount ?? 0).toLocaleString()}
-            </p>
-          </div>
-        ) : null}
+        <PackagingReceiptLines order={order} />
         {(order.specialDeliveryAmount ?? 0) > 0 ? (
           <div className="thermal-receipt__item">
             <p className="thermal-receipt__item-name">{SPECIAL_DELIVERY_RECEIPT_LABEL}</p>

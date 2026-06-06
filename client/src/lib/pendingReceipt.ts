@@ -11,6 +11,8 @@ export interface PendingReceiptPayload {
   deliveryIncluded: boolean
   deliveryAmount: number
   packagingAmount: number
+  packaging30Count: number
+  packaging50Count: number
   specialDeliveryAmount: number
   boxAndTapesAmount: number
   includePaybill: boolean
@@ -26,6 +28,8 @@ export interface ReceiptPreviewOrder {
   deliveryIncluded: boolean
   deliveryAmount: number
   packagingAmount: number
+  packaging30Count: number
+  packaging50Count: number
   specialDeliveryAmount: number
   boxAndTapesAmount: number
   includePaybill: boolean
@@ -41,9 +45,23 @@ export function loadPendingReceipt(): PendingReceiptPayload | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
     if (!raw) return null
-    const parsed = JSON.parse(raw) as PendingReceiptPayload
+    const parsed = JSON.parse(raw) as Partial<PendingReceiptPayload>
     if (!parsed.items?.length || !parsed.employeeName) return null
-    return parsed
+    return {
+      employeeId: parsed.employeeId ?? '',
+      employeeName: parsed.employeeName,
+      items: parsed.items,
+      subtotal: parsed.subtotal ?? 0,
+      deliveryIncluded: parsed.deliveryIncluded ?? false,
+      deliveryAmount: parsed.deliveryAmount ?? 0,
+      packagingAmount: parsed.packagingAmount ?? 0,
+      packaging30Count: parsed.packaging30Count ?? 0,
+      packaging50Count: parsed.packaging50Count ?? 0,
+      specialDeliveryAmount: parsed.specialDeliveryAmount ?? 0,
+      boxAndTapesAmount: parsed.boxAndTapesAmount ?? 0,
+      includePaybill: parsed.includePaybill ?? false,
+      grandTotal: parsed.grandTotal ?? 0,
+    }
   } catch {
     return null
   }
@@ -63,6 +81,8 @@ export function pendingToPreviewOrder(payload: PendingReceiptPayload): ReceiptPr
     deliveryIncluded: payload.deliveryIncluded,
     deliveryAmount: payload.deliveryAmount,
     packagingAmount: payload.packagingAmount,
+    packaging30Count: payload.packaging30Count,
+    packaging50Count: payload.packaging50Count,
     specialDeliveryAmount: payload.specialDeliveryAmount,
     boxAndTapesAmount: payload.boxAndTapesAmount,
     includePaybill: payload.includePaybill,
