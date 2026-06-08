@@ -164,17 +164,18 @@
 
 .thermal-receipt__footer {
   margin: 0;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 10px;
+  font-family: inherit;
+  font-size: inherit;
   font-weight: 700;
-  text-align: left;
-  line-height: 1.5;
+  text-align: center;
+  line-height: 1.45;
   overflow-wrap: anywhere;
 }
 
 .thermal-receipt__footer p {
-  margin: 0 0 2px;
+  margin: 0 0 3px;
   font-weight: 700;
+  font-size: inherit;
 }
 
 .thermal-receipt__footer-lead {
@@ -188,15 +189,12 @@
 }
 
 .thermal-receipt__footer-phones {
-  font-size: 9px;
   line-height: 1.45;
-  letter-spacing: -0.02em;
 }
 
 .thermal-receipt__footer-tagline {
   margin-top: 10px !important;
   font-weight: 900;
-  font-size: 9px;
   line-height: 1.45;
 }
 
