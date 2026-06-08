@@ -195,9 +195,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                         </div>
                         <div className="text-xs text-gray-400 mt-0.5">{item.categoryName}</div>
                         <div className="text-sky-700 font-bold text-sm mt-1">
-                          {item.price === 0
-                            ? 'On request'
-                            : `Ksh ${(item.price * item.quantity).toLocaleString()}`}
+                          {item.price === 0 ? 'On request' : `Ksh ${item.price.toLocaleString()}`}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
