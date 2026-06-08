@@ -14,7 +14,6 @@ import {
   type SafeHandlingCounts,
   emptySafeHandlingCounts,
   safeHandlingTotal,
-  safeHandlingActiveLines,
 } from '../constants/orderFees'
 
 interface Props {
@@ -187,43 +186,50 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                     <p className="text-sm">No items added yet</p>
                   </div>
                 ) : (
-                  items.map((item) => (
-                    <div key={item.id} className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 text-sm leading-tight truncate">
-                          {item.name}
+                  items.map((item) => {
+                    const lineTotal = item.price * item.quantity
+                    const unitLabel = item.price === 0 ? 'On req.' : item.price.toLocaleString()
+                    const amountLabel =
+                      item.price === 0 ? 'On req.' : lineTotal.toLocaleString()
+
+                    return (
+                      <div key={item.id} className="bg-gray-50 rounded-2xl p-3 space-y-2">
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 items-baseline text-sm">
+                          <span className="font-semibold text-gray-900 leading-tight">{item.name}</span>
+                          <span className="text-gray-600 tabular-nums whitespace-nowrap text-xs">
+                            {item.quantity} x {unitLabel}
+                          </span>
+                          <span className="font-bold text-gray-900 tabular-nums whitespace-nowrap text-right">
+                            {amountLabel}
+                          </span>
                         </div>
-                        <div className="text-xs text-gray-400 mt-0.5">{item.categoryName}</div>
-                        <div className="text-sky-700 font-bold text-sm mt-1">
-                          {item.price === 0 ? 'On request' : `Ksh ${item.price.toLocaleString()}`}
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => decrement(item.id)}
+                            title="Decrease quantity"
+                            className="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <span className="w-6 text-center font-bold text-gray-900">{item.quantity}</span>
+                          <button
+                            onClick={() => increment(item.id)}
+                            title="Increase quantity"
+                            className="w-9 h-9 rounded-xl bg-sky-100 hover:bg-sky-200 flex items-center justify-center text-sky-700"
+                          >
+                            <Plus size={16} />
+                          </button>
+                          <button
+                            onClick={() => removeItem(item.id)}
+                            title="Remove item"
+                            className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500"
+                          >
+                            <Trash2 size={15} />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => decrement(item.id)}
-                          title="Decrease quantity"
-                          className="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <span className="w-6 text-center font-bold text-gray-900">{item.quantity}</span>
-                        <button
-                          onClick={() => increment(item.id)}
-                          title="Increase quantity"
-                          className="w-9 h-9 rounded-xl bg-sky-100 hover:bg-sky-200 flex items-center justify-center text-sky-700"
-                        >
-                          <Plus size={16} />
-                        </button>
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          title="Remove item"
-                          className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 ml-1"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </div>
 
@@ -261,23 +267,19 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                     })}
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>Subtotal</span>
-                      <span>Ksh {totalPrice.toLocaleString()}</span>
-                    </div>
-                    {safeHandlingActiveLines(safeHandlingCounts).map(({ amount, count }) => (
-                      <div key={amount} className="flex justify-between text-sm text-teal-700">
-                        <span>
-                          {SAFE_HANDLING_SECTION_LABEL} (Ksh {amount} ×{count})
+                  <div className="space-y-1 border-t border-gray-200 pt-3">
+                    {safeHandlingAmount > 0 ? (
+                      <div className="flex justify-between text-sm text-teal-700">
+                        <span>{SAFE_HANDLING_SECTION_LABEL}</span>
+                        <span className="font-semibold tabular-nums">
+                          {safeHandlingAmount.toLocaleString()}
                         </span>
-                        <span>Ksh {(amount * count).toLocaleString()}</span>
                       </div>
-                    ))}
-                    <div className="flex justify-between items-center pt-1 border-t border-gray-100">
-                      <span className="font-semibold text-gray-700">Grand Total</span>
-                      <span className="text-2xl font-bold text-gray-900">
-                        Ksh {grandTotal.toLocaleString()}
+                    ) : null}
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="font-bold text-gray-900 uppercase tracking-wide">Total</span>
+                      <span className="text-2xl font-bold text-gray-900 tabular-nums">
+                        {grandTotal.toLocaleString()}
                       </span>
                     </div>
                   </div>

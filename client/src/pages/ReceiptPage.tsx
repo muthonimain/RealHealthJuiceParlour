@@ -74,23 +74,37 @@ function formatGeneratedAt(iso: string) {
   return `${date} ${time}`
 }
 
+function formatReceiptAmount(amount: number): string {
+  return amount === 0 ? 'On req.' : amount.toLocaleString()
+}
+
+function ReceiptLine({
+  name,
+  middle,
+  amount,
+}: {
+  name: string
+  middle?: string
+  amount: string
+}) {
+  return (
+    <div className="thermal-receipt__line">
+      <span className="thermal-receipt__line-name">{name}</span>
+      <span className="thermal-receipt__line-qty">{middle ?? ''}</span>
+      <span className="thermal-receipt__line-amount">{amount}</span>
+    </div>
+  )
+}
+
 function ServiceFeeReceiptLines({ order }: { order: Order }) {
   const lines = safeHandlingActiveLines(normalizeSafeHandlingCounts(order.safeHandlingCounts))
   if (lines.length > 0) {
+    const total = lines.reduce((sum, { amount, count }) => sum + amount * count, 0)
     return (
-      <>
-        {lines.map(({ amount, count }) => (
-          <div key={amount} className="thermal-receipt__item">
-            <p className="thermal-receipt__item-name">{SAFE_HANDLING_RECEIPT_LABEL}</p>
-            <p className="thermal-receipt__item-unit">
-              Ksh {amount.toLocaleString()} ×{count}
-            </p>
-            <p className="thermal-receipt__item-total">
-              Total Ksh {(amount * count).toLocaleString()}
-            </p>
-          </div>
-        ))}
-      </>
+      <ReceiptLine
+        name={SAFE_HANDLING_RECEIPT_LABEL}
+        amount={formatReceiptAmount(total)}
+      />
     )
   }
 
@@ -118,11 +132,11 @@ function ServiceFeeReceiptLines({ order }: { order: Order }) {
   return (
     <>
       {legacyFees.map((fee) => (
-        <div key={fee.label} className="thermal-receipt__item">
-          <p className="thermal-receipt__item-name">{fee.label}</p>
-          <p className="thermal-receipt__item-unit">Ksh {fee.amount.toLocaleString()} ×1</p>
-          <p className="thermal-receipt__item-total">Total Ksh {fee.amount.toLocaleString()}</p>
-        </div>
+        <ReceiptLine
+          key={fee.label}
+          name={fee.label}
+          amount={formatReceiptAmount(fee.amount)}
+        />
       ))}
     </>
   )
@@ -159,20 +173,18 @@ function ReceiptCopy({
 
       <hr className="thermal-receipt__rule" />
 
-      <section>
+      <section className="thermal-receipt__lines">
         {order.items.map((item) => {
           const lineTotal = item.price * item.quantity
-          const unitLabel = item.price === 0 ? 'On req.' : `Ksh ${item.price.toLocaleString()}`
-          const totalLabel = item.price === 0 ? 'On req.' : `Ksh ${lineTotal.toLocaleString()}`
+          const unitPrice = item.price === 0 ? 'On req.' : item.price.toLocaleString()
 
           return (
-            <div key={item.id} className="thermal-receipt__item">
-              <p className="thermal-receipt__item-name">{item.name}</p>
-              <p className="thermal-receipt__item-unit">
-                {unitLabel} ×{item.quantity}
-              </p>
-              <p className="thermal-receipt__item-total">Total {totalLabel}</p>
-            </div>
+            <ReceiptLine
+              key={item.id}
+              name={item.name}
+              middle={`${item.quantity} x ${unitPrice}`}
+              amount={formatReceiptAmount(lineTotal)}
+            />
           )
         })}
         <ServiceFeeReceiptLines order={order} />
@@ -181,13 +193,9 @@ function ReceiptCopy({
       <hr className="thermal-receipt__rule" />
 
       <section>
-        <p className="thermal-receipt__total-row">
-          <span>Subtotal</span>
-          <span>Ksh {order.subtotal.toLocaleString()}</span>
-        </p>
         <p className="thermal-receipt__grand-total">
           <span>TOTAL</span>
-          <span>Ksh {order.grandTotal.toLocaleString()}</span>
+          <span>{order.grandTotal.toLocaleString()}</span>
         </p>
       </section>
 

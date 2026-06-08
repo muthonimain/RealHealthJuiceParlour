@@ -107,57 +107,45 @@
   line-height: 1.5;
 }
 
-.thermal-receipt__item {
-  margin: 0 0 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px dotted #ccc;
+.thermal-receipt__lines {
+  margin: 0;
 }
 
-.thermal-receipt__item:last-child {
-  border-bottom: none;
+.thermal-receipt__line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+  align-items: baseline;
+  margin: 0 0 5px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.thermal-receipt__line:last-child {
   margin-bottom: 0;
-  padding-bottom: 0;
 }
 
-.thermal-receipt__item-name {
-  margin: 0 0 2px;
-  font-size: 14px;
+.thermal-receipt__line-name {
+  min-width: 0;
+  font-size: 13px;
   font-weight: 900;
   line-height: 1.3;
 }
 
-.thermal-receipt__item-unit {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.thermal-receipt__item-total {
-  margin: 1px 0 0;
-  font-size: 12px;
-  font-weight: 900;
+.thermal-receipt__line-qty {
   text-align: right;
-  line-height: 1.35;
-}
-
-.thermal-receipt__total-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px;
-  align-items: baseline;
-  margin: 0 0 3px;
-  font-size: 12px;
+  white-space: nowrap;
+  font-size: 11px;
   font-weight: 700;
+  padding-right: 2px;
 }
 
-.thermal-receipt__total-row span:first-child {
-  min-width: 0;
-}
-
-.thermal-receipt__total-row span:last-child {
+.thermal-receipt__line-amount {
   text-align: right;
+  white-space: nowrap;
   font-weight: 900;
+  min-width: 2.75em;
 }
 
 .thermal-receipt__grand-total {
@@ -165,9 +153,7 @@
   grid-template-columns: 1fr auto;
   gap: 4px;
   align-items: baseline;
-  margin: 4px 0 0;
-  padding-top: 4px;
-  border-top: 2px solid #000;
+  margin: 0;
   font-size: 15px;
   font-weight: 900;
 }
@@ -317,11 +303,10 @@
 
   .thermal-receipt__title,
   .thermal-receipt__copy-label,
-  .thermal-receipt__item-name,
-  .thermal-receipt__item-total,
+  .thermal-receipt__line-name,
+  .thermal-receipt__line-amount,
   .thermal-receipt__grand-total,
   .thermal-receipt__grand-total span,
-  .thermal-receipt__total-row span:last-child,
   .thermal-receipt__footer-tagline {
     font-weight: 900 !important;
   }
