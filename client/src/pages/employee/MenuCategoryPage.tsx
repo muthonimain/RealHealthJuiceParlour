@@ -16,13 +16,8 @@ const container: Variants = { hidden: {}, show: { transition: { staggerChildren:
 const cardVariant: Variants = { hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } }
 
 function ItemCard({ item, categoryName }: { item: MenuItem; categoryName: string }) {
-  const { addItem, increment, decrement, getQuantity } = useCart()
+  const { addOrIncrement, decrement, getQuantity } = useCart()
   const qty = getQuantity(item.id)
-
-  const handleIncrement = () => {
-    if (qty === 0) addItem(item, categoryName)
-    else increment(item.id)
-  }
 
   const price = normalizePrice(item.price)
 
@@ -59,7 +54,7 @@ function ItemCard({ item, categoryName }: { item: MenuItem; categoryName: string
         </span>
         <button
           type="button"
-          onClick={handleIncrement}
+          onClick={() => addOrIncrement(item, categoryName)}
           title="Add to order"
           className={`flex-1 rounded-xl py-3 flex items-center justify-center transition-all min-h-[48px] ${employeeTheme.orderStepperBtn}`}
         >

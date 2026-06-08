@@ -24,7 +24,7 @@ interface CartState {
 }
 
 type CartAction =
-  | { type: 'SYNC'; items: CartItem[]; updatedAt: string }
+  | { type: 'SYNC'; items: CartItem[]; updatedAt: string | null }
   | { type: 'ADD'; item: MenuItem; categoryName: string }
   | { type: 'REMOVE'; id: string }
   | { type: 'INCREMENT'; id: string }
@@ -86,6 +86,7 @@ interface CartContextType {
   totalItems: number
   totalPrice: number
   addItem: (item: MenuItem, categoryName: string) => void
+  addOrIncrement: (item: MenuItem, categoryName: string) => void
   removeItem: (id: string) => void
   increment: (id: string) => void
   decrement: (id: string) => void
@@ -96,7 +97,8 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null)
 
-const POLL_MS = 2000
+const POLL_MS = 3000
+const PUSH_DEBOUNCE_MS = 400
 
 function cartFingerprint(items: CartItem[]): string {
   return JSON.stringify(
@@ -104,19 +106,33 @@ function cartFingerprint(items: CartItem[]): string {
   )
 }
 
+function parseUpdatedAt(value: string | null | undefined): number {
+  if (!value) return 0
+  const t = new Date(value).getTime()
+  return Number.isFinite(t) ? t : 0
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user, handleSessionInactive } = useAuth()
   const [state, dispatch] = useReducer(cartReducer, { items: [], updatedAt: null })
   const [isSyncing, setIsSyncing] = useState(false)
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pushVersion = useRef(0)
   const pushing = useRef(false)
+  const hasPendingLocal = useRef(false)
   const stateRef = useRef(state)
   stateRef.current = state
 
   const isEmployee = user?.role === 'employee'
 
+  const syncState = useCallback((items: CartItem[], updatedAt: string | null) => {
+    const next = { items, updatedAt }
+    stateRef.current = next
+    dispatch({ type: 'SYNC', items, updatedAt })
+  }, [])
+
   const pushCart = useCallback(
-    async (items: CartItem[]) => {
+    async (items: CartItem[], version: number) => {
       if (!isEmployee) return
       pushing.current = true
       try {
@@ -129,41 +145,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
           if (data.code === 'SESSION_INACTIVE') handleSessionInactive()
           return
         }
-        if (res.ok) {
-          const data = await readApiJson<{ items: CartItem[]; updatedAt: string }>(res)
-          dispatch({ type: 'SYNC', items: data.items, updatedAt: data.updatedAt })
-        }
+        if (!res.ok) return
+
+        const data = await readApiJson<{ items: CartItem[]; updatedAt: string }>(res)
+        // Ignore stale responses when the user has already made newer edits.
+        if (version !== pushVersion.current) return
+
+        hasPendingLocal.current = false
+        syncState(data.items, data.updatedAt)
       } finally {
         pushing.current = false
       }
     },
-    [isEmployee, handleSessionInactive]
+    [isEmployee, handleSessionInactive, syncState]
   )
 
   const schedulePush = useCallback(
     (items: CartItem[]) => {
       if (!isEmployee) return
+      hasPendingLocal.current = true
+      pushVersion.current += 1
+      const version = pushVersion.current
+
       if (pushTimer.current) clearTimeout(pushTimer.current)
       pushTimer.current = setTimeout(() => {
-        void pushCart(items)
-      }, 250)
+        void pushCart(items, version)
+      }, PUSH_DEBOUNCE_MS)
     },
     [isEmployee, pushCart]
   )
 
   const applyLocal = useCallback(
-    (action: CartAction) => {
+    (action: Exclude<CartAction, { type: 'SYNC' }>) => {
       const next = cartReducer(stateRef.current, action)
-      dispatch(action)
-      if (action.type !== 'SYNC') {
-        schedulePush(next.items)
-      }
+      stateRef.current = next
+      dispatch({ type: 'SYNC', items: next.items, updatedAt: next.updatedAt })
+      schedulePush(next.items)
     },
     [schedulePush]
   )
 
   const pullCart = useCallback(async () => {
-    if (!isEmployee || pushing.current) return
+    if (!isEmployee || pushing.current || hasPendingLocal.current) return
+
     try {
       const res = await authFetch('/api/cart')
       if (res.status === 409) {
@@ -172,31 +196,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return
       }
       if (!res.ok) return
+
       const data = await readApiJson<{ items: CartItem[]; updatedAt: string }>(res)
-      const remoteTime = new Date(data.updatedAt).getTime()
-      const localTime = stateRef.current.updatedAt
-        ? new Date(stateRef.current.updatedAt).getTime()
-        : 0
-      const remoteChanged =
-        cartFingerprint(data.items) !== cartFingerprint(stateRef.current.items)
-      if (remoteTime > localTime || remoteChanged) {
-        dispatch({ type: 'SYNC', items: data.items, updatedAt: data.updatedAt })
+      const remoteTime = parseUpdatedAt(data.updatedAt)
+      const localTime = parseUpdatedAt(stateRef.current.updatedAt)
+
+      // Only accept remote when it is strictly newer — never overwrite unsaved local edits.
+      if (remoteTime <= localTime) return
+      if (cartFingerprint(data.items) === cartFingerprint(stateRef.current.items)) {
+        syncState(stateRef.current.items, data.updatedAt)
+        return
       }
+
+      syncState(data.items, data.updatedAt)
     } catch {
       /* ignore poll errors */
     }
-  }, [isEmployee, handleSessionInactive])
+  }, [isEmployee, handleSessionInactive, syncState])
 
   useEffect(() => {
     if (!isEmployee) {
-      dispatch({ type: 'CLEAR' })
+      hasPendingLocal.current = false
+      pushVersion.current = 0
+      if (pushTimer.current) clearTimeout(pushTimer.current)
+      syncState([], null)
       return
     }
+
     setIsSyncing(true)
     void pullCart().finally(() => setIsSyncing(false))
     const id = setInterval(() => void pullCart(), POLL_MS)
     return () => clearInterval(id)
-  }, [isEmployee, user?.id, pullCart])
+  }, [isEmployee, user?.id, pullCart, syncState])
 
   const totalItems = state.items.reduce((sum, i) => sum + i.quantity, 0)
   const totalPrice = state.items.reduce(
@@ -206,23 +237,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: MenuItem, categoryName: string) =>
     applyLocal({ type: 'ADD', item, categoryName })
+
+  const addOrIncrement = (item: MenuItem, categoryName: string) => {
+    const exists = stateRef.current.items.some((i) => i.id === item.id)
+    if (exists) applyLocal({ type: 'INCREMENT', id: item.id })
+    else applyLocal({ type: 'ADD', item, categoryName })
+  }
+
   const removeItem = (id: string) => applyLocal({ type: 'REMOVE', id })
   const increment = (id: string) => applyLocal({ type: 'INCREMENT', id })
   const decrement = (id: string) => applyLocal({ type: 'DECREMENT', id })
 
   const clearCart = () => {
     if (isEmployee) {
+      hasPendingLocal.current = false
+      pushVersion.current += 1
+      if (pushTimer.current) clearTimeout(pushTimer.current)
       void authFetch('/api/cart', { method: 'DELETE' }).then(async (res) => {
         if (res.ok) {
           const data = await readApiJson<{ items: CartItem[]; updatedAt: string }>(res)
-          dispatch({ type: 'SYNC', items: data.items, updatedAt: data.updatedAt })
+          syncState(data.items, data.updatedAt)
         } else {
-          dispatch({ type: 'CLEAR' })
+          syncState([], null)
         }
       })
       return
     }
-    dispatch({ type: 'CLEAR' })
+    syncState([], null)
   }
 
   const getQuantity = (id: string) => state.items.find((i) => i.id === id)?.quantity ?? 0
@@ -234,6 +275,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         totalItems,
         totalPrice,
         addItem,
+        addOrIncrement,
         removeItem,
         increment,
         decrement,
