@@ -44,13 +44,10 @@ router.post(
       items,
       subtotal,
       deliveryIncluded,
-      deliveryAmount,
-      packagingAmount,
-      packaging30Count,
-      packaging50Count,
-      specialDeliveryAmount,
-      boxAndTapesAmount,
-      includePaybill,
+      safeHandlingAmount,
+      safeHandlingCounts,
+      includePaybill854845,
+      includePaybill247247,
       grandTotal,
       generatedAt,
     } = req.body as {
@@ -59,13 +56,10 @@ router.post(
       items: OrderItem[]
       subtotal: number
       deliveryIncluded: boolean
-      deliveryAmount: number
-      packagingAmount?: number
-      packaging30Count?: number
-      packaging50Count?: number
-      specialDeliveryAmount?: number
-      boxAndTapesAmount?: number
-      includePaybill?: boolean
+      safeHandlingAmount?: number
+      safeHandlingCounts?: Record<string, number>
+      includePaybill854845?: boolean
+      includePaybill247247?: boolean
       grandTotal: number
       generatedAt?: string
     }
@@ -81,13 +75,16 @@ router.post(
       items,
       subtotal,
       deliveryIncluded,
-      deliveryAmount,
-      packagingAmount: packagingAmount ?? 0,
-      packaging30Count: packaging30Count ?? 0,
-      packaging50Count: packaging50Count ?? 0,
-      specialDeliveryAmount: specialDeliveryAmount ?? 0,
-      boxAndTapesAmount: boxAndTapesAmount ?? 0,
-      includePaybill: includePaybill ?? false,
+      safeHandlingAmount: safeHandlingAmount ?? 0,
+      safeHandlingCounts: safeHandlingCounts ?? {},
+      deliveryAmount: 0,
+      packagingAmount: 0,
+      packaging30Count: 0,
+      packaging50Count: 0,
+      specialDeliveryAmount: 0,
+      boxAndTapesAmount: 0,
+      includePaybill854845: includePaybill854845 ?? false,
+      includePaybill247247: includePaybill247247 ?? false,
       grandTotal,
       generatedAt,
     })
@@ -152,7 +149,8 @@ router.patch(
       packagingAmount?: number
       specialDeliveryAmount?: number
       boxAndTapesAmount?: number
-      includePaybill?: boolean
+      includePaybill854845?: boolean
+      includePaybill247247?: boolean
       grandTotal?: number
       createdAt?: string
     }
@@ -201,7 +199,8 @@ router.patch(
       packagingAmount,
       specialDeliveryAmount: body.specialDeliveryAmount,
       boxAndTapesAmount: body.boxAndTapesAmount,
-      includePaybill: body.includePaybill,
+      includePaybill854845: body.includePaybill854845,
+      includePaybill247247: body.includePaybill247247,
       grandTotal,
       createdAt: body.createdAt,
     })

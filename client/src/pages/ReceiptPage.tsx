@@ -13,10 +13,12 @@ import {
 import { Printer, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
-  DELIVERY_PAYBILL,
-  DELIVERY_ACCOUNT,
-  SPECIAL_DELIVERY_RECEIPT_LABEL,
+  SAFE_HANDLING_RECEIPT_LABEL,
+  normalizeSafeHandlingCounts,
+  safeHandlingActiveLines,
+  activePaybills,
 } from '../constants/orderFees'
+import type { SafeHandlingCounts } from '../constants/orderFees'
 import '../styles/thermal-receipt.css'
 
 interface OrderItem {
@@ -34,12 +36,16 @@ interface Order {
   items: OrderItem[]
   subtotal: number
   deliveryIncluded: boolean
-  deliveryAmount: number
+  safeHandlingAmount?: number
+  safeHandlingCounts?: SafeHandlingCounts
+  deliveryAmount?: number
   packagingAmount?: number
   packaging30Count?: number
   packaging50Count?: number
   specialDeliveryAmount?: number
   boxAndTapesAmount?: number
+  includePaybill854845?: boolean
+  includePaybill247247?: boolean
   includePaybill?: boolean
   grandTotal: number
   createdAt: string
@@ -68,43 +74,58 @@ function formatGeneratedAt(iso: string) {
   return `${date} ${time}`
 }
 
-function PackagingReceiptLines({ order }: { order: Order }) {
-  const count30 = order.packaging30Count ?? 0
-  const count50 = order.packaging50Count ?? 0
-  const legacyTotal = order.packagingAmount ?? 0
-
-  if (count30 > 0 || count50 > 0) {
+function ServiceFeeReceiptLines({ order }: { order: Order }) {
+  const lines = safeHandlingActiveLines(normalizeSafeHandlingCounts(order.safeHandlingCounts))
+  if (lines.length > 0) {
     return (
       <>
-        {count30 > 0 ? (
-          <div className="thermal-receipt__item">
-            <p className="thermal-receipt__item-name">Packaging (Ksh 30)</p>
-            <p className="thermal-receipt__item-unit">Ksh 30 ×{count30}</p>
-            <p className="thermal-receipt__item-total">Total Ksh {(30 * count30).toLocaleString()}</p>
+        {lines.map(({ amount, count }) => (
+          <div key={amount} className="thermal-receipt__item">
+            <p className="thermal-receipt__item-name">{SAFE_HANDLING_RECEIPT_LABEL}</p>
+            <p className="thermal-receipt__item-unit">
+              Ksh {amount.toLocaleString()} ×{count}
+            </p>
+            <p className="thermal-receipt__item-total">
+              Total Ksh {(amount * count).toLocaleString()}
+            </p>
           </div>
-        ) : null}
-        {count50 > 0 ? (
-          <div className="thermal-receipt__item">
-            <p className="thermal-receipt__item-name">Packaging (Ksh 50)</p>
-            <p className="thermal-receipt__item-unit">Ksh 50 ×{count50}</p>
-            <p className="thermal-receipt__item-total">Total Ksh {(50 * count50).toLocaleString()}</p>
-          </div>
-        ) : null}
+        ))}
       </>
     )
   }
 
-  if (legacyTotal > 0) {
-    return (
-      <div className="thermal-receipt__item">
-        <p className="thermal-receipt__item-name">Packaging</p>
-        <p className="thermal-receipt__item-unit">Ksh {legacyTotal.toLocaleString()} ×1</p>
-        <p className="thermal-receipt__item-total">Total Ksh {legacyTotal.toLocaleString()}</p>
-      </div>
-    )
+  const legacyFees: { label: string; amount: number }[] = []
+  if ((order.deliveryAmount ?? 0) > 0) {
+    legacyFees.push({ label: 'Delivery', amount: order.deliveryAmount! })
+  }
+  const count30 = order.packaging30Count ?? 0
+  const count50 = order.packaging50Count ?? 0
+  if (count30 > 0) legacyFees.push({ label: 'Packaging (Ksh 30)', amount: 30 * count30 })
+  else if (count50 > 0) legacyFees.push({ label: 'Packaging (Ksh 50)', amount: 50 * count50 })
+  else if ((order.packagingAmount ?? 0) > 0) {
+    legacyFees.push({ label: 'Packaging', amount: order.packagingAmount! })
+  }
+  if ((order.specialDeliveryAmount ?? 0) > 0) {
+    legacyFees.push({ label: 'Delivery & COT', amount: order.specialDeliveryAmount! })
+  }
+  if ((order.boxAndTapesAmount ?? 0) > 0) {
+    legacyFees.push({ label: 'Box and Tapes', amount: order.boxAndTapesAmount! })
+  }
+  if ((order.safeHandlingAmount ?? 0) > 0 && legacyFees.length === 0) {
+    legacyFees.push({ label: SAFE_HANDLING_RECEIPT_LABEL, amount: order.safeHandlingAmount! })
   }
 
-  return null
+  return (
+    <>
+      {legacyFees.map((fee) => (
+        <div key={fee.label} className="thermal-receipt__item">
+          <p className="thermal-receipt__item-name">{fee.label}</p>
+          <p className="thermal-receipt__item-unit">Ksh {fee.amount.toLocaleString()} ×1</p>
+          <p className="thermal-receipt__item-total">Total Ksh {fee.amount.toLocaleString()}</p>
+        </div>
+      ))}
+    </>
+  )
 }
 
 function ReceiptCopy({
@@ -154,40 +175,7 @@ function ReceiptCopy({
             </div>
           )
         })}
-        {order.deliveryAmount > 0 ? (
-          <div className="thermal-receipt__item">
-            <p className="thermal-receipt__item-name">Delivery</p>
-            <p className="thermal-receipt__item-unit">
-              Ksh {order.deliveryAmount.toLocaleString()} ×1
-            </p>
-            <p className="thermal-receipt__item-total">
-              Total Ksh {order.deliveryAmount.toLocaleString()}
-            </p>
-          </div>
-        ) : null}
-        <PackagingReceiptLines order={order} />
-        {(order.specialDeliveryAmount ?? 0) > 0 ? (
-          <div className="thermal-receipt__item">
-            <p className="thermal-receipt__item-name">{SPECIAL_DELIVERY_RECEIPT_LABEL}</p>
-            <p className="thermal-receipt__item-unit">
-              Ksh {(order.specialDeliveryAmount ?? 0).toLocaleString()} ×1
-            </p>
-            <p className="thermal-receipt__item-total">
-              Total Ksh {(order.specialDeliveryAmount ?? 0).toLocaleString()}
-            </p>
-          </div>
-        ) : null}
-        {(order.boxAndTapesAmount ?? 0) > 0 ? (
-          <div className="thermal-receipt__item">
-            <p className="thermal-receipt__item-name">Box and Tapes</p>
-            <p className="thermal-receipt__item-unit">
-              Ksh {(order.boxAndTapesAmount ?? 0).toLocaleString()} ×1
-            </p>
-            <p className="thermal-receipt__item-total">
-              Total Ksh {(order.boxAndTapesAmount ?? 0).toLocaleString()}
-            </p>
-          </div>
-        ) : null}
+        <ServiceFeeReceiptLines order={order} />
       </section>
 
       <hr className="thermal-receipt__rule" />
@@ -203,19 +191,23 @@ function ReceiptCopy({
         </p>
       </section>
 
-      {order.includePaybill ? (
+      {activePaybills(order).length > 0 ? (
         <>
           <hr className="thermal-receipt__rule" />
           <section className="thermal-receipt__payment">
             <p className="thermal-receipt__payment-title">M-Pesa Payment</p>
-            <p className="thermal-receipt__payment-row">
-              <span>Paybill</span>
-              <span>{DELIVERY_PAYBILL}</span>
-            </p>
-            <p className="thermal-receipt__payment-row">
-              <span>Account</span>
-              <span>{DELIVERY_ACCOUNT}</span>
-            </p>
+            {activePaybills(order).map((option) => (
+              <div key={option.paybill} className="thermal-receipt__payment-block">
+                <p className="thermal-receipt__payment-row">
+                  <span>Paybill</span>
+                  <span>{option.paybill}</span>
+                </p>
+                <p className="thermal-receipt__payment-row">
+                  <span>Account</span>
+                  <span>{option.account}</span>
+                </p>
+              </div>
+            ))}
           </section>
         </>
       ) : null}

@@ -6,6 +6,7 @@ import { authFetch, readApiJson } from '../../lib/api'
 import OwnerPageShell from '../../components/OwnerPageShell'
 import { dataUnchanged } from '../../lib/stableData'
 import { sumRevenueForWorkingMonth, workingMonthLabel } from '../../lib/workingMonth'
+import { orderServiceFeeTotal } from '../../constants/orderFees'
 
 interface OrderItem {
   name: string
@@ -20,7 +21,11 @@ interface Order {
   items: OrderItem[]
   subtotal: number
   deliveryIncluded: boolean
+  safeHandlingAmount?: number
   deliveryAmount: number
+  packagingAmount?: number
+  specialDeliveryAmount?: number
+  boxAndTapesAmount?: number
   grandTotal: number
   createdAt: string
 }
@@ -622,7 +627,7 @@ export default function EmployeeRecordsPage() {
                       Items
                     </th>
                     <th className="text-right px-4 py-3 text-amber-800 font-semibold">Subtotal</th>
-                    <th className="text-center px-4 py-3 text-amber-800 font-semibold">Delivery</th>
+                    <th className="text-center px-4 py-3 text-amber-800 font-semibold">Service fees</th>
                     <th className="text-right px-4 py-3 text-amber-800 font-semibold">Total</th>
                     <th className="text-center px-4 py-3 text-amber-800 font-semibold">Receipt</th>
                     <th className="text-center px-4 py-3 text-amber-800 font-semibold">Actions</th>
@@ -672,9 +677,9 @@ export default function EmployeeRecordsPage() {
                           Ksh {order.subtotal.toLocaleString()}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          {order.deliveryIncluded ? (
-                            <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-0.5 rounded-lg">
-                              +Ksh {order.deliveryAmount}
+                          {orderServiceFeeTotal(order) > 0 ? (
+                            <span className="bg-teal-100 text-teal-800 text-xs font-semibold px-2 py-0.5 rounded-lg">
+                              +Ksh {orderServiceFeeTotal(order).toLocaleString()}
                             </span>
                           ) : (
                             <span className="text-gray-300 text-xs">—</span>

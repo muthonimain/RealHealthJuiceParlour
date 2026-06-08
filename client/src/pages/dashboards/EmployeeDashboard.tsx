@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ShoppingCart, LogOut, Wallet, ArrowLeft, AlertCircle, User } from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { ShoppingCart, LogOut, Wallet, ArrowLeft, AlertCircle, User, Printer } from 'lucide-react'
 import BrandLogo, { HeaderLogo } from '../../components/BrandLogo'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
@@ -14,6 +14,7 @@ interface EmployeeInfo {
   id: string
   name: string
   username: string
+  isActive?: boolean
 }
 
 const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
@@ -23,6 +24,8 @@ export default function EmployeeDashboard() {
   const { user, selectEmployee, logout } = useAuth()
   const { totalItems, totalPrice } = useCart()
   const navigate = useNavigate()
+  const location = useLocation()
+  const isPrintStation = location.pathname.endsWith('/print')
   const [cartOpen, setCartOpen] = useState(false)
   const [menuData, setMenuData] = useState<MenuCategory[]>([])
   const [menuLoading, setMenuLoading] = useState(true)
@@ -53,18 +56,32 @@ export default function EmployeeDashboard() {
       return
     }
 
-    fetch('/api/employees')
-      .then((r) => r.json())
-      .then((data: EmployeeInfo[]) => setEmployees(data))
-      .catch(() => setLoadError('Could not load employee list. Is the server running?'))
-      .finally(() => setEmployeesLoading(false))
+    const loadEmployees = () => {
+      fetch('/api/employees')
+        .then((r) => r.json())
+        .then((data: EmployeeInfo[]) => setEmployees(data))
+        .catch(() => setLoadError('Could not load employee list. Is the server running?'))
+        .finally(() => setEmployeesLoading(false))
+    }
+
+    loadEmployees()
+    const id = setInterval(loadEmployees, 10_000)
+    return () => clearInterval(id)
   }, [isEmployee])
 
+  useEffect(() => {
+    if (isEmployee && isPrintStation) {
+      setCartOpen(true)
+    }
+  }, [isEmployee, isPrintStation])
+
   const handleSelectEmployee = async (emp: EmployeeInfo) => {
+    if (!isPrintStation && emp.isActive) return
+
     setIsSelecting(true)
     setSelectError('')
     try {
-      await selectEmployee(emp.id)
+      await selectEmployee(emp.id, { sharedDevice: isPrintStation })
     } catch (err: unknown) {
       setSelectError(err instanceof Error ? err.message : 'Could not select employee. Try again.')
     } finally {
@@ -72,8 +89,8 @@ export default function EmployeeDashboard() {
     }
   }
 
-  const handleSwitchEmployee = () => {
-    logout()
+  const handleSwitchEmployee = async () => {
+    await logout()
   }
 
   if (!isEmployee) {
@@ -97,8 +114,14 @@ export default function EmployeeDashboard() {
           <div className="w-full flex justify-center mb-5 px-2">
             <BrandLogo size="hero" className="drop-shadow-md" />
           </div>
-          <p className={`${employeeTheme.subtitle} text-lg font-semibold tracking-wide`}>Staff dashboard</p>
-          <p className={`${employeeTheme.hint} text-sm mt-2`}>Tap your name to continue</p>
+          <p className={`${employeeTheme.subtitle} text-lg font-semibold tracking-wide`}>
+            {isPrintStation ? 'Print monitor' : 'Staff dashboard'}
+          </p>
+          <p className={`${employeeTheme.hint} text-sm mt-2`}>
+            {isPrintStation
+              ? 'Tap your name to join the live order on this printer'
+              : 'Tap your name to start taking orders'}
+          </p>
         </motion.div>
 
         {loadError && (
@@ -118,7 +141,9 @@ export default function EmployeeDashboard() {
         {employeesLoading ? (
           <p className={`${employeeTheme.hint} text-sm`}>Loading staff…</p>
         ) : employees.length === 0 ? (
-          <p className={`${employeeTheme.hint} text-sm text-center`}>No staff set up yet. Ask the therapist to add staff.</p>
+          <p className={`${employeeTheme.hint} text-sm text-center`}>
+            No staff set up yet. Ask the therapist to add staff.
+          </p>
         ) : (
           <motion.div
             variants={container}
@@ -126,30 +151,116 @@ export default function EmployeeDashboard() {
             animate="show"
             className="grid grid-cols-2 gap-4 w-full max-w-2xl"
           >
-            {employees.map((emp) => (
-              <motion.button
-                key={emp.id}
-                type="button"
-                variants={item}
-                whileTap={{ scale: 0.95 }}
-                disabled={isSelecting}
-                onClick={() => handleSelectEmployee(emp)}
-                className={`${employeeTheme.signInCard} p-6 flex flex-col items-center gap-3 min-h-[140px] transition-all disabled:opacity-60`}
-              >
-                <div className={`${employeeTheme.signInCardIconBg} rounded-2xl p-4`}>
-                  <User size={36} className={employeeTheme.signInCardIcon} />
-                </div>
-                <span className={`${employeeTheme.signInCardName} font-bold text-base text-center leading-tight`}>
-                  {emp.name}
-                </span>
-              </motion.button>
-            ))}
+            {employees.map((emp) => {
+              const locked = !isPrintStation && emp.isActive
+              return (
+                <motion.button
+                  key={emp.id}
+                  type="button"
+                  variants={item}
+                  whileTap={locked ? undefined : { scale: 0.95 }}
+                  disabled={isSelecting || locked}
+                  onClick={() => handleSelectEmployee(emp)}
+                  className={`${employeeTheme.signInCard} p-6 flex flex-col items-center gap-3 min-h-[140px] transition-all disabled:opacity-60 ${
+                    locked ? 'cursor-not-allowed ring-2 ring-amber-300' : ''
+                  }`}
+                >
+                  <div className={`${employeeTheme.signInCardIconBg} rounded-2xl p-4`}>
+                    {isPrintStation ? (
+                      <Printer size={36} className={employeeTheme.signInCardIcon} />
+                    ) : (
+                      <User size={36} className={employeeTheme.signInCardIcon} />
+                    )}
+                  </div>
+                  <span className={`${employeeTheme.signInCardName} font-bold text-base text-center leading-tight`}>
+                    {emp.name}
+                  </span>
+                  {locked ? (
+                    <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-1 rounded-lg">
+                      Already signed in
+                    </span>
+                  ) : emp.isActive && isPrintStation ? (
+                    <span className="text-xs font-semibold text-sky-700 bg-sky-50 px-2 py-1 rounded-lg">
+                      Join live order
+                    </span>
+                  ) : null}
+                </motion.button>
+              )
+            })}
           </motion.div>
         )}
 
         <p className={`mt-10 ${employeeTheme.footer} text-xs text-center`}>
           Real Health Juice Parlour &copy; {new Date().getFullYear()}
         </p>
+      </div>
+    )
+  }
+
+  if (isPrintStation) {
+    return (
+      <div className="min-h-dvh w-full overflow-x-hidden bg-sky-50">
+        <header className="w-full bg-sky-800 text-white border-b border-sky-900">
+          <div className="flex items-center gap-2 max-w-7xl mx-auto p-3 min-w-0 w-full box-border">
+            <HeaderLogo className="shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-white font-bold text-sm leading-tight m-0 truncate">
+                Print monitor
+              </p>
+              <p className={`${employeeTheme.headerAccent} text-xs font-semibold m-0 mt-0.5 truncate`}>
+                {user.name}
+              </p>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCartOpen(true)}
+                className={`relative flex items-center gap-2 ${employeeTheme.cartBtn} text-white rounded-xl px-4 py-2.5 font-semibold text-sm transition-all`}
+              >
+                <ShoppingCart size={18} />
+                <span>Print Order</span>
+                {totalItems > 0 ? (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                ) : null}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSwitchEmployee}
+                title="Switch staff"
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2.5 text-sm font-semibold transition-all"
+              >
+                <LogOut size={16} />
+                <span>Switch</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="w-full max-w-lg mx-auto px-4 py-10 text-center">
+          <Printer size={48} className="mx-auto text-sky-600 mb-4" />
+          <h1 className={`text-xl font-bold ${employeeTheme.pageTitle}`}>Live order for {user.name}</h1>
+          <p className={`${employeeTheme.pageHint} text-sm mt-2`}>
+            Items added on the menu tablet appear here automatically. Open Print Order to generate the
+            receipt.
+          </p>
+          <button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            className={`mt-6 w-full flex items-center justify-center gap-2 ${employeeTheme.cartBtn} text-white font-bold rounded-2xl px-6 py-4 text-lg shadow-sm`}
+          >
+            <ShoppingCart size={22} />
+            {totalItems > 0 ? `Print Order (${totalItems} items)` : 'Open Print Order'}
+          </button>
+          {totalItems > 0 ? (
+            <p className="mt-3 text-sky-800 font-bold text-lg">Ksh {totalPrice.toLocaleString()}</p>
+          ) : null}
+        </main>
+
+        <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} employeeName={user.name} />
       </div>
     )
   }
@@ -222,7 +333,9 @@ export default function EmployeeDashboard() {
         {menuLoading ? (
           <p className={`text-center ${employeeTheme.pageHint} py-12`}>Loading menu…</p>
         ) : menuData.length === 0 ? (
-          <p className={`text-center ${employeeTheme.pageHint} py-12`}>No menu categories yet. Ask the therapist to set up the menu.</p>
+          <p className={`text-center ${employeeTheme.pageHint} py-12`}>
+            No menu categories yet. Ask the therapist to set up the menu.
+          </p>
         ) : (
           <motion.div
             variants={container}

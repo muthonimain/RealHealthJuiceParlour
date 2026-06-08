@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
+import { touchEmployeeSession, isEmployeeSessionActive } from '../data/employeeSessionStore'
 
-interface JwtPayload {
+export interface JwtPayload {
   id: string
   role: string
+  sessionId?: string
 }
 
 export interface AuthRequest extends Request {
@@ -37,4 +39,27 @@ export function requireRole(...roles: string[]) {
     }
     next()
   }
+}
+
+export async function requireEmployeeSession(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  if (!req.user || req.user.role !== 'employee' || !req.user.sessionId) {
+    res.status(401).json({ message: 'Employee session required.' })
+    return
+  }
+
+  const active = await isEmployeeSessionActive(req.user.id, req.user.sessionId)
+  if (!active) {
+    res.status(409).json({
+      message: 'This staff session is no longer active. Tap Switch staff and sign in again.',
+      code: 'SESSION_INACTIVE',
+    })
+    return
+  }
+
+  await touchEmployeeSession(req.user.id, req.user.sessionId)
+  next()
 }

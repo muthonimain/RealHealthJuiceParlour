@@ -8,6 +8,7 @@ import {
   updateEmployee,
   deleteEmployee,
 } from '../data/employeeStore'
+import { getActiveEmployeeIds } from '../data/employeeSessionStore'
 
 const router = Router()
 
@@ -15,7 +16,14 @@ const router = Router()
 router.get(
   '/',
   asyncHandler(async (_req, res: Response) => {
-    res.json(await listEmployees())
+    const [employees, activeIds] = await Promise.all([listEmployees(), getActiveEmployeeIds()])
+    const activeSet = new Set(activeIds)
+    res.json(
+      employees.map((emp) => ({
+        ...emp,
+        isActive: activeSet.has(emp.id),
+      }))
+    )
   })
 )
 

@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS orders (
   items JSONB NOT NULL,
   subtotal INT NOT NULL,
   delivery_included BOOLEAN NOT NULL DEFAULT FALSE,
+  safe_handling_amount INT NOT NULL DEFAULT 0,
+  safe_handling_counts JSONB NOT NULL DEFAULT '{}'::jsonb,
   delivery_amount INT NOT NULL DEFAULT 0,
   packaging_amount INT NOT NULL DEFAULT 0,
   packaging_30_count INT NOT NULL DEFAULT 0,
@@ -37,6 +39,7 @@ CREATE TABLE IF NOT EXISTS orders (
   special_delivery_amount INT NOT NULL DEFAULT 0,
   box_and_tapes_amount INT NOT NULL DEFAULT 0,
   include_paybill BOOLEAN NOT NULL DEFAULT FALSE,
+  include_paybill_247247 BOOLEAN NOT NULL DEFAULT FALSE,
   grand_total INT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -81,3 +84,17 @@ CREATE TABLE IF NOT EXISTS employees (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_employees_username_lower ON employees (LOWER(username));
+
+CREATE TABLE IF NOT EXISTS employee_sessions (
+  session_id TEXT PRIMARY KEY,
+  employee_id TEXT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_employee_sessions_employee ON employee_sessions(employee_id);
+
+CREATE TABLE IF NOT EXISTS employee_carts (
+  employee_id TEXT PRIMARY KEY REFERENCES employees(id) ON DELETE CASCADE,
+  items JSONB NOT NULL DEFAULT '[]'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

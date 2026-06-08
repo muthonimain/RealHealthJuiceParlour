@@ -10,6 +10,7 @@ import ordersRoutes from './routes/orders'
 import clearancesRoutes from './routes/clearances'
 import expensesRoutes from './routes/expenses'
 import profitRoutes from './routes/profit'
+import cartRoutes from './routes/cart'
 import { initDatabase } from './db/init'
 import { pool } from './db/pool'
 
@@ -34,6 +35,7 @@ app.use('/api/orders', ordersRoutes)
 app.use('/api/clearances', clearancesRoutes)
 app.use('/api/expenses', expensesRoutes)
 app.use('/api/profit', profitRoutes)
+app.use('/api/cart', cartRoutes)
 
 app.get('/api/health', async (_req, res) => {
   try {

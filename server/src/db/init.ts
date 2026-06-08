@@ -206,10 +206,19 @@ export async function initDatabase(): Promise<void> {
   `)
   await syncOrderNumberSequence()
   await pool.query(
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS safe_handling_amount INT NOT NULL DEFAULT 0`
+  )
+  await pool.query(
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS safe_handling_counts JSONB NOT NULL DEFAULT '{}'::jsonb`
+  )
+  await pool.query(
     `ALTER TABLE orders ADD COLUMN IF NOT EXISTS packaging_amount INT NOT NULL DEFAULT 0`
   )
   await pool.query(
     `ALTER TABLE orders ADD COLUMN IF NOT EXISTS include_paybill BOOLEAN NOT NULL DEFAULT FALSE`
+  )
+  await pool.query(
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS include_paybill_247247 BOOLEAN NOT NULL DEFAULT FALSE`
   )
   await pool.query(
     `ALTER TABLE orders ADD COLUMN IF NOT EXISTS packaging_30_count INT NOT NULL DEFAULT 0`
@@ -223,6 +232,23 @@ export async function initDatabase(): Promise<void> {
   await pool.query(
     `ALTER TABLE orders ADD COLUMN IF NOT EXISTS box_and_tapes_amount INT NOT NULL DEFAULT 0`
   )
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS employee_sessions (
+      session_id TEXT PRIMARY KEY,
+      employee_id TEXT NOT NULL,
+      last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `)
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_employee_sessions_employee ON employee_sessions(employee_id)
+  `)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS employee_carts (
+      employee_id TEXT PRIMARY KEY,
+      items JSONB NOT NULL DEFAULT '[]'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `)
   await seedEmployeesFromEnvIfEmpty()
 
   const { rows: menuCount } = await pool.query<{ count: string }>(

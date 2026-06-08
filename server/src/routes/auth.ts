@@ -2,6 +2,15 @@ import { Router, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { verifyOwnerLogin } from '../data/owners'
 import { verifyEmployeeLogin, getEmployeeById } from '../data/employees'
+import {
+  createEmployeeSession,
+  touchEmployeeSession,
+  releaseEmployeeSession,
+  isEmployeeSessionActive,
+  isEmployeeInUseByAnotherSession,
+} from '../data/employeeSessionStore'
+import { requireAuth, requireRole, AuthRequest } from '../middleware/auth'
+import { asyncHandler } from '../middleware/asyncHandler'
 
 const router = Router()
 const env = (key: string, fallback: string) => (process.env[key] ?? '').trim() || fallback
@@ -62,8 +71,89 @@ router.post('/employee-select', async (req: Request, res: Response): Promise<voi
     return
   }
 
-  const token = jwt.sign({ id: employee.id, role: 'employee' }, JWT_SECRET, { expiresIn: JWT_EXPIRES })
-  res.json({ token, user: { id: employee.id, name: employee.name, role: 'employee' } })
+  const { resumeSessionId, sharedDevice } = req.body as {
+    resumeSessionId?: string
+    sharedDevice?: boolean
+  }
+
+  if (resumeSessionId) {
+    const stillActive = await isEmployeeSessionActive(employee.id, resumeSessionId)
+    if (stillActive) {
+      const token = jwt.sign(
+        { id: employee.id, role: 'employee', sessionId: resumeSessionId },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES }
+      )
+      await touchEmployeeSession(employee.id, resumeSessionId)
+      res.json({
+        token,
+        user: { id: employee.id, name: employee.name, role: 'employee' },
+        sessionId: resumeSessionId,
+      })
+      return
+    }
+  }
+
+  if (!sharedDevice) {
+    const inUse = await isEmployeeInUseByAnotherSession(employee.id)
+    if (inUse) {
+      res.status(409).json({
+        message: `${employee.name} is already signed in on another device. Open the print monitor at /dashboard/employee/print, or tap Switch staff on the active device first.`,
+        code: 'EMPLOYEE_IN_USE',
+      })
+      return
+    }
+  }
+
+  const sessionId = await createEmployeeSession(employee.id)
+  const token = jwt.sign(
+    { id: employee.id, role: 'employee', sessionId },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES }
+  )
+  res.json({
+    token,
+    user: { id: employee.id, name: employee.name, role: 'employee' },
+    sessionId,
+  })
 })
+
+router.post(
+  '/employee-heartbeat',
+  requireAuth,
+  requireRole('employee'),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id, sessionId } = req.user!
+    if (!sessionId) {
+      res.status(401).json({ message: 'Employee session required.', code: 'SESSION_INACTIVE' })
+      return
+    }
+
+    const active = await isEmployeeSessionActive(id, sessionId)
+    if (!active) {
+      res.status(409).json({
+        message: 'This staff session is no longer active.',
+        code: 'SESSION_INACTIVE',
+      })
+      return
+    }
+
+    await touchEmployeeSession(id, sessionId)
+    res.json({ ok: true })
+  })
+)
+
+router.post(
+  '/employee-release',
+  requireAuth,
+  requireRole('employee'),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id, sessionId } = req.user!
+    if (sessionId) {
+      await releaseEmployeeSession(id, sessionId)
+    }
+    res.json({ ok: true })
+  })
+)
 
 export default router

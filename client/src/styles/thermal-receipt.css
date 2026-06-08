@@ -85,6 +85,18 @@
   letter-spacing: 0.04em;
 }
 
+.thermal-receipt__payment-block {
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dotted #ccc;
+}
+
+.thermal-receipt__payment-block:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .thermal-receipt__payment-row {
   margin: 0;
   display: flex;

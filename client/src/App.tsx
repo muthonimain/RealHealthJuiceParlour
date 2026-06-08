@@ -49,6 +49,7 @@ function App() {
 
             {/* Employee dashboard: pick name, then menu categories */}
             <Route path="/dashboard/employee" element={<EmployeeDashboard />} />
+            <Route path="/dashboard/employee/print" element={<EmployeeDashboard />} />
             <Route
               path="/dashboard/employee/menu/:categoryId"
               element={

@@ -1,39 +1,122 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { UserRole } from '../App'
+import { authFetch, readApiJson } from '../lib/api'
 
 interface User {
   id: string
   name: string
   role: UserRole
   token: string
+  sessionId?: string
+}
+
+interface SelectEmployeeOptions {
+  sharedDevice?: boolean
 }
 
 interface AuthContextType {
   user: User | null
   login: (role: UserRole, username: string, password: string) => Promise<void>
-  selectEmployee: (employeeId: string) => Promise<void>
-  logout: () => void
+  selectEmployee: (employeeId: string, options?: SelectEmployeeOptions) => Promise<void>
+  logout: () => Promise<void>
+  handleSessionInactive: () => void
   isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+const HEARTBEAT_MS = 30_000
+
+function persistUser(user: User | null) {
+  if (user) localStorage.setItem('rhjp_user', JSON.stringify(user))
+  else localStorage.removeItem('rhjp_user')
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const userRef = useRef(user)
+  userRef.current = user
+
+  const handleSessionInactive = useCallback(() => {
+    setUser(null)
+    persistUser(null)
+  }, [])
 
   useEffect(() => {
-    const stored = localStorage.getItem('rhjp_user')
-    if (stored) {
+    const init = async () => {
+      const stored = localStorage.getItem('rhjp_user')
+      if (!stored) {
+        setIsLoading(false)
+        return
+      }
+
       try {
-        setUser(JSON.parse(stored))
+        const parsed = JSON.parse(stored) as User
+        if (parsed.role === 'employee' && parsed.sessionId && parsed.id) {
+          const res = await fetch('/api/auth/employee-select', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              employeeId: parsed.id,
+              resumeSessionId: parsed.sessionId,
+            }),
+          })
+          if (res.ok) {
+            const data = await readApiJson<{
+              token: string
+              user: { id: string; name: string; role: UserRole }
+              sessionId: string
+            }>(res)
+            const userData: User = {
+              ...data.user,
+              token: data.token,
+              sessionId: data.sessionId,
+            }
+            setUser(userData)
+            persistUser(userData)
+          } else {
+            persistUser(null)
+            setUser(null)
+          }
+        } else if (parsed.role === 'owner') {
+          setUser(parsed)
+        } else {
+          persistUser(null)
+          setUser(null)
+        }
       } catch {
-        localStorage.removeItem('rhjp_user')
+        persistUser(null)
+        setUser(null)
+      } finally {
+        setIsLoading(false)
       }
     }
-    setIsLoading(false)
+
+    void init()
   }, [])
+
+  useEffect(() => {
+    const current = userRef.current
+    if (!current || current.role !== 'employee' || !current.sessionId) return
+
+    const heartbeat = async () => {
+      try {
+        const res = await authFetch('/api/auth/employee-heartbeat', { method: 'POST' })
+        if (res.status === 409 || res.status === 401) {
+          const data = await res.json().catch(() => ({}))
+          if (data.code === 'SESSION_INACTIVE') handleSessionInactive()
+        }
+      } catch {
+        /* ignore transient network errors */
+      }
+    }
+
+    void heartbeat()
+    const id = setInterval(() => void heartbeat(), HEARTBEAT_MS)
+    return () => clearInterval(id)
+  }, [user?.id, user?.sessionId, user?.role, handleSessionInactive])
 
   const login = async (role: UserRole, username: string, password: string) => {
     const res = await fetch('/api/auth/login', {
@@ -50,14 +133,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await res.json()
     const userData: User = { ...data.user, token: data.token }
     setUser(userData)
-    localStorage.setItem('rhjp_user', JSON.stringify(userData))
+    persistUser(userData)
   }
 
-  const selectEmployee = async (employeeId: string) => {
+  const selectEmployee = async (employeeId: string, options?: SelectEmployeeOptions) => {
     const res = await fetch('/api/auth/employee-select', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ employeeId }),
+      body: JSON.stringify({
+        employeeId,
+        sharedDevice: options?.sharedDevice === true,
+      }),
     })
 
     if (!res.ok) {
@@ -65,19 +151,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(data.message || 'Could not select employee')
     }
 
-    const data = await res.json()
-    const userData: User = { ...data.user, token: data.token }
+    const data = await readApiJson<{
+      token: string
+      user: { id: string; name: string; role: UserRole }
+      sessionId: string
+    }>(res)
+    const userData: User = {
+      ...data.user,
+      token: data.token,
+      sessionId: data.sessionId,
+    }
     setUser(userData)
-    localStorage.setItem('rhjp_user', JSON.stringify(userData))
+    persistUser(userData)
   }
 
-  const logout = () => {
+  const logout = async () => {
+    const current = userRef.current
+    if (current?.role === 'employee' && current.sessionId) {
+      try {
+        await authFetch('/api/auth/employee-release', { method: 'POST' })
+      } catch {
+        /* ignore */
+      }
+    }
     setUser(null)
-    localStorage.removeItem('rhjp_user')
+    persistUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, selectEmployee, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{ user, login, selectEmployee, logout, handleSessionInactive, isLoading }}
+    >
       {children}
     </AuthContext.Provider>
   )

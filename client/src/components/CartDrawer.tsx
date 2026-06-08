@@ -1,26 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { X, Plus, Minus, ShoppingCart, Trash2, Printer, Truck, Package } from 'lucide-react'
+import { X, Plus, Minus, ShoppingCart, Trash2, Printer, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { savePendingReceipt, PENDING_RECEIPT_ROUTE_ID } from '../lib/pendingReceipt'
 import {
-  DELIVERY_OPTIONS,
-  PACKAGING_OPTIONS,
-  SPECIAL_DELIVERY_OPTIONS,
-  BOX_AND_TAPES_AMOUNT,
-  SPECIAL_DELIVERY_CHECKBOX_LABEL,
-  SPECIAL_DELIVERY_RECEIPT_LABEL,
-  DELIVERY_PAYBILL,
-  DELIVERY_ACCOUNT,
-  type DeliveryOption,
-  type PackagingOption,
-  type PackagingCounts,
-  type SpecialDeliveryOption,
-  EMPTY_PACKAGING_COUNTS,
-  packagingTotal,
+  SAFE_HANDLING_OPTIONS,
+  SAFE_HANDLING_SECTION_LABEL,
+  MPESA_PAYBILL_OPTIONS,
+  type SafeHandlingOption,
+  type SafeHandlingCounts,
+  emptySafeHandlingCounts,
+  safeHandlingTotal,
+  safeHandlingActiveLines,
 } from '../constants/orderFees'
 
 interface Props {
@@ -35,93 +29,65 @@ const drawer: Variants = {
   exit: { x: '100%', transition: { duration: 0.2 } },
 }
 
-function FeeCheckboxRow({
-  label,
-  icon: Icon,
-  options,
-  selected,
-  onSelect,
-}: {
-  label: string
-  icon: typeof Truck
-  options: readonly number[]
-  selected: number | null
-  onSelect: (amount: number) => void
-}) {
-  return (
-    <div className="bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 space-y-2">
-      <div className="flex items-center gap-2">
-        <Icon size={18} className="text-orange-500 shrink-0" />
-        <span className="text-sm font-semibold text-gray-800">{label}</span>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {options.map((amount) => {
-          const checked = selected === amount
-          return (
-            <label
-              key={amount}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer select-none text-sm font-semibold transition-colors ${
-                checked
-                  ? 'bg-orange-500 border-orange-500 text-white'
-                  : 'bg-white border-orange-200 text-gray-700 hover:bg-orange-100'
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => onSelect(amount)}
-                className="w-4 h-4 accent-orange-500 cursor-pointer"
-              />
-              Ksh {amount}
-            </label>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function PackagingCounterRow({
+function SafeHandlingSection({
   counts,
   onChange,
 }: {
-  counts: PackagingCounts
-  onChange: (amount: PackagingOption, next: number) => void
+  counts: SafeHandlingCounts
+  onChange: (amount: SafeHandlingOption, next: number) => void
 }) {
   return (
-    <div className="bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 space-y-3">
+    <div className="bg-teal-50 border border-teal-200 rounded-2xl px-4 py-3 space-y-3">
       <div className="flex items-center gap-2">
-        <Package size={18} className="text-orange-500 shrink-0" />
-        <span className="text-sm font-semibold text-gray-800">Packaging</span>
+        <ShieldCheck size={18} className="text-teal-600 shrink-0" />
+        <span className="text-sm font-bold text-gray-900">{SAFE_HANDLING_SECTION_LABEL}</span>
       </div>
-      <p className="text-xs text-gray-500 -mt-1">Add one package per item — tap + for each soup or product packed</p>
-      <div className="space-y-2">
-        {PACKAGING_OPTIONS.map((amount) => {
-          const count = counts[amount]
+      <p className="text-xs text-gray-500 -mt-1">
+        Tap + for each packaging or delivery fee — same price can be added more than once
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {SAFE_HANDLING_OPTIONS.map((amount) => {
+          const count = counts[amount] ?? 0
+          const active = count > 0
           return (
             <div
               key={amount}
-              className="flex items-center justify-between gap-3 bg-white border border-orange-200 rounded-xl px-3 py-2.5"
+              className={`rounded-xl border px-2.5 py-2 ${
+                active ? 'bg-teal-600 border-teal-600 text-white' : 'bg-white border-teal-200 text-gray-800'
+              }`}
             >
-              <span className="text-sm font-bold text-gray-800">Ksh {amount}</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-1 mb-1.5">
+                <span className={`text-xs font-bold ${active ? 'text-white' : 'text-gray-800'}`}>
+                  Ksh {amount}
+                </span>
+                {active ? (
+                  <span className="text-[10px] font-bold bg-white/20 rounded px-1.5 py-0.5">×{count}</span>
+                ) : null}
+              </div>
+              <div className="flex items-center justify-between gap-1">
                 <button
                   type="button"
                   onClick={() => onChange(amount, Math.max(0, count - 1))}
                   disabled={count === 0}
-                  title={`Remove Ksh ${amount} packaging`}
-                  className="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 disabled:opacity-40 flex items-center justify-center"
+                  title={`Remove Ksh ${amount}`}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center disabled:opacity-40 ${
+                    active ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
                 >
-                  <Minus size={16} />
+                  <Minus size={14} />
                 </button>
-                <span className="w-8 text-center font-bold text-gray-900 tabular-nums">{count}</span>
+                <span className={`w-6 text-center text-sm font-bold tabular-nums ${active ? 'text-white' : 'text-gray-900'}`}>
+                  {count}
+                </span>
                 <button
                   type="button"
                   onClick={() => onChange(amount, count + 1)}
-                  title={`Add Ksh ${amount} packaging`}
-                  className="w-9 h-9 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-700 flex items-center justify-center"
+                  title={`Add Ksh ${amount}`}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                    active ? 'bg-white/20 hover:bg-white/30' : 'bg-teal-100 hover:bg-teal-200 text-teal-800'
+                  }`}
                 >
-                  <Plus size={16} />
+                  <Plus size={14} />
                 </button>
               </div>
             </div>
@@ -132,122 +98,33 @@ function PackagingCounterRow({
   )
 }
 
-function SpecialDeliveriesSection({
-  specialDeliveryOpen,
-  onSpecialDeliveryOpenChange,
-  specialDeliveryFee,
-  onSpecialDeliverySelect,
-  boxAndTapes,
-  onBoxAndTapesChange,
-}: {
-  specialDeliveryOpen: boolean
-  onSpecialDeliveryOpenChange: (open: boolean) => void
-  specialDeliveryFee: SpecialDeliveryOption | null
-  onSpecialDeliverySelect: (amount: SpecialDeliveryOption) => void
-  boxAndTapes: boolean
-  onBoxAndTapesChange: (checked: boolean) => void
-}) {
-  return (
-    <div className="bg-violet-50 border border-violet-200 rounded-2xl px-4 py-3 space-y-3">
-      <p className="text-sm font-bold text-violet-900">Special Deliveries</p>
-
-      <div className="space-y-2">
-        <label className="flex items-center gap-2 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={specialDeliveryOpen}
-            onChange={(e) => onSpecialDeliveryOpenChange(e.target.checked)}
-            className="w-4 h-4 accent-violet-600 cursor-pointer"
-          />
-          <span className="text-sm font-semibold text-gray-800">{SPECIAL_DELIVERY_CHECKBOX_LABEL}</span>
-        </label>
-        {specialDeliveryOpen ? (
-          <div className="flex flex-wrap gap-2 pl-6">
-            {SPECIAL_DELIVERY_OPTIONS.map((amount) => {
-              const checked = specialDeliveryFee === amount
-              return (
-                <label
-                  key={amount}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer select-none text-sm font-semibold transition-colors ${
-                    checked
-                      ? 'bg-violet-600 border-violet-600 text-white'
-                      : 'bg-white border-violet-200 text-gray-700 hover:bg-violet-100'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => onSpecialDeliverySelect(amount)}
-                    className="w-4 h-4 accent-violet-600 cursor-pointer"
-                  />
-                  Ksh {amount}
-                </label>
-              )
-            })}
-          </div>
-        ) : null}
-      </div>
-
-      <label className="flex items-center gap-2 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={boxAndTapes}
-          onChange={(e) => onBoxAndTapesChange(e.target.checked)}
-          className="w-4 h-4 accent-violet-600 cursor-pointer"
-        />
-        <span className="text-sm font-semibold text-gray-800">Box and Tapes</span>
-        <span className="text-sm font-bold text-violet-800">Ksh {BOX_AND_TAPES_AMOUNT}</span>
-      </label>
-    </div>
-  )
-}
-
 export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Props) {
   const { items, totalItems, totalPrice, increment, decrement, removeItem, clearCart } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [deliveryFee, setDeliveryFee] = useState<DeliveryOption | null>(null)
-  const [packagingCounts, setPackagingCounts] = useState<PackagingCounts>(EMPTY_PACKAGING_COUNTS)
-  const [specialDeliveryOpen, setSpecialDeliveryOpen] = useState(false)
-  const [specialDeliveryFee, setSpecialDeliveryFee] = useState<SpecialDeliveryOption | null>(null)
-  const [boxAndTapes, setBoxAndTapes] = useState(false)
-  const [includePaybill, setIncludePaybill] = useState(false)
+  const [safeHandlingCounts, setSafeHandlingCounts] = useState<SafeHandlingCounts>(emptySafeHandlingCounts())
+  const [includePaybill854845, setIncludePaybill854845] = useState(false)
+  const [includePaybill247247, setIncludePaybill247247] = useState(false)
   const [error, setError] = useState('')
 
-  const deliveryAmount = deliveryFee ?? 0
-  const packagingAmount = packagingTotal(packagingCounts)
-  const specialDeliveryAmount = specialDeliveryOpen ? (specialDeliveryFee ?? 0) : 0
-  const boxAndTapesAmount = boxAndTapes ? BOX_AND_TAPES_AMOUNT : 0
-  const hasExtras =
-    deliveryAmount > 0 ||
-    packagingAmount > 0 ||
-    specialDeliveryAmount > 0 ||
-    boxAndTapesAmount > 0
-  const grandTotal =
-    totalPrice + deliveryAmount + packagingAmount + specialDeliveryAmount + boxAndTapesAmount
+  const safeHandlingAmount = safeHandlingTotal(safeHandlingCounts)
+  const hasExtras = safeHandlingAmount > 0
+  const grandTotal = totalPrice + safeHandlingAmount
 
-  const toggleDelivery = (amount: DeliveryOption) => {
-    setDeliveryFee((prev) => (prev === amount ? null : amount))
+  const setSafeHandlingCount = (amount: SafeHandlingOption, next: number) => {
+    setSafeHandlingCounts((prev) => {
+      const updated = { ...prev }
+      if (next <= 0) delete updated[amount]
+      else updated[amount] = next
+      return updated
+    })
   }
 
-  const setPackagingCount = (amount: PackagingOption, next: number) => {
-    setPackagingCounts((prev) => ({ ...prev, [amount]: next }))
+  const resetFees = () => {
+    setSafeHandlingCounts(emptySafeHandlingCounts())
+    setIncludePaybill854845(false)
+    setIncludePaybill247247(false)
   }
-
-  const toggleSpecialDelivery = (amount: SpecialDeliveryOption) => {
-    setSpecialDeliveryFee((prev) => (prev === amount ? null : amount))
-  }
-
-  const handleSpecialDeliveryOpenChange = (open: boolean) => {
-    setSpecialDeliveryOpen(open)
-    if (!open) setSpecialDeliveryFee(null)
-  }
-
-  useEffect(() => {
-    if (deliveryAmount > 0 || specialDeliveryAmount > 0) {
-      setIncludePaybill(true)
-    }
-  }, [deliveryAmount, specialDeliveryAmount])
 
   const handleGenerateReceipt = () => {
     setError('')
@@ -257,22 +134,14 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
       items,
       subtotal: totalPrice,
       deliveryIncluded: hasExtras,
-      deliveryAmount,
-      packagingAmount,
-      packaging30Count: packagingCounts[30],
-      packaging50Count: packagingCounts[50],
-      specialDeliveryAmount,
-      boxAndTapesAmount,
-      includePaybill,
+      safeHandlingAmount,
+      safeHandlingCounts,
+      includePaybill854845,
+      includePaybill247247,
       grandTotal,
     })
     clearCart()
-    setDeliveryFee(null)
-    setPackagingCounts(EMPTY_PACKAGING_COUNTS)
-    setSpecialDeliveryOpen(false)
-    setSpecialDeliveryFee(null)
-    setBoxAndTapes(false)
-    setIncludePaybill(false)
+    resetFees()
     onClose()
     navigate(`/receipt/${PENDING_RECEIPT_ROUTE_ID}`)
   }
@@ -312,163 +181,132 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
 
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
               <div className="p-4 space-y-3">
-              {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center min-h-[12rem] text-gray-400 gap-3">
-                  <ShoppingCart size={48} className="opacity-30" />
-                  <p className="text-sm">No items added yet</p>
-                </div>
-              ) : (
-                items.map((item) => (
-                  <div key={item.id} className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-900 text-sm leading-tight truncate">
-                        {item.name}
+                {items.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center min-h-[12rem] text-gray-400 gap-3">
+                    <ShoppingCart size={48} className="opacity-30" />
+                    <p className="text-sm">No items added yet</p>
+                  </div>
+                ) : (
+                  items.map((item) => (
+                    <div key={item.id} className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900 text-sm leading-tight truncate">
+                          {item.name}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-0.5">{item.categoryName}</div>
+                        <div className="text-sky-700 font-bold text-sm mt-1">
+                          {item.price === 0
+                            ? 'On request'
+                            : `Ksh ${(item.price * item.quantity).toLocaleString()}`}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-400 mt-0.5">{item.categoryName}</div>
-                      <div className="text-sky-700 font-bold text-sm mt-1">
-                        {item.price === 0
-                          ? 'On request'
-                          : `Ksh ${(item.price * item.quantity).toLocaleString()}`}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => decrement(item.id)}
+                          title="Decrease quantity"
+                          className="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <span className="w-6 text-center font-bold text-gray-900">{item.quantity}</span>
+                        <button
+                          onClick={() => increment(item.id)}
+                          title="Increase quantity"
+                          className="w-9 h-9 rounded-xl bg-sky-100 hover:bg-sky-200 flex items-center justify-center text-sky-700"
+                        >
+                          <Plus size={16} />
+                        </button>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          title="Remove item"
+                          className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 ml-1"
+                        >
+                          <Trash2 size={15} />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => decrement(item.id)}
-                        title="Decrease quantity"
-                        className="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <span className="w-6 text-center font-bold text-gray-900">{item.quantity}</span>
-                      <button
-                        onClick={() => increment(item.id)}
-                        title="Increase quantity"
-                        className="w-9 h-9 rounded-xl bg-sky-100 hover:bg-sky-200 flex items-center justify-center text-sky-700"
-                      >
-                        <Plus size={16} />
-                      </button>
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        title="Remove item"
-                        className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 ml-1"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                  ))
+                )}
+              </div>
+
+              {items.length > 0 && (
+                <div className="border-t border-gray-100 p-4 pb-6 space-y-3">
+                  <SafeHandlingSection counts={safeHandlingCounts} onChange={setSafeHandlingCount} />
+
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 space-y-2">
+                    <p className="text-sm font-semibold text-gray-800">M-Pesa Paybill on receipt (optional)</p>
+                    {MPESA_PAYBILL_OPTIONS.map((option, index) => {
+                      const checked = index === 0 ? includePaybill854845 : includePaybill247247
+                      const onChange = index === 0 ? setIncludePaybill854845 : setIncludePaybill247247
+                      return (
+                        <label
+                          key={option.paybill}
+                          className="flex items-start gap-3 cursor-pointer select-none rounded-xl bg-white/70 border border-emerald-100 px-3 py-2.5"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => onChange(e.target.checked)}
+                            className="w-4 h-4 mt-0.5 accent-emerald-600 cursor-pointer"
+                            aria-label={`Include paybill ${option.paybill} on receipt`}
+                          />
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-800">
+                              Paybill {option.paybill}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-0.5">
+                              Account <span className="font-bold text-gray-900">{option.account}</span>
+                            </p>
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Subtotal</span>
+                      <span>Ksh {totalPrice.toLocaleString()}</span>
+                    </div>
+                    {safeHandlingActiveLines(safeHandlingCounts).map(({ amount, count }) => (
+                      <div key={amount} className="flex justify-between text-sm text-teal-700">
+                        <span>
+                          {SAFE_HANDLING_SECTION_LABEL} (Ksh {amount} ×{count})
+                        </span>
+                        <span>Ksh {(amount * count).toLocaleString()}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between items-center pt-1 border-t border-gray-100">
+                      <span className="font-semibold text-gray-700">Grand Total</span>
+                      <span className="text-2xl font-bold text-gray-900">
+                        Ksh {grandTotal.toLocaleString()}
+                      </span>
                     </div>
                   </div>
-                ))
+
+                  {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+
+                  <button
+                    onClick={handleGenerateReceipt}
+                    className="w-full bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-bold text-lg rounded-2xl py-4 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Printer size={20} />
+                    Generate Receipt
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearCart()
+                      resetFees()
+                    }}
+                    className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-base rounded-2xl py-3.5 transition-all flex items-center justify-center gap-2 border-2 border-red-700"
+                  >
+                    <Trash2 size={18} />
+                    Clear Order
+                  </button>
+                </div>
               )}
-              </div>
-
-            {items.length > 0 && (
-              <div className="border-t border-gray-100 p-4 pb-6 space-y-3">
-                <FeeCheckboxRow
-                  label="Delivery"
-                  icon={Truck}
-                  options={DELIVERY_OPTIONS}
-                  selected={deliveryFee}
-                  onSelect={(amount) => toggleDelivery(amount as DeliveryOption)}
-                />
-                <PackagingCounterRow counts={packagingCounts} onChange={setPackagingCount} />
-
-                <SpecialDeliveriesSection
-                  specialDeliveryOpen={specialDeliveryOpen}
-                  onSpecialDeliveryOpenChange={handleSpecialDeliveryOpenChange}
-                  specialDeliveryFee={specialDeliveryFee}
-                  onSpecialDeliverySelect={toggleSpecialDelivery}
-                  boxAndTapes={boxAndTapes}
-                  onBoxAndTapesChange={setBoxAndTapes}
-                />
-
-                <label className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={includePaybill}
-                    onChange={(e) => setIncludePaybill(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 accent-emerald-600 cursor-pointer"
-                    aria-label="Include M-Pesa paybill on receipt"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-800">Include M-Pesa Paybill on receipt</p>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Paybill <span className="font-bold text-gray-900">{DELIVERY_PAYBILL}</span>
-                      {' · '}
-                      Account <span className="font-bold text-gray-900">{DELIVERY_ACCOUNT}</span>
-                    </p>
-                  </div>
-                </label>
-
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>Subtotal</span>
-                    <span>Ksh {totalPrice.toLocaleString()}</span>
-                  </div>
-                  {deliveryAmount > 0 && (
-                    <div className="flex justify-between text-sm text-orange-600">
-                      <span>Delivery</span>
-                      <span>Ksh {deliveryAmount.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {packagingCounts[30] > 0 && (
-                    <div className="flex justify-between text-sm text-orange-600">
-                      <span>Packaging (Ksh 30 ×{packagingCounts[30]})</span>
-                      <span>Ksh {(30 * packagingCounts[30]).toLocaleString()}</span>
-                    </div>
-                  )}
-                  {packagingCounts[50] > 0 && (
-                    <div className="flex justify-between text-sm text-orange-600">
-                      <span>Packaging (Ksh 50 ×{packagingCounts[50]})</span>
-                      <span>Ksh {(50 * packagingCounts[50]).toLocaleString()}</span>
-                    </div>
-                  )}
-                  {specialDeliveryAmount > 0 && (
-                    <div className="flex justify-between text-sm text-violet-700">
-                      <span>{SPECIAL_DELIVERY_RECEIPT_LABEL}</span>
-                      <span>Ksh {specialDeliveryAmount.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {boxAndTapesAmount > 0 && (
-                    <div className="flex justify-between text-sm text-violet-700">
-                      <span>Box and Tapes</span>
-                      <span>Ksh {boxAndTapesAmount.toLocaleString()}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center pt-1 border-t border-gray-100">
-                    <span className="font-semibold text-gray-700">Grand Total</span>
-                    <span className="text-2xl font-bold text-gray-900">
-                      Ksh {grandTotal.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                {error && <p className="text-red-500 text-xs text-center">{error}</p>}
-
-                <button
-                  onClick={handleGenerateReceipt}
-                  className="w-full bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-bold text-lg rounded-2xl py-4 transition-all flex items-center justify-center gap-2"
-                >
-                  <Printer size={20} />
-                  Generate Receipt
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    clearCart()
-                    setDeliveryFee(null)
-                    setPackagingCounts(EMPTY_PACKAGING_COUNTS)
-                    setSpecialDeliveryOpen(false)
-                    setSpecialDeliveryFee(null)
-                    setBoxAndTapes(false)
-                    setIncludePaybill(false)
-                  }}
-                  className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-base rounded-2xl py-3.5 transition-all flex items-center justify-center gap-2 border-2 border-red-700"
-                >
-                  <Trash2 size={18} />
-                  Clear Order
-                </button>
-              </div>
-            )}
             </div>
           </motion.div>
         </>
