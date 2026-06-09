@@ -74,37 +74,34 @@
 
 .thermal-receipt__payment {
   margin: 0;
+  text-align: left;
 }
 
 .thermal-receipt__payment-title {
-  margin: 0 0 6px;
-  font-size: 12px;
+  margin: 0 0 2px;
+  font-family: inherit;
+  font-size: inherit;
   font-weight: 900;
-  text-align: center;
+  text-align: left;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
 }
 
 .thermal-receipt__payment-block {
-  margin: 0 0 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px dotted #ccc;
+  margin: 0 0 4px;
 }
 
 .thermal-receipt__payment-block:last-child {
   margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
 }
 
-.thermal-receipt__payment-row {
+.thermal-receipt__payment-line {
   margin: 0;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.5;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .thermal-receipt__lines {
@@ -178,14 +175,18 @@
   font-size: inherit;
 }
 
-.thermal-receipt__footer-lead {
-  margin-bottom: 1px !important;
+.thermal-receipt__footer-bold {
+  font-weight: 900;
+}
+
+.thermal-receipt__footer-italic {
+  font-style: italic;
+  font-weight: 700;
 }
 
 .thermal-receipt__footer-heading {
-  margin-top: 10px !important;
+  margin-top: 8px !important;
   margin-bottom: 2px !important;
-  font-weight: 900;
 }
 
 .thermal-receipt__footer-phones {
@@ -193,8 +194,7 @@
 }
 
 .thermal-receipt__footer-tagline {
-  margin-top: 10px !important;
-  font-weight: 900;
+  margin-top: 8px !important;
   line-height: 1.45;
 }
 

@@ -206,16 +206,12 @@ function ReceiptCopy({
             <p className="thermal-receipt__payment-title">M-Pesa Payment</p>
             {activePaybills(order).map((option) => (
               <div key={option.paybill} className="thermal-receipt__payment-block">
-                <p className="thermal-receipt__payment-row">
-                  <span>Paybill</span>
-                  <span>{option.paybill}</span>
-                </p>
-                <p className="thermal-receipt__payment-row">
-                  <span>Account</span>
-                  <span>{option.account}</span>
-                </p>
+                <p className="thermal-receipt__payment-line">Paybill: {option.paybill}</p>
+                <p className="thermal-receipt__payment-line">Account: {option.account}</p>
               </div>
             ))}
+            <p className="thermal-receipt__payment-line">Agent no. 81294</p>
+            <p className="thermal-receipt__payment-line">Store no. 383438</p>
           </section>
         </>
       ) : null}
@@ -223,18 +219,17 @@ function ReceiptCopy({
       <hr className="thermal-receipt__rule" />
 
       <footer className="thermal-receipt__footer">
-        <p className="thermal-receipt__footer-lead">Nutrition • Juice Therapy • Lifestyle</p>
-        <p className="thermal-receipt__footer-lead">Medicine</p>
-
-        <p className="thermal-receipt__footer-heading">Follow Us:</p>
-        <p>Real Health Juice Parlour</p>
-
-        <p className="thermal-receipt__footer-heading">Orders &amp; Wellness Support:</p>
-        <p className="thermal-receipt__footer-phones">
-          0729 125 413 | 0794 650 556 | 0724 228 947
+        <p className="thermal-receipt__footer-lead thermal-receipt__footer-bold">
+          Nutrition • Juice Therapy • Lifestyle Medicine
         </p>
+        <p className="thermal-receipt__footer-italic">Healing from Within, the Natural Way.</p>
 
-        <p className="thermal-receipt__footer-tagline">
+        <p className="thermal-receipt__footer-heading thermal-receipt__footer-bold">
+          Orders &amp; Wellness Support:
+        </p>
+        <p className="thermal-receipt__footer-phones">0729 125 413 | 0724 228 947</p>
+
+        <p className="thermal-receipt__footer-tagline thermal-receipt__footer-italic">
           No Sugar • No Preservatives • 100% Natural
         </p>
       </footer>
@@ -446,8 +441,8 @@ export default function ReceiptPage() {
 
           {screenHint ? <p className="thermal-screen__hint">{screenHint}</p> : null}
 
-          <p className="thermal-screen__copy-title">Customer copy</p>
-          <ReceiptCopy order={order} copyLabel="Customer copy" preview />
+          <p className="thermal-screen__copy-title">Customer receipt</p>
+          <ReceiptCopy order={order} copyLabel="Customer receipt" preview />
 
           <div className="thermal-cut print:hidden my-6">— CUT HERE —</div>
 
@@ -460,7 +455,7 @@ export default function ReceiptPage() {
         <div className="thermal-print-root" aria-hidden>
           <ReceiptCopy
             order={order}
-            copyLabel={printCopy === 'customer' ? 'Customer copy' : 'Kitchen copy'}
+            copyLabel={printCopy === 'customer' ? 'Customer receipt' : 'Kitchen copy'}
           />
         </div>
       ) : null}
