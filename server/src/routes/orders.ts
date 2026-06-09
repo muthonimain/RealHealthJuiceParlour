@@ -17,6 +17,7 @@ import {
 } from '../lib/workingMonth'
 import { asyncHandler } from '../middleware/asyncHandler'
 import { buildDailyProductSalesReport, buildProductSalesReport } from '../services/productSalesReport'
+import { allocateOrderId } from '../lib/orderNumber'
 
 const router = Router()
 const ownerOnly = [requireAuth, requireRole('owner')]
@@ -50,6 +51,7 @@ router.post(
       includePaybill247247,
       grandTotal,
       generatedAt,
+      id: reservedOrderId,
     } = req.body as {
       employeeId: string
       employeeName: string
@@ -62,6 +64,7 @@ router.post(
       includePaybill247247?: boolean
       grandTotal: number
       generatedAt?: string
+      id?: string
     }
 
     if (!employeeName || !items?.length) {
@@ -70,6 +73,7 @@ router.post(
     }
 
     const order = await createOrder({
+      id: reservedOrderId,
       employeeId,
       employeeName,
       items,
@@ -119,6 +123,13 @@ router.get(
     const dateParam = typeof req.query.date === 'string' ? req.query.date : ''
     const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : undefined
     res.json(await buildDailyProductSalesReport(dateKey))
+  })
+)
+
+router.get(
+  '/next-id',
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.json({ id: await allocateOrderId() })
   })
 )
 

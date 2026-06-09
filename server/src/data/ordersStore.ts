@@ -1,5 +1,5 @@
 import { pool } from '../db/pool'
-import { allocateOrderId } from '../lib/orderNumber'
+import { allocateOrderId, isFormattedOrderId } from '../lib/orderNumber'
 
 export interface OrderItem {
   id: string
@@ -100,9 +100,12 @@ function resolveGeneratedAt(raw?: string): string | null {
 }
 
 export async function createOrder(
-  data: Omit<Order, 'id' | 'createdAt'> & { generatedAt?: string }
+  data: Omit<Order, 'id' | 'createdAt'> & { generatedAt?: string; id?: string }
 ): Promise<Order> {
-  const id = await allocateOrderId()
+  let id = data.id?.trim() ?? ''
+  if (!id || !isFormattedOrderId(id) || (await getOrderById(id))) {
+    id = await allocateOrderId()
+  }
   const generatedAt = resolveGeneratedAt(data.generatedAt)
   const safeHandlingCounts = normalizeCounts(data.safeHandlingCounts)
   const { rows } = await pool.query<OrderRow>(

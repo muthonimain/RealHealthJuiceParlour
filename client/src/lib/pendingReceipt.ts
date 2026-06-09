@@ -16,6 +16,7 @@ export interface PendingReceiptPayload {
   includePaybill854845: boolean
   includePaybill247247: boolean
   grandTotal: number
+  reservedOrderId?: string
 }
 
 export interface ReceiptPreviewOrder {
@@ -75,6 +76,7 @@ export function loadPendingReceipt(): PendingReceiptPayload | null {
       includePaybill854845: parsed.includePaybill854845 ?? parsed.includePaybill ?? false,
       includePaybill247247: parsed.includePaybill247247 ?? false,
       grandTotal: parsed.grandTotal ?? 0,
+      reservedOrderId: parsed.reservedOrderId,
     }
   } catch {
     return null
@@ -85,9 +87,27 @@ export function clearPendingReceipt(): void {
   sessionStorage.removeItem(STORAGE_KEY)
 }
 
+export async function reserveOrderId(): Promise<string> {
+  const res = await fetch('/api/orders/next-id')
+  if (!res.ok) throw new Error('Could not reserve order number.')
+  const data = (await res.json()) as { id?: string }
+  if (!data.id?.trim()) throw new Error('Could not reserve order number.')
+  return data.id.trim()
+}
+
+export async function ensurePendingOrderId(
+  payload: PendingReceiptPayload
+): Promise<PendingReceiptPayload> {
+  if (payload.reservedOrderId?.trim()) return payload
+  const reservedOrderId = await reserveOrderId()
+  const updated = { ...payload, reservedOrderId }
+  savePendingReceipt(updated)
+  return updated
+}
+
 export function pendingToPreviewOrder(payload: PendingReceiptPayload): ReceiptPreviewOrder {
   return {
-    id: '—',
+    id: payload.reservedOrderId?.trim() || '—',
     employeeId: payload.employeeId,
     employeeName: payload.employeeName,
     items: payload.items,

@@ -8,6 +8,7 @@ import {
   loadPendingReceipt,
   PENDING_RECEIPT_ROUTE_ID,
   pendingToPreviewOrder,
+  ensurePendingOrderId,
   type PendingReceiptPayload,
 } from '../lib/pendingReceipt'
 import { Printer, ArrowLeft } from 'lucide-react'
@@ -204,14 +205,18 @@ function ReceiptCopy({
           <hr className="thermal-receipt__rule" />
           <section className="thermal-receipt__payment">
             <p className="thermal-receipt__payment-title">M-Pesa Payment</p>
-            {activePaybills(order).map((option) => (
+            {activePaybills(order).map((option, index, options) => (
               <div key={option.paybill} className="thermal-receipt__payment-block">
                 <p className="thermal-receipt__payment-line">Paybill: {option.paybill}</p>
                 <p className="thermal-receipt__payment-line">Account: {option.account}</p>
+                {index === options.length - 1 ? (
+                  <>
+                    <p className="thermal-receipt__payment-line">Agent no.81294</p>
+                    <p className="thermal-receipt__payment-line">Store no. 383438</p>
+                  </>
+                ) : null}
               </div>
             ))}
-            <p className="thermal-receipt__payment-line">Agent no. 81294</p>
-            <p className="thermal-receipt__payment-line">Store no. 383438</p>
           </section>
         </>
       ) : null}
@@ -263,8 +268,12 @@ export default function ReceiptPage() {
         setError('No order to preview. Start a new order from the menu.')
         return
       }
-      setOrder(pendingToPreviewOrder(payload))
-      setIsPending(true)
+      void ensurePendingOrderId(payload)
+        .then((ready) => {
+          setOrder(pendingToPreviewOrder(ready))
+          setIsPending(true)
+        })
+        .catch(() => setError('Could not reserve order number. Try generating the receipt again.'))
       return
     }
 
@@ -287,6 +296,7 @@ export default function ReceiptPage() {
       },
       body: JSON.stringify({
         ...payload,
+        id: payload.reservedOrderId,
         generatedAt: new Date().toISOString(),
       }),
     })

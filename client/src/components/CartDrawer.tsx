@@ -5,7 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
-import { savePendingReceipt, PENDING_RECEIPT_ROUTE_ID } from '../lib/pendingReceipt'
+import {
+  savePendingReceipt,
+  reserveOrderId,
+  PENDING_RECEIPT_ROUTE_ID,
+} from '../lib/pendingReceipt'
 import {
   SAFE_HANDLING_OPTIONS,
   SAFE_HANDLING_SECTION_LABEL,
@@ -105,6 +109,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
   const [includePaybill854845, setIncludePaybill854845] = useState(false)
   const [includePaybill247247, setIncludePaybill247247] = useState(false)
   const [error, setError] = useState('')
+  const [generating, setGenerating] = useState(false)
 
   const safeHandlingAmount = safeHandlingTotal(safeHandlingCounts)
   const hasExtras = safeHandlingAmount > 0
@@ -125,24 +130,33 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
     setIncludePaybill247247(false)
   }
 
-  const handleGenerateReceipt = () => {
+  const handleGenerateReceipt = async () => {
     setError('')
-    savePendingReceipt({
-      employeeId: user?.id ?? '',
-      employeeName: user?.name ?? employeeName,
-      items,
-      subtotal: totalPrice,
-      deliveryIncluded: hasExtras,
-      safeHandlingAmount,
-      safeHandlingCounts,
-      includePaybill854845,
-      includePaybill247247,
-      grandTotal,
-    })
-    clearCart()
-    resetFees()
-    onClose()
-    navigate(`/receipt/${PENDING_RECEIPT_ROUTE_ID}`)
+    setGenerating(true)
+    try {
+      const reservedOrderId = await reserveOrderId()
+      savePendingReceipt({
+        employeeId: user?.id ?? '',
+        employeeName: user?.name ?? employeeName,
+        items,
+        subtotal: totalPrice,
+        deliveryIncluded: hasExtras,
+        safeHandlingAmount,
+        safeHandlingCounts,
+        includePaybill854845,
+        includePaybill247247,
+        grandTotal,
+        reservedOrderId,
+      })
+      clearCart()
+      resetFees()
+      onClose()
+      navigate(`/receipt/${PENDING_RECEIPT_ROUTE_ID}`)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not generate receipt. Try again.')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   return (
@@ -287,11 +301,12 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                   {error && <p className="text-red-500 text-xs text-center">{error}</p>}
 
                   <button
-                    onClick={handleGenerateReceipt}
-                    className="w-full bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-bold text-lg rounded-2xl py-4 transition-all flex items-center justify-center gap-2"
+                    onClick={() => void handleGenerateReceipt()}
+                    disabled={generating}
+                    className="w-full bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-bold text-lg rounded-2xl py-4 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                   >
                     <Printer size={20} />
-                    Generate Receipt
+                    {generating ? 'Reserving order no…' : 'Generate Receipt'}
                   </button>
 
                   <button
