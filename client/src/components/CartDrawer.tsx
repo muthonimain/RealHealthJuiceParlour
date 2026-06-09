@@ -14,6 +14,8 @@ import {
   SAFE_HANDLING_OPTIONS,
   SAFE_HANDLING_SECTION_LABEL,
   MPESA_PAYBILL_OPTIONS,
+  MPESA_AGENT_NO,
+  MPESA_STORE_NO,
   type SafeHandlingOption,
   type SafeHandlingCounts,
   emptySafeHandlingCounts,
@@ -108,6 +110,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
   const [safeHandlingCounts, setSafeHandlingCounts] = useState<SafeHandlingCounts>(emptySafeHandlingCounts())
   const [includePaybill854845, setIncludePaybill854845] = useState(false)
   const [includePaybill247247, setIncludePaybill247247] = useState(false)
+  const [includeMpesaAgentStore, setIncludeMpesaAgentStore] = useState(false)
   const [error, setError] = useState('')
   const [generating, setGenerating] = useState(false)
 
@@ -128,6 +131,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
     setSafeHandlingCounts(emptySafeHandlingCounts())
     setIncludePaybill854845(false)
     setIncludePaybill247247(false)
+    setIncludeMpesaAgentStore(false)
   }
 
   const handleGenerateReceipt = async () => {
@@ -145,6 +149,7 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
         safeHandlingCounts,
         includePaybill854845,
         includePaybill247247,
+        includeMpesaAgentStore,
         grandTotal,
         reservedOrderId,
       })
@@ -279,6 +284,21 @@ export default function CartDrawer({ open, onClose, employeeName = 'Staff' }: Pr
                         </label>
                       )
                     })}
+                    <label className="flex items-start gap-3 cursor-pointer select-none rounded-xl bg-white/70 border border-emerald-100 px-3 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={includeMpesaAgentStore}
+                        onChange={(e) => setIncludeMpesaAgentStore(e.target.checked)}
+                        className="w-4 h-4 mt-0.5 accent-emerald-600 cursor-pointer"
+                        aria-label="Include M-Pesa agent and store numbers on receipt"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800">Agent &amp; Store on receipt</p>
+                        <p className="text-xs text-gray-600 mt-0.5">
+                          Agent no.{MPESA_AGENT_NO} · Store no. {MPESA_STORE_NO}
+                        </p>
+                      </div>
+                    </label>
                   </div>
 
                   <div className="space-y-1 border-t border-gray-200 pt-3">

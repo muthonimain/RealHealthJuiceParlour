@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS orders (
   box_and_tapes_amount INT NOT NULL DEFAULT 0,
   include_paybill BOOLEAN NOT NULL DEFAULT FALSE,
   include_paybill_247247 BOOLEAN NOT NULL DEFAULT FALSE,
+  include_mpesa_agent_store BOOLEAN NOT NULL DEFAULT FALSE,
   grand_total INT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

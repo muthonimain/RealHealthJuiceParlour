@@ -221,6 +221,9 @@ export async function initDatabase(): Promise<void> {
     `ALTER TABLE orders ADD COLUMN IF NOT EXISTS include_paybill_247247 BOOLEAN NOT NULL DEFAULT FALSE`
   )
   await pool.query(
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS include_mpesa_agent_store BOOLEAN NOT NULL DEFAULT FALSE`
+  )
+  await pool.query(
     `ALTER TABLE orders ADD COLUMN IF NOT EXISTS packaging_30_count INT NOT NULL DEFAULT 0`
   )
   await pool.query(

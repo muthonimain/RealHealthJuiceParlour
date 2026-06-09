@@ -49,6 +49,7 @@ router.post(
       safeHandlingCounts,
       includePaybill854845,
       includePaybill247247,
+      includeMpesaAgentStore,
       grandTotal,
       generatedAt,
       id: reservedOrderId,
@@ -62,6 +63,7 @@ router.post(
       safeHandlingCounts?: Record<string, number>
       includePaybill854845?: boolean
       includePaybill247247?: boolean
+      includeMpesaAgentStore?: boolean
       grandTotal: number
       generatedAt?: string
       id?: string
@@ -89,6 +91,7 @@ router.post(
       boxAndTapesAmount: 0,
       includePaybill854845: includePaybill854845 ?? false,
       includePaybill247247: includePaybill247247 ?? false,
+      includeMpesaAgentStore: includeMpesaAgentStore ?? false,
       grandTotal,
       generatedAt,
     })

@@ -15,6 +15,7 @@ export interface PendingReceiptPayload {
   safeHandlingCounts: SafeHandlingCounts
   includePaybill854845: boolean
   includePaybill247247: boolean
+  includeMpesaAgentStore: boolean
   grandTotal: number
   reservedOrderId?: string
 }
@@ -30,6 +31,7 @@ export interface ReceiptPreviewOrder {
   safeHandlingCounts: SafeHandlingCounts
   includePaybill854845: boolean
   includePaybill247247: boolean
+  includeMpesaAgentStore: boolean
   grandTotal: number
   createdAt: string
 }
@@ -75,6 +77,7 @@ export function loadPendingReceipt(): PendingReceiptPayload | null {
       safeHandlingCounts,
       includePaybill854845: parsed.includePaybill854845 ?? parsed.includePaybill ?? false,
       includePaybill247247: parsed.includePaybill247247 ?? false,
+      includeMpesaAgentStore: parsed.includeMpesaAgentStore ?? false,
       grandTotal: parsed.grandTotal ?? 0,
       reservedOrderId: parsed.reservedOrderId,
     }
@@ -117,6 +120,7 @@ export function pendingToPreviewOrder(payload: PendingReceiptPayload): ReceiptPr
     safeHandlingCounts: payload.safeHandlingCounts,
     includePaybill854845: payload.includePaybill854845,
     includePaybill247247: payload.includePaybill247247,
+    includeMpesaAgentStore: payload.includeMpesaAgentStore,
     grandTotal: payload.grandTotal,
     createdAt: new Date().toISOString(),
   }

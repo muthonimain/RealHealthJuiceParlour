@@ -10,6 +10,9 @@ export const MPESA_PAYBILL_OPTIONS = [
   { paybill: '247247', account: '248899' },
 ] as const
 
+export const MPESA_AGENT_NO = '81294'
+export const MPESA_STORE_NO = '383438'
+
 export type MpesaPaybillOption = (typeof MPESA_PAYBILL_OPTIONS)[number]
 
 /** @deprecated Use MPESA_PAYBILL_OPTIONS */

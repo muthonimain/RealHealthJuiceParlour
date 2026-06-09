@@ -28,6 +28,7 @@ export interface Order {
   boxAndTapesAmount: number
   includePaybill854845: boolean
   includePaybill247247: boolean
+  includeMpesaAgentStore: boolean
   grandTotal: number
   createdAt: string
 }
@@ -49,6 +50,7 @@ interface OrderRow {
   box_and_tapes_amount: number
   include_paybill: boolean
   include_paybill_247247: boolean
+  include_mpesa_agent_store?: boolean
   grand_total: number
   created_at: Date
 }
@@ -84,6 +86,7 @@ function mapOrder(row: OrderRow): Order {
     boxAndTapesAmount: row.box_and_tapes_amount ?? 0,
     includePaybill854845: row.include_paybill ?? false,
     includePaybill247247: row.include_paybill_247247 ?? false,
+    includeMpesaAgentStore: row.include_mpesa_agent_store ?? false,
     grandTotal: row.grand_total,
     createdAt: new Date(row.created_at).toISOString(),
   }
@@ -114,17 +117,17 @@ export async function createOrder(
            id, employee_id, employee_name, items, subtotal, delivery_included,
            safe_handling_amount, safe_handling_counts,
            delivery_amount, packaging_amount, packaging_30_count, packaging_50_count,
-           special_delivery_amount, box_and_tapes_amount, include_paybill, include_paybill_247247, grand_total, created_at
+           special_delivery_amount, box_and_tapes_amount, include_paybill, include_paybill_247247, include_mpesa_agent_store, grand_total, created_at
          )
-         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18::timestamptz)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::timestamptz)
          RETURNING *`
       : `INSERT INTO orders (
            id, employee_id, employee_name, items, subtotal, delivery_included,
            safe_handling_amount, safe_handling_counts,
            delivery_amount, packaging_amount, packaging_30_count, packaging_50_count,
-           special_delivery_amount, box_and_tapes_amount, include_paybill, include_paybill_247247, grand_total
+           special_delivery_amount, box_and_tapes_amount, include_paybill, include_paybill_247247, include_mpesa_agent_store, grand_total
          )
-         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
          RETURNING *`,
     generatedAt
       ? [
@@ -144,6 +147,7 @@ export async function createOrder(
           data.boxAndTapesAmount ?? 0,
           data.includePaybill854845 ?? false,
           data.includePaybill247247 ?? false,
+          data.includeMpesaAgentStore ?? false,
           data.grandTotal,
           generatedAt,
         ]
@@ -164,6 +168,7 @@ export async function createOrder(
           data.boxAndTapesAmount ?? 0,
           data.includePaybill854845 ?? false,
           data.includePaybill247247 ?? false,
+          data.includeMpesaAgentStore ?? false,
           data.grandTotal,
         ]
   )
@@ -204,6 +209,7 @@ export async function updateOrder(
   const boxAndTapesAmount = data.boxAndTapesAmount ?? existing.boxAndTapesAmount
   const includePaybill854845 = data.includePaybill854845 ?? existing.includePaybill854845
   const includePaybill247247 = data.includePaybill247247 ?? existing.includePaybill247247
+  const includeMpesaAgentStore = data.includeMpesaAgentStore ?? existing.includeMpesaAgentStore
   const grandTotal = data.grandTotal ?? existing.grandTotal
   const employeeId = data.employeeId ?? existing.employeeId
   const employeeName = data.employeeName ?? existing.employeeName
@@ -239,8 +245,9 @@ export async function updateOrder(
        box_and_tapes_amount = $14,
        include_paybill = $15,
        include_paybill_247247 = $16,
-       grand_total = $17,
-       created_at = $18::timestamptz
+       include_mpesa_agent_store = $17,
+       grand_total = $18,
+       created_at = $19::timestamptz
      WHERE id = $1
      RETURNING *`,
     [
@@ -260,6 +267,7 @@ export async function updateOrder(
       boxAndTapesAmount,
       includePaybill854845,
       includePaybill247247,
+      includeMpesaAgentStore,
       grandTotal,
       createdAt,
     ]

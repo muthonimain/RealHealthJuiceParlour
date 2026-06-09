@@ -18,6 +18,8 @@ import {
   normalizeSafeHandlingCounts,
   safeHandlingActiveLines,
   activePaybills,
+  MPESA_AGENT_NO,
+  MPESA_STORE_NO,
 } from '../constants/orderFees'
 import type { SafeHandlingCounts } from '../constants/orderFees'
 import '../styles/thermal-receipt.css'
@@ -48,6 +50,7 @@ interface Order {
   includePaybill854845?: boolean
   includePaybill247247?: boolean
   includePaybill?: boolean
+  includeMpesaAgentStore?: boolean
   grandTotal: number
   createdAt: string
 }
@@ -200,23 +203,23 @@ function ReceiptCopy({
         </p>
       </section>
 
-      {activePaybills(order).length > 0 ? (
+      {activePaybills(order).length > 0 || order.includeMpesaAgentStore ? (
         <>
           <hr className="thermal-receipt__rule" />
           <section className="thermal-receipt__payment">
             <p className="thermal-receipt__payment-title">M-Pesa Payment</p>
-            {activePaybills(order).map((option, index, options) => (
+            {activePaybills(order).map((option) => (
               <div key={option.paybill} className="thermal-receipt__payment-block">
                 <p className="thermal-receipt__payment-line">Paybill: {option.paybill}</p>
                 <p className="thermal-receipt__payment-line">Account: {option.account}</p>
-                {index === options.length - 1 ? (
-                  <>
-                    <p className="thermal-receipt__payment-line">Agent no.81294</p>
-                    <p className="thermal-receipt__payment-line">Store no. 383438</p>
-                  </>
-                ) : null}
               </div>
             ))}
+            {order.includeMpesaAgentStore ? (
+              <div className="thermal-receipt__payment-block">
+                <p className="thermal-receipt__payment-line">Agent no.{MPESA_AGENT_NO}</p>
+                <p className="thermal-receipt__payment-line">Store no. {MPESA_STORE_NO}</p>
+              </div>
+            ) : null}
           </section>
         </>
       ) : null}
