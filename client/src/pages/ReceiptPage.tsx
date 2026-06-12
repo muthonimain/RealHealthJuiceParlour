@@ -22,6 +22,7 @@ import {
   MPESA_STORE_NO,
 } from '../constants/orderFees'
 import type { SafeHandlingCounts } from '../constants/orderFees'
+import ReceiptSocialIcons from '../components/ReceiptSocialIcons'
 import '../styles/thermal-receipt.css'
 
 interface OrderItem {
@@ -235,8 +236,10 @@ function ReceiptCopy({
         </p>
 
         <p className="thermal-receipt__footer-heading thermal-receipt__footer-bold">Follow Us</p>
-        <p className="thermal-receipt__footer-social">@RealHealthJuiceParlour</p>
-        <p className="thermal-receipt__footer-social-platforms">Facebook · Instagram · TikTok · X</p>
+        <div className="thermal-receipt__footer-social-row">
+          <span className="thermal-receipt__footer-social">@RealHealthJuiceParlour</span>
+          <ReceiptSocialIcons />
+        </div>
       </footer>
     </article>
   )
