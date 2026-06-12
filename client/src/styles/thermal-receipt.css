@@ -185,16 +185,29 @@
 }
 
 .thermal-receipt__footer-heading {
-  margin-top: 8px !important;
-  margin-bottom: 2px !important;
+  margin-top: 10px !important;
+  margin-bottom: 4px !important;
 }
 
-.thermal-receipt__footer-phones {
-  line-height: 1.45;
+.thermal-receipt__footer-heading:first-child {
+  margin-top: 0 !important;
 }
 
 .thermal-receipt__footer-tagline {
-  margin-top: 8px !important;
+  margin-top: 6px !important;
+  margin-bottom: 2px !important;
+  line-height: 1.45;
+}
+
+.thermal-receipt__footer-social {
+  margin-top: 2px !important;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.thermal-receipt__footer-social-platforms {
+  margin-top: 2px !important;
+  font-size: 0.92em;
   line-height: 1.45;
 }
 

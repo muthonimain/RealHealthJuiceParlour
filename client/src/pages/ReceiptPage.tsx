@@ -227,19 +227,16 @@ function ReceiptCopy({
       <hr className="thermal-receipt__rule" />
 
       <footer className="thermal-receipt__footer">
-        <p className="thermal-receipt__footer-lead thermal-receipt__footer-bold">
-          Nutrition • Juice Therapy • Lifestyle Medicine
-        </p>
-        <p className="thermal-receipt__footer-italic">Healing from Within, the Natural Way.</p>
-
-        <p className="thermal-receipt__footer-heading thermal-receipt__footer-bold">
-          Orders &amp; Wellness Support:
-        </p>
-        <p className="thermal-receipt__footer-phones">0729 125 413 | 0724 228 947</p>
-
+        <p className="thermal-receipt__footer-heading thermal-receipt__footer-bold">Contacts Us:</p>
+        <p>Juice Parlour: 0729 125 413</p>
+        <p>Chief Juice Therapist: 0724 228 947</p>
         <p className="thermal-receipt__footer-tagline thermal-receipt__footer-italic">
-          No Sugar • No Preservatives • 100% Natural
+          Fresh • Natural • Healing from Within
         </p>
+
+        <p className="thermal-receipt__footer-heading thermal-receipt__footer-bold">Follow Us</p>
+        <p className="thermal-receipt__footer-social">@RealHealthJuiceParlour</p>
+        <p className="thermal-receipt__footer-social-platforms">Facebook · Instagram · TikTok · X</p>
       </footer>
     </article>
   )
