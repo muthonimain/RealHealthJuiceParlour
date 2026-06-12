@@ -229,8 +229,8 @@ function ReceiptCopy({
 
       <footer className="thermal-receipt__footer">
         <p className="thermal-receipt__footer-heading thermal-receipt__footer-bold">Contacts Us:</p>
-        <p>Juice Parlour: 0729 125 413</p>
-        <p>Chief Juice Therapist: 0724 228 947</p>
+        <p className="thermal-receipt__footer-line">Juice Parlour: 0729 125 413</p>
+        <p className="thermal-receipt__footer-line">Chief Juice Therapist: 0724 228 947</p>
         <p className="thermal-receipt__footer-tagline thermal-receipt__footer-italic">
           Fresh • Natural • Healing from Within
         </p>

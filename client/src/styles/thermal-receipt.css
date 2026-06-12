@@ -162,17 +162,22 @@
 .thermal-receipt__footer {
   margin: 0;
   font-family: inherit;
-  font-size: inherit;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 400;
   text-align: center;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
+  line-height: 1.5;
+  overflow-wrap: normal;
 }
 
 .thermal-receipt__footer p {
-  margin: 0 0 3px;
-  font-weight: 700;
+  margin: 0 0 2px;
+  font-weight: 400;
   font-size: inherit;
+}
+
+.thermal-receipt__footer-line {
+  white-space: nowrap;
+  font-weight: 400;
 }
 
 .thermal-receipt__footer-bold {
@@ -181,7 +186,7 @@
 
 .thermal-receipt__footer-italic {
   font-style: italic;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .thermal-receipt__footer-heading {
@@ -203,14 +208,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-wrap: nowrap;
+  gap: 5px;
   margin-top: 2px;
+  white-space: nowrap;
 }
 
 .thermal-receipt__footer-social {
-  font-weight: 900;
+  font-weight: 400;
   line-height: 1.45;
+  flex-shrink: 0;
 }
 
 .thermal-receipt__footer-icons {
@@ -221,8 +228,8 @@
 
 .thermal-receipt__footer-icon {
   display: block;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
@@ -358,8 +365,32 @@
   .thermal-receipt__line-amount,
   .thermal-receipt__grand-total,
   .thermal-receipt__grand-total span,
-  .thermal-receipt__footer-tagline {
+  .thermal-receipt__footer-bold,
+  .thermal-receipt__footer-heading {
     font-weight: 900 !important;
+  }
+
+  .thermal-receipt__footer {
+    font-size: 11px !important;
+    font-weight: 400 !important;
+  }
+
+  .thermal-receipt__footer p,
+  .thermal-receipt__footer-line,
+  .thermal-receipt__footer-social {
+    font-weight: 400 !important;
+    white-space: nowrap !important;
+  }
+
+  .thermal-receipt__footer-tagline {
+    font-style: italic !important;
+    font-weight: 400 !important;
+    white-space: normal !important;
+  }
+
+  .thermal-receipt__footer-social-row {
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
   }
 
   .thermal-receipt__footer-icon-bg {
