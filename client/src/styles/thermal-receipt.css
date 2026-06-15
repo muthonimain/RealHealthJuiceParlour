@@ -163,7 +163,7 @@
   margin: 0;
   font-family: inherit;
   font-size: 11px;
-  font-weight: 400;
+  font-weight: 700;
   text-align: center;
   line-height: 1.5;
   overflow-wrap: normal;
@@ -171,13 +171,13 @@
 
 .thermal-receipt__footer p {
   margin: 0 0 2px;
-  font-weight: 400;
+  font-weight: 700;
   font-size: inherit;
 }
 
 .thermal-receipt__footer-line {
   white-space: nowrap;
-  font-weight: 400;
+  font-weight: 700;
 }
 
 .thermal-receipt__footer-bold {
@@ -186,7 +186,7 @@
 
 .thermal-receipt__footer-italic {
   font-style: italic;
-  font-weight: 400;
+  font-weight: 700;
 }
 
 .thermal-receipt__footer-heading {
@@ -215,7 +215,7 @@
 }
 
 .thermal-receipt__footer-social {
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1.45;
   flex-shrink: 0;
 }
@@ -372,19 +372,19 @@
 
   .thermal-receipt__footer {
     font-size: 11px !important;
-    font-weight: 400 !important;
+    font-weight: 700 !important;
   }
 
   .thermal-receipt__footer p,
   .thermal-receipt__footer-line,
   .thermal-receipt__footer-social {
-    font-weight: 400 !important;
+    font-weight: 700 !important;
     white-space: nowrap !important;
   }
 
   .thermal-receipt__footer-tagline {
     font-style: italic !important;
-    font-weight: 400 !important;
+    font-weight: 700 !important;
     white-space: normal !important;
   }
 
