@@ -14,18 +14,6 @@ export interface CategorySectionPreset {
 
 export const CATEGORY_SECTION_PRESETS: CategorySectionPreset[] = [
   {
-    idPrefixes: ['herbs'],
-    nameIncludes: 'herbs',
-    sections: ['Powders', 'Seeds'],
-    defaultItemSection: 'Powders',
-  },
-  {
-    idPrefixes: ['honey-nuts-oils', 'honey-nuts', 'nuts-oils-honey', 'nuts-oils'],
-    nameMustIncludeAll: ['honey', 'nuts', 'oils'],
-    sections: ['Honey', 'Nuts', 'Oils'],
-    defaultItemSection: 'Honey',
-  },
-  {
     idPrefixes: ['gut-healing-drinks', 'gut-healing'],
     nameIncludes: 'guthealing',
     sections: ['Flavored Kombucha', 'Plain Kombucha', 'Other Drinks'],

@@ -6,12 +6,6 @@ const PRESETS: {
   nameMustIncludeAll?: string[]
   sections: string[]
 }[] = [
-  { idPrefixes: ['herbs'], nameIncludes: 'herbs', sections: ['Powders', 'Seeds'] },
-  {
-    idPrefixes: ['honey-nuts-oils', 'honey-nuts', 'nuts-oils-honey', 'nuts-oils'],
-    nameMustIncludeAll: ['honey', 'nuts', 'oils'],
-    sections: ['Honey', 'Nuts', 'Oils'],
-  },
   {
     idPrefixes: ['gut-healing-drinks', 'gut-healing'],
     nameIncludes: 'guthealing',

@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { pool, requireDatabase } from './pool'
 import { buildDefaultMenu } from './menuSeed'
+import { syncMenuFromSeedIfNeeded } from './syncMenuFromSeed'
 import { findPresetForCategory } from '../data/categorySectionPresets'
 import type { MenuCategory } from '../data/menuStore'
 import type { Order } from '../data/ordersStore'
@@ -198,6 +199,7 @@ export async function initDatabase(): Promise<void> {
   requireDatabase()
   await runSchema()
   await runMenuMigrations()
+  await syncMenuFromSeedIfNeeded()
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_number_seq (
       year_suffix CHAR(2) PRIMARY KEY,
