@@ -69,6 +69,16 @@ function toCreatedAtIso(date: string, time: string) {
   return new Date(`${date}T${time}:00`).toISOString()
 }
 
+function orderMatchesEmployee(order: Order, summary: EmployeeSummary) {
+  if (summary.employeeId.startsWith('name:')) {
+    return order.employeeName === summary.employeeName
+  }
+  if (order.employeeId) {
+    return order.employeeId === summary.employeeId
+  }
+  return order.employeeName === summary.employeeName
+}
+
 export default function EmployeeRecordsPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -76,6 +86,7 @@ export default function EmployeeRecordsPage() {
   const [summaries, setSummaries] = useState<EmployeeSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [clearingId, setClearingId] = useState<string | null>(null)
+  const [deletingEmployeeId, setDeletingEmployeeId] = useState<string | null>(null)
   const [lastRefresh, setLastRefresh] = useState(new Date())
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDate, setEditDate] = useState('')
@@ -251,6 +262,45 @@ export default function EmployeeRecordsPage() {
     }
   }
 
+  const handleDeleteAllRecords = async (summary: EmployeeSummary) => {
+    const employeeOrders = orders.filter((o) => orderMatchesEmployee(o, summary))
+    if (employeeOrders.length === 0) return
+
+    const total = employeeOrders.reduce((sum, o) => sum + o.grandTotal, 0)
+    if (
+      !confirm(
+        `Delete all ${employeeOrders.length} sale(s) recorded by ${summary.employeeName}?\n\nTotal: Ksh ${total.toLocaleString()}\n\nThis removes them from staff summaries, revenue totals, and reports. This cannot be undone.`
+      )
+    ) {
+      return
+    }
+
+    setActionError('')
+    setDeletingEmployeeId(summary.employeeId)
+    try {
+      const res = await authFetch(`/api/orders/employee/${encodeURIComponent(summary.employeeId)}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ employeeName: summary.employeeName }),
+      })
+      const data = await readApiJson<{ message?: string; orders?: Order[] }>(res)
+      if (!res.ok) {
+        throw new Error(data.message || 'Could not delete employee records')
+      }
+      if (data.orders) setOrders(data.orders)
+      if (editingId && !data.orders?.some((o) => o.id === editingId)) cancelEdit()
+
+      const summariesRes = await authFetch('/api/clearances/summaries')
+      if (summariesRes.ok) {
+        setSummaries(await summariesRes.json())
+      }
+      setLastRefresh(new Date())
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : 'Failed to delete employee records')
+    } finally {
+      setDeletingEmployeeId(null)
+    }
+  }
+
   const monthRevenue = sumRevenueForWorkingMonth(orders)
   const monthLabel = workingMonthLabel()
   const todayOrders = orders.filter((o) => {
@@ -419,6 +469,8 @@ export default function EmployeeRecordsPage() {
                 const isPending = summary.status === 'pending' && summary.totalOrders > 0
                 const isCleared = summary.status === 'cleared' && summary.totalOrders > 0
                 const noOrders = summary.totalOrders === 0
+                const employeeOrderCount = orders.filter((o) => orderMatchesEmployee(o, summary)).length
+                const isDeleting = deletingEmployeeId === summary.employeeId
 
                 return (
                   <div
@@ -494,7 +546,7 @@ export default function EmployeeRecordsPage() {
                     {isPending && (
                       <button
                         onClick={() => handleClear(summary)}
-                        disabled={clearingId === summary.employeeId}
+                        disabled={clearingId === summary.employeeId || isDeleting}
                         title={`Clear ${summary.employeeName} for today`}
                         className="w-full bg-amber-600 hover:bg-amber-700 active:bg-amber-800 disabled:opacity-60 text-white font-bold rounded-xl py-3.5 text-sm transition-all flex items-center justify-center gap-2 min-h-[48px]"
                       >
@@ -504,6 +556,25 @@ export default function EmployeeRecordsPage() {
                           <>
                             <CheckCircle2 size={18} />
                             Clear Staff — Day Complete
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    {employeeOrderCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAllRecords(summary)}
+                        disabled={actionBusy || isDeleting || clearingId === summary.employeeId}
+                        title={`Delete all sales by ${summary.employeeName}`}
+                        className="w-full border-2 border-red-200 bg-white hover:bg-red-50 active:bg-red-100 disabled:opacity-60 text-red-700 font-bold rounded-xl py-3 text-sm transition-all flex items-center justify-center gap-2 min-h-[48px]"
+                      >
+                        {isDeleting ? (
+                          <div className="w-5 h-5 rounded-full border-2 border-red-600 border-t-transparent animate-spin" />
+                        ) : (
+                          <>
+                            <Trash2 size={18} />
+                            Delete All Records ({employeeOrderCount})
                           </>
                         )}
                       </button>

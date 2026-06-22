@@ -117,3 +117,7 @@ export async function getClearancesForDate(dateKey: string): Promise<DailyCleara
   )
   return rows.map(mapClearance)
 }
+
+export async function deleteClearancesByEmployee(employeeId: string): Promise<void> {
+  await pool.query('DELETE FROM clearances WHERE employee_id = $1', [employeeId])
+}

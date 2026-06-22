@@ -2,10 +2,12 @@ import { Router, Request, Response } from 'express'
 import {
   createOrder,
   deleteOrder,
+  deleteOrdersByEmployee,
   getAllOrders,
   getOrderById,
   updateOrder,
 } from '../data/ordersStore'
+import { deleteClearancesByEmployee } from '../data/clearanceStore'
 import type { OrderItem } from '../data/ordersStore'
 import { revokeClearanceIfSuperseded } from '../data/clearanceStore'
 import { requireAuth, requireRole, AuthRequest } from '../middleware/auth'
@@ -133,6 +135,34 @@ router.get(
   '/next-id',
   asyncHandler(async (_req: Request, res: Response) => {
     res.json({ id: await allocateOrderId() })
+  })
+)
+
+router.delete(
+  '/employee/:employeeId',
+  ...ownerOnly,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const employeeId = String(req.params.employeeId)
+    const { employeeName } = req.body as { employeeName?: string }
+
+    if (!employeeName?.trim()) {
+      res.status(400).json({ message: 'employeeName is required.' })
+      return
+    }
+
+    const deletedCount = await deleteOrdersByEmployee(employeeId, employeeName.trim())
+    if (deletedCount === 0) {
+      res.status(404).json({ message: 'No sales found for this employee.' })
+      return
+    }
+
+    await deleteClearancesByEmployee(employeeId)
+
+    res.json({
+      success: true,
+      deletedCount,
+      orders: await getAllOrders(),
+    })
   })
 )
 

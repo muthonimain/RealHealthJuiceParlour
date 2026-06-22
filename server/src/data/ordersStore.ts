@@ -279,3 +279,22 @@ export async function deleteOrder(id: string): Promise<boolean> {
   const { rowCount } = await pool.query('DELETE FROM orders WHERE id = $1', [id])
   return (rowCount ?? 0) > 0
 }
+
+export async function deleteOrdersByEmployee(
+  employeeId: string,
+  employeeName: string
+): Promise<number> {
+  const name = employeeName.trim()
+  const { rowCount } = employeeId.startsWith('name:')
+    ? await pool.query('DELETE FROM orders WHERE employee_name = $1', [
+        employeeId.slice(5).trim() || name,
+      ])
+    : await pool.query(
+        `DELETE FROM orders
+         WHERE employee_id = $1
+            OR (COALESCE(employee_id, '') = '' AND employee_name = $2)
+            OR employee_name = $2`,
+        [employeeId, name]
+      )
+  return rowCount ?? 0
+}
