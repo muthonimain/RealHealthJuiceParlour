@@ -4,7 +4,9 @@ import { RefreshCw, Receipt, CheckCircle2, Clock, User, Pencil, Trash2, X } from
 import { useAuth } from '../../context/AuthContext'
 import { authFetch, readApiJson } from '../../lib/api'
 import OwnerPageShell from '../../components/OwnerPageShell'
+import RecordsDatePicker from '../../components/RecordsDatePicker'
 import { dataUnchanged } from '../../lib/stableData'
+import { dayLabelFromKey, isOnDay, isTodayDateKey, todayDateKey } from '../../lib/dateKey'
 import { sumRevenueForWorkingMonth, workingMonthLabel } from '../../lib/workingMonth'
 import { orderServiceFeeTotal } from '../../constants/orderFees'
 
@@ -49,13 +51,8 @@ function formatDateTime(iso: string) {
   }
 }
 
-function todayLabel() {
-  return new Date().toLocaleDateString('en-KE', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+function orderMatchesEmployeeOnDate(order: Order, summary: EmployeeSummary, dateKey: string) {
+  return isOnDay(order.createdAt, dateKey) && orderMatchesEmployee(order, summary)
 }
 
 function splitDateTime(iso: string) {
@@ -84,6 +81,7 @@ export default function EmployeeRecordsPage() {
   const navigate = useNavigate()
   const [orders, setOrders] = useState<Order[]>([])
   const [summaries, setSummaries] = useState<EmployeeSummary[]>([])
+  const [selectedDate, setSelectedDate] = useState(todayDateKey)
   const [loading, setLoading] = useState(true)
   const [clearingId, setClearingId] = useState<string | null>(null)
   const [deletingEmployeeId, setDeletingEmployeeId] = useState<string | null>(null)
@@ -103,7 +101,7 @@ export default function EmployeeRecordsPage() {
     try {
       const [ordersRes, summariesRes] = await Promise.all([
         authFetch('/api/orders'),
-        authFetch('/api/clearances/summaries'),
+        authFetch(`/api/clearances/summaries?date=${encodeURIComponent(selectedDate)}`),
       ])
       if (ordersRes.ok) {
         const nextOrders: Order[] = await ordersRes.json()
@@ -117,13 +115,18 @@ export default function EmployeeRecordsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [selectedDate])
 
   useEffect(() => {
+    setLoading(true)
     fetchData()
+  }, [fetchData])
+
+  useEffect(() => {
+    if (!isTodayDateKey(selectedDate)) return
     const interval = setInterval(fetchData, 15000)
     return () => clearInterval(interval)
-  }, [fetchData])
+  }, [fetchData, selectedDate])
 
   const startEdit = (order: Order) => {
     const { date, time } = splitDateTime(order.createdAt)
@@ -197,7 +200,9 @@ export default function EmployeeRecordsPage() {
       }
       if (data.orders) setOrders(data.orders)
       cancelEdit()
-      const summariesRes = await authFetch('/api/clearances/summaries')
+      const summariesRes = await authFetch(
+        `/api/clearances/summaries?date=${encodeURIComponent(selectedDate)}`
+      )
       if (summariesRes.ok) {
         setSummaries(await summariesRes.json())
       }
@@ -227,7 +232,9 @@ export default function EmployeeRecordsPage() {
       }
       if (data.orders) setOrders(data.orders)
       if (editingId === order.id) cancelEdit()
-      const summariesRes = await authFetch('/api/clearances/summaries')
+      const summariesRes = await authFetch(
+        `/api/clearances/summaries?date=${encodeURIComponent(selectedDate)}`
+      )
       if (summariesRes.ok) {
         setSummaries(await summariesRes.json())
       }
@@ -249,6 +256,7 @@ export default function EmployeeRecordsPage() {
         body: JSON.stringify({
           employeeId: summary.employeeId,
           employeeName: summary.employeeName,
+          date: selectedDate,
           clearedBy: user?.name ?? 'Owner',
         }),
       })
@@ -263,13 +271,16 @@ export default function EmployeeRecordsPage() {
   }
 
   const handleDeleteAllRecords = async (summary: EmployeeSummary) => {
-    const employeeOrders = orders.filter((o) => orderMatchesEmployee(o, summary))
+    const employeeOrders = orders.filter((o) =>
+      orderMatchesEmployeeOnDate(o, summary, selectedDate)
+    )
     if (employeeOrders.length === 0) return
 
     const total = employeeOrders.reduce((sum, o) => sum + o.grandTotal, 0)
+    const dateLabel = isTodayDateKey(selectedDate) ? 'today' : dayLabelFromKey(selectedDate)
     if (
       !confirm(
-        `Delete all ${employeeOrders.length} sale(s) recorded by ${summary.employeeName}?\n\nTotal: Ksh ${total.toLocaleString()}\n\nThis removes them from staff summaries, revenue totals, and reports. This cannot be undone.`
+        `Delete all ${employeeOrders.length} sale(s) by ${summary.employeeName} for ${dateLabel}?\n\nTotal: Ksh ${total.toLocaleString()}\n\nThis cannot be undone.`
       )
     ) {
       return
@@ -280,7 +291,7 @@ export default function EmployeeRecordsPage() {
     try {
       const res = await authFetch(`/api/orders/employee/${encodeURIComponent(summary.employeeId)}`, {
         method: 'DELETE',
-        body: JSON.stringify({ employeeName: summary.employeeName }),
+        body: JSON.stringify({ employeeName: summary.employeeName, date: selectedDate }),
       })
       const data = await readApiJson<{ message?: string; orders?: Order[] }>(res)
       if (!res.ok) {
@@ -289,7 +300,9 @@ export default function EmployeeRecordsPage() {
       if (data.orders) setOrders(data.orders)
       if (editingId && !data.orders?.some((o) => o.id === editingId)) cancelEdit()
 
-      const summariesRes = await authFetch('/api/clearances/summaries')
+      const summariesRes = await authFetch(
+        `/api/clearances/summaries?date=${encodeURIComponent(selectedDate)}`
+      )
       if (summariesRes.ok) {
         setSummaries(await summariesRes.json())
       }
@@ -303,11 +316,9 @@ export default function EmployeeRecordsPage() {
 
   const monthRevenue = sumRevenueForWorkingMonth(orders)
   const monthLabel = workingMonthLabel()
-  const todayOrders = orders.filter((o) => {
-    const d = new Date(o.createdAt)
-    return d.toDateString() === new Date().toDateString()
-  })
-  const todayRevenue = todayOrders.reduce((sum, o) => sum + o.grandTotal, 0)
+  const dayOrders = orders.filter((o) => isOnDay(o.createdAt, selectedDate))
+  const dayRevenue = dayOrders.reduce((sum, o) => sum + o.grandTotal, 0)
+  const viewingToday = isTodayDateKey(selectedDate)
   const pendingCount = summaries.filter((s) => s.status === 'pending' && s.totalOrders > 0).length
 
   const editingOrder = editingId ? orders.find((o) => o.id === editingId) : undefined
@@ -450,11 +461,17 @@ export default function EmployeeRecordsPage() {
         </button>
       }
     >
-        <p className="text-sm text-gray-500 mb-4">{todayLabel()} — daily staff totals</p>
+        <RecordsDatePicker value={selectedDate} onChange={setSelectedDate} className="mb-4" />
+
+        <p className="text-sm text-gray-500 mb-4">
+          {dayLabelFromKey(selectedDate)} — daily staff totals
+        </p>
 
         {/* Staff banners */}
         <section className="mb-8">
-          <h2 className="text-lg font-bold text-gray-800 mb-3">Today&apos;s Staff Summary</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-3">
+            {viewingToday ? "Today's Staff Summary" : 'Staff Summary'}
+          </h2>
           {loading ? (
             <div className="flex justify-center py-10">
               <div className="w-8 h-8 rounded-full border-4 border-amber-500 border-t-transparent animate-spin" />
@@ -469,7 +486,9 @@ export default function EmployeeRecordsPage() {
                 const isPending = summary.status === 'pending' && summary.totalOrders > 0
                 const isCleared = summary.status === 'cleared' && summary.totalOrders > 0
                 const noOrders = summary.totalOrders === 0
-                const employeeOrderCount = orders.filter((o) => orderMatchesEmployee(o, summary)).length
+                const employeeOrderCount = orders.filter((o) =>
+                  orderMatchesEmployeeOnDate(o, summary, selectedDate)
+                ).length
                 const isDeleting = deletingEmployeeId === summary.employeeId
 
                 return (
@@ -508,7 +527,7 @@ export default function EmployeeRecordsPage() {
 
                       {noOrders ? (
                         <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
-                          No orders today
+                          {viewingToday ? 'No orders today' : 'No orders'}
                         </span>
                       ) : isPending ? (
                         <span className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-200 px-3 py-1.5 rounded-full uppercase tracking-wide">
@@ -584,7 +603,7 @@ export default function EmployeeRecordsPage() {
               })}
             </div>
           )}
-          {pendingCount > 0 && (
+          {viewingToday && pendingCount > 0 && (
             <p className="text-amber-700 text-sm mt-3 font-medium">
               {pendingCount} employee{pendingCount !== 1 ? 's' : ''} still pending clearance for today.
             </p>
@@ -594,9 +613,9 @@ export default function EmployeeRecordsPage() {
         {/* Summary stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
-            { label: "Total Orders", value: orders.length },
-            { label: "Today's Orders", value: todayOrders.length },
-            { label: "Today's Revenue", value: `Ksh ${todayRevenue.toLocaleString()}` },
+            { label: 'Orders on this day', value: dayOrders.length },
+            { label: viewingToday ? "Today's revenue" : 'Day revenue', value: `Ksh ${dayRevenue.toLocaleString()}` },
+            { label: 'Staff with sales', value: summaries.filter((s) => s.totalOrders > 0).length },
             {
               label: `${monthLabel} revenue`,
               value: `Ksh ${monthRevenue.toLocaleString()}`,
@@ -615,6 +634,7 @@ export default function EmployeeRecordsPage() {
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <Receipt size={18} className="text-amber-600 shrink-0" />
             All Order Records
+            {!viewingToday ? ` · ${dayLabelFromKey(selectedDate)}` : ''}
           </h2>
           <p className="text-xs text-gray-400">
             Live · Updated{' '}
@@ -629,10 +649,12 @@ export default function EmployeeRecordsPage() {
           <div className="flex items-center justify-center py-20">
             <div className="w-8 h-8 rounded-full border-4 border-amber-500 border-t-transparent animate-spin" />
           </div>
-        ) : orders.length === 0 ? (
+        ) : dayOrders.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center text-gray-400 shadow-sm">
             <Receipt size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="font-medium">No orders yet</p>
+            <p className="font-medium">
+              {viewingToday ? 'No orders yet today' : 'No orders on this date'}
+            </p>
             <p className="text-sm mt-1">Orders appear here when an employee generates a receipt.</p>
           </div>
         ) : (
@@ -641,7 +663,7 @@ export default function EmployeeRecordsPage() {
               <p className="mb-3 text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2">{actionError}</p>
             )}
             <div className="md:hidden space-y-3">
-              {orders.map((order) => {
+              {dayOrders.map((order) => {
                 const { date, time } = formatDateTime(order.createdAt)
                 const itemsSummary = order.items.map((i) => `${i.name} ×${i.quantity}`).join(', ')
                 return (
@@ -705,7 +727,7 @@ export default function EmployeeRecordsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order) => {
+                  {dayOrders.map((order) => {
                     const { date, time } = formatDateTime(order.createdAt)
                     const itemsSummary = order.items
                       .map((i) => `${i.name} x${i.quantity}`)
@@ -779,7 +801,7 @@ export default function EmployeeRecordsPage() {
           </>
         )}
 
-        {user && (
+        {user && viewingToday && (
           <p className="text-center text-gray-400 text-xs mt-6">
             Logged in as <span className="font-semibold">{user.name}</span> (Therapist) · Refreshes every 15 seconds
           </p>

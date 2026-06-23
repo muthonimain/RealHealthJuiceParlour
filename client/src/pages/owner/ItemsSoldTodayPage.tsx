@@ -3,14 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { ListOrdered, RefreshCw } from 'lucide-react'
 import { authFetch, readApiJson } from '../../lib/api'
 import OwnerPageShell from '../../components/OwnerPageShell'
+import RecordsDatePicker from '../../components/RecordsDatePicker'
+import { isTodayDateKey, todayDateKey } from '../../lib/dateKey'
 import type { DailyProductSalesReport, ProductSalesRow } from '../../types/salesReport'
 
-function ProductList({ rows }: { rows: ProductSalesRow[] }) {
+function ProductList({ rows, emptyLabel }: { rows: ProductSalesRow[]; emptyLabel: string }) {
   if (rows.length === 0) {
     return (
       <div className="bg-white rounded-2xl p-12 text-center text-gray-400 shadow-sm border border-gray-100">
         <ListOrdered size={40} className="mx-auto mb-3 opacity-30" />
-        <p className="font-medium">No items sold today yet</p>
+        <p className="font-medium">{emptyLabel}</p>
         <p className="text-sm mt-1">Products appear here when staff print customer receipts.</p>
       </div>
     )
@@ -31,7 +33,7 @@ function ProductList({ rows }: { rows: ProductSalesRow[] }) {
             <div className="mt-2 grid grid-cols-2 gap-2 text-center text-xs">
               <div>
                 <p className="font-bold text-gray-900 text-lg">{row.quantitySold}</p>
-                <p className="text-gray-500">Sold today</p>
+                <p className="text-gray-500">Units sold</p>
               </div>
               <div>
                 <p className="font-bold text-gray-900">Ksh {row.revenue.toLocaleString()}</p>
@@ -49,7 +51,7 @@ function ProductList({ rows }: { rows: ProductSalesRow[] }) {
               <th className="text-left px-4 py-3 text-sky-900 font-semibold">#</th>
               <th className="text-left px-4 py-3 text-sky-900 font-semibold">Product</th>
               <th className="text-left px-4 py-3 text-sky-900 font-semibold">Category</th>
-              <th className="text-right px-4 py-3 text-sky-900 font-semibold">Sold today</th>
+              <th className="text-right px-4 py-3 text-sky-900 font-semibold">Units sold</th>
               <th className="text-right px-4 py-3 text-sky-900 font-semibold">Revenue</th>
               <th className="text-right px-4 py-3 text-sky-900 font-semibold">Orders</th>
             </tr>
@@ -78,6 +80,7 @@ function ProductList({ rows }: { rows: ProductSalesRow[] }) {
 
 export default function ItemsSoldTodayPage() {
   const navigate = useNavigate()
+  const [selectedDate, setSelectedDate] = useState(todayDateKey)
   const [report, setReport] = useState<DailyProductSalesReport | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -85,27 +88,39 @@ export default function ItemsSoldTodayPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await authFetch('/api/orders/reports/items-sold-today')
+      const res = await authFetch(
+        `/api/orders/reports/items-sold-today?date=${encodeURIComponent(selectedDate)}`
+      )
       const data = await readApiJson<DailyProductSalesReport & { message?: string }>(res)
       if (!res.ok) {
-        throw new Error(data.message || 'Could not load items sold today.')
+        throw new Error(data.message || 'Could not load items sold.')
       }
       setReport(data)
       setError('')
       setLastRefresh(new Date())
     } catch (err: unknown) {
       setReport(null)
-      setError(err instanceof Error ? err.message : 'Could not load items sold today.')
+      setError(err instanceof Error ? err.message : 'Could not load items sold.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [selectedDate])
 
   useEffect(() => {
+    setLoading(true)
     load()
+  }, [load])
+
+  useEffect(() => {
+    if (!isTodayDateKey(selectedDate)) return
     const interval = setInterval(load, 15000)
     return () => clearInterval(interval)
-  }, [load])
+  }, [load, selectedDate])
+
+  const dateHeading = isTodayDateKey(selectedDate) ? 'today' : 'on this day'
+  const emptyLabel = isTodayDateKey(selectedDate)
+    ? 'No items sold today yet'
+    : 'No items sold on this date'
 
   return (
     <OwnerPageShell
@@ -120,6 +135,8 @@ export default function ItemsSoldTodayPage() {
         </button>
       }
     >
+      <RecordsDatePicker value={selectedDate} onChange={setSelectedDate} className="mb-4" />
+
       {report ? (
         <p className="text-sm text-gray-500 mb-4">
           {report.dateLabel} — ranked from most sold to least sold
@@ -138,7 +155,7 @@ export default function ItemsSoldTodayPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "Today's orders", value: String(report.orderCount) },
+              { label: `Orders ${dateHeading}`, value: String(report.orderCount) },
               { label: 'Units sold', value: String(report.totalUnitsSold) },
               { label: 'Products sold', value: String(report.uniqueProductsSold) },
               {
@@ -158,7 +175,7 @@ export default function ItemsSoldTodayPage() {
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
               <ListOrdered size={18} className="text-sky-600 shrink-0" />
-              All items sold today
+              Items sold {dateHeading}
             </h2>
             <p className="text-xs text-gray-400 shrink-0">
               Updated{' '}
@@ -169,7 +186,7 @@ export default function ItemsSoldTodayPage() {
             </p>
           </div>
 
-          <ProductList rows={report.products} />
+          <ProductList rows={report.products} emptyLabel={emptyLabel} />
         </div>
       ) : null}
     </OwnerPageShell>

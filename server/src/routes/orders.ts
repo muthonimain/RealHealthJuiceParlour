@@ -143,14 +143,17 @@ router.delete(
   ...ownerOnly,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const employeeId = String(req.params.employeeId)
-    const { employeeName } = req.body as { employeeName?: string }
+    const { employeeName, date } = req.body as { employeeName?: string; date?: string }
 
     if (!employeeName?.trim()) {
       res.status(400).json({ message: 'employeeName is required.' })
       return
     }
 
-    const deletedCount = await deleteOrdersByEmployee(employeeId, employeeName.trim())
+    const dateKey =
+      typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined
+
+    const deletedCount = await deleteOrdersByEmployee(employeeId, employeeName.trim(), dateKey)
     if (deletedCount === 0) {
       res.status(404).json({ message: 'No sales found for this employee.' })
       return

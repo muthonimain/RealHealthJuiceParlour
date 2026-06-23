@@ -5,7 +5,6 @@ import { toDateKey } from '../lib/dateKey'
 import {
   createExpense,
   deleteExpense,
-  getAllExpenses,
   getExpensesForDate,
   sumExpensesForDate,
   updateExpense,
@@ -23,28 +22,36 @@ async function staffDisplayName(userId: string, role: string): Promise<string> {
   return employees.find((e) => e.id === userId)?.name ?? 'Employee'
 }
 
+function resolveDateKey(raw: unknown): string {
+  if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
+    return raw.trim()
+  }
+  return toDateKey()
+}
+
+async function expensesPayloadForDate(dateKey: string) {
+  const items = await getExpensesForDate(dateKey)
+  return {
+    dateKey,
+    items,
+    total: await sumExpensesForDate(dateKey),
+  }
+}
+
 router.use(requireAuth, requireRole('owner', 'employee'))
 
 router.get(
   '/',
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const dateFilter = typeof req.query.date === 'string' ? req.query.date : ''
+    const dateParam = typeof req.query.date === 'string' ? req.query.date.trim() : ''
+    const dateKey =
+      dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : toDateKey()
 
-    if (dateFilter) {
-      const items = await getExpensesForDate(dateFilter)
-      res.json({
-        dateKey: dateFilter,
-        items,
-        total: await sumExpensesForDate(dateFilter),
-      })
-      return
-    }
-
-    const items = await getAllExpenses()
+    const items = await getExpensesForDate(dateKey)
     res.json({
-      dateKey: null,
+      dateKey,
       items,
-      total: items.reduce((sum, e) => sum + e.amount, 0),
+      total: await sumExpensesForDate(dateKey),
     })
   })
 )
@@ -85,8 +92,7 @@ router.post(
 
     res.status(201).json({
       expense,
-      total: await sumExpensesForDate(dateKey),
-      items: await getExpensesForDate(dateKey),
+      ...(await expensesPayloadForDate(dateKey)),
     })
   })
 )
@@ -125,17 +131,17 @@ router.patch(
       updates.dateKey = date
     }
 
+    const viewDateKey = resolveDateKey(req.query.date)
+
     const expense = await updateExpense(id, updates)
     if (!expense) {
       res.status(404).json({ message: 'Expense not found.' })
       return
     }
 
-    const items = await getAllExpenses()
     res.json({
       expense,
-      items,
-      total: items.reduce((sum, e) => sum + e.amount, 0),
+      ...(await expensesPayloadForDate(viewDateKey)),
     })
   })
 )
@@ -144,15 +150,16 @@ router.delete(
   '/:id',
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const id = String(req.params.id)
+    const viewDateKey = resolveDateKey(req.query.date)
+
     if (!(await deleteExpense(id))) {
       res.status(404).json({ message: 'Expense not found.' })
       return
     }
-    const items = await getAllExpenses()
+
     res.json({
       success: true,
-      items,
-      total: items.reduce((sum, e) => sum + e.amount, 0),
+      ...(await expensesPayloadForDate(viewDateKey)),
     })
   })
 )

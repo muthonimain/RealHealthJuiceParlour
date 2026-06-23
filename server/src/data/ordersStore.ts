@@ -282,19 +282,28 @@ export async function deleteOrder(id: string): Promise<boolean> {
 
 export async function deleteOrdersByEmployee(
   employeeId: string,
-  employeeName: string
+  employeeName: string,
+  dateKey?: string
 ): Promise<number> {
   const name = employeeName.trim()
+  const dateFilter =
+    dateKey && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
+      ? `AND created_at::date = $${employeeId.startsWith('name:') ? 2 : 3}::date`
+      : ''
+  const dateParams = dateFilter ? [dateKey] : []
+
   const { rowCount } = employeeId.startsWith('name:')
-    ? await pool.query('DELETE FROM orders WHERE employee_name = $1', [
-        employeeId.slice(5).trim() || name,
-      ])
+    ? await pool.query(
+        `DELETE FROM orders WHERE employee_name = $1 ${dateFilter}`,
+        [employeeId.slice(5).trim() || name, ...dateParams]
+      )
     : await pool.query(
         `DELETE FROM orders
-         WHERE employee_id = $1
+         WHERE (employee_id = $1
             OR (COALESCE(employee_id, '') = '' AND employee_name = $2)
-            OR employee_name = $2`,
-        [employeeId, name]
+            OR employee_name = $2)
+         ${dateFilter}`,
+        [employeeId, name, ...dateParams]
       )
   return rowCount ?? 0
 }
