@@ -3,17 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { TrendingUp, Minus, Equal, Receipt, Wallet } from 'lucide-react'
 import { authFetch } from '../../lib/api'
 import OwnerPageShell from '../../components/OwnerPageShell'
+import RecordsDatePicker from '../../components/RecordsDatePicker'
 import { dataUnchanged } from '../../lib/stableData'
+import { dayLabelFromKey, isTodayDateKey, todayDateKey } from '../../lib/dateKey'
 import type { DailyProfitSummary } from '../../types/expense'
-
-function todayHeading() {
-  return new Date().toLocaleDateString('en-KE', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-}
 
 function formatKsh(value: number) {
   return `Ksh ${value.toLocaleString()}`
@@ -109,12 +102,17 @@ function FormulaStep({ children }: { children: ReactNode }) {
 
 export default function NetProfitPage() {
   const navigate = useNavigate()
+  const [selectedDate, setSelectedDate] = useState(() => todayDateKey())
   const [summary, setSummary] = useState<DailyProfitSummary | null>(null)
   const [loading, setLoading] = useState(true)
+  const viewingToday = isTodayDateKey(selectedDate)
+  const dayLabel = viewingToday ? 'today' : dayLabelFromKey(selectedDate)
 
   const load = useCallback(async () => {
     try {
-      const res = await authFetch('/api/profit/daily')
+      const res = await authFetch(
+        `/api/profit/daily?date=${encodeURIComponent(selectedDate)}`
+      )
       if (res.ok) {
         const next: DailyProfitSummary = await res.json()
         setSummary((prev) => (dataUnchanged(prev, next) ? prev : next))
@@ -122,13 +120,25 @@ export default function NetProfitPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [selectedDate])
 
   useEffect(() => {
-    load()
-    const id = setInterval(load, 20000)
-    return () => clearInterval(id)
+    setLoading(true)
+    void load()
   }, [load])
+
+  useEffect(() => {
+    if (!viewingToday) return
+    const interval = setInterval(() => {
+      const today = todayDateKey()
+      if (selectedDate !== today) {
+        setSelectedDate(today)
+        return
+      }
+      void load()
+    }, 20000)
+    return () => clearInterval(interval)
+  }, [load, selectedDate, viewingToday])
 
   return (
     <OwnerPageShell
@@ -138,8 +148,10 @@ export default function NetProfitPage() {
       backTitle="Back to therapist dashboard"
     >
       <div className="max-w-3xl mx-auto w-full">
+        <RecordsDatePicker value={selectedDate} onChange={setSelectedDate} className="mb-4" />
+
         <p className="text-base sm:text-lg font-bold text-gray-700 mb-6 text-center sm:text-left">
-          {todayHeading()}
+          {dayLabelFromKey(selectedDate)} — shop closing summary
         </p>
 
         {loading ? (
@@ -151,7 +163,7 @@ export default function NetProfitPage() {
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 text-center sm:text-left">
                 <div className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">
-                  Orders today
+                  Orders {viewingToday ? 'today' : 'on day'}
                 </div>
                 <div className="text-3xl font-extrabold text-gray-900 mt-1">{summary.orderCount}</div>
               </div>
@@ -169,8 +181,12 @@ export default function NetProfitPage() {
                   <TrendingUp size={24} strokeWidth={2.5} />
                 </span>
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">Today&apos;s calculation</h2>
-                  <p className="text-sm font-semibold text-gray-500 mt-0.5">Follow each step below</p>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">
+                    {viewingToday ? "Today's calculation" : 'Daily calculation'}
+                  </h2>
+                  <p className="text-sm font-semibold text-gray-500 mt-0.5">
+                    Net profit for {dayLabel}
+                  </p>
                 </div>
               </div>
 
@@ -180,8 +196,8 @@ export default function NetProfitPage() {
                 </p>
                 <CalcRow
                   operator="start"
-                  label="Today's revenue"
-                  hint="Total sales recorded today"
+                  label={viewingToday ? "Today's revenue" : 'Revenue'}
+                  hint={`Total sales recorded ${dayLabel}`}
                   amount={summary.todayRevenue}
                 />
 
@@ -191,12 +207,12 @@ export default function NetProfitPage() {
                 <CalcRow
                   operator="minus"
                   label="Cost of goods"
-                  hint="Today's logged expenses"
+                  hint={`Expenses logged ${dayLabel}`}
                   amount={summary.costOfGoods}
                   tone="deduction"
                 />
 
-                <FormulaStep>Gross profit = Today&apos;s revenue − Cost of goods</FormulaStep>
+                <FormulaStep>Gross profit = Revenue − Cost of goods</FormulaStep>
 
                 <p className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-amber-800 mb-1">
                   Step 3 — Gross profit
@@ -230,7 +246,7 @@ export default function NetProfitPage() {
                 <CalcRow
                   operator="equals"
                   label="Net profit"
-                  hint="What remains after all deductions"
+                  hint={`Shop closed with ${dayLabel}`}
                   amount={summary.netProfit}
                   tone="final"
                 />
@@ -239,18 +255,28 @@ export default function NetProfitPage() {
 
             <button
               type="button"
-              onClick={() => navigate('/dashboard/owner/expenses')}
+              onClick={() =>
+                navigate('/dashboard/owner/expenses', { state: { viewDate: selectedDate } })
+              }
               className="w-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-extrabold rounded-2xl py-4 text-base transition-all flex items-center justify-center gap-2"
             >
               <Wallet size={20} />
-              Manage today&apos;s expenses
+              {viewingToday ? "Manage today's expenses" : `View expenses for ${dayLabelFromKey(selectedDate)}`}
             </button>
 
-            <p className="text-sm font-semibold text-gray-400 text-center leading-relaxed">
-              Updates automatically every few seconds.
-              <br />
-              Record all daily expenses on the Expenses page.
-            </p>
+            {viewingToday ? (
+              <p className="text-sm font-semibold text-gray-400 text-center leading-relaxed">
+                Updates automatically every few seconds.
+                <br />
+                Record all daily expenses on the Expenses page.
+              </p>
+            ) : (
+              <p className="text-sm font-semibold text-gray-400 text-center leading-relaxed">
+                Historical summary for {dayLabelFromKey(selectedDate)}.
+                <br />
+                Pick another date above to compare closing totals.
+              </p>
+            )}
           </div>
         ) : (
           <p className="text-center text-gray-400 font-semibold">Could not load profit summary.</p>

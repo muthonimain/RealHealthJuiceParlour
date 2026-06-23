@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, LogOut, Plus, Receipt, Pencil, Trash2, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { authFetch, readApiJson } from '../lib/api'
@@ -22,12 +22,16 @@ function formatTime(iso: string) {
 export default function ExpensesPage() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const isOwner = user?.role === 'owner'
   const theme = isOwner ? ownerTheme : employeeTheme
 
   const dashboardPath = isOwner ? '/dashboard/owner' : '/dashboard/employee'
 
-  const [viewDate, setViewDate] = useState(() => todayDateKey())
+  const [viewDate, setViewDate] = useState(() => {
+    const fromNav = (location.state as { viewDate?: string } | null)?.viewDate
+    return fromNav && /^\d{4}-\d{2}-\d{2}$/.test(fromNav) ? fromNav : todayDateKey()
+  })
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)

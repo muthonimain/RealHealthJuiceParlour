@@ -12,8 +12,9 @@ router.use(requireAuth, requireRole('owner'))
 router.get(
   '/daily',
   asyncHandler(async (req, res: Response) => {
+    const dateParam = typeof req.query.date === 'string' ? req.query.date.trim() : ''
     const dateKey =
-      typeof req.query.date === 'string' && req.query.date ? req.query.date : toDateKey()
+      dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : toDateKey()
 
     res.json({
       ...(await buildDailyProfit(dateKey)),
