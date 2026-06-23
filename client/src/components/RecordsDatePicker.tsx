@@ -1,10 +1,5 @@
 import { Calendar } from 'lucide-react'
-import {
-  dayLabelFromKey,
-  isTodayDateKey,
-  offsetDateKey,
-  todayDateKey,
-} from '../lib/dateKey'
+import { dayLabelFromKey, isTodayDateKey, todayDateKey } from '../lib/dateKey'
 
 interface RecordsDatePickerProps {
   value: string
@@ -13,7 +8,6 @@ interface RecordsDatePickerProps {
 }
 
 export default function RecordsDatePicker({ value, onChange, className = '' }: RecordsDatePickerProps) {
-  const yesterday = offsetDateKey(todayDateKey(), -1)
   const isToday = isTodayDateKey(value)
 
   return (
@@ -30,30 +24,17 @@ export default function RecordsDatePicker({ value, onChange, className = '' }: R
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onChange(yesterday)}
-              className={`px-3 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-                value === yesterday
-                  ? 'bg-amber-100 border-amber-300 text-amber-900'
-                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Yesterday
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(todayDateKey())}
-              className={`px-3 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-                isToday
-                  ? 'bg-amber-100 border-amber-300 text-amber-900'
-                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Today
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => onChange(todayDateKey())}
+            className={`px-3 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+              isToday
+                ? 'bg-amber-100 border-amber-300 text-amber-900'
+                : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            Today
+          </button>
 
           <label className="flex items-center gap-2 w-full sm:w-auto">
             <span className="text-xs font-semibold text-gray-500 shrink-0">Pick date</span>
