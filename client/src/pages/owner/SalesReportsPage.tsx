@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { BarChart2, TrendingDown, TrendingUp } from 'lucide-react'
 import { authFetch, readApiJson } from '../../lib/api'
 import OwnerPageShell from '../../components/OwnerPageShell'
+import { retentionCutoffMonthKey } from '../../lib/dateKey'
 import { toMonthKey } from '../../lib/workingMonth'
 import type { ProductSalesReport, ProductSalesRow } from '../../types/salesReport'
 
@@ -148,9 +149,20 @@ export default function SalesReportsPage() {
             id="sales-month"
             type="month"
             value={monthKey}
-            onChange={(e) => setMonthKey(e.target.value)}
+            min={retentionCutoffMonthKey()}
+            max={toMonthKey()}
+            onChange={(e) => {
+              const next = e.target.value
+              const min = retentionCutoffMonthKey()
+              const max = toMonthKey()
+              if (!next) return
+              if (next < min) setMonthKey(min)
+              else if (next > max) setMonthKey(max)
+              else setMonthKey(next)
+            }}
             className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 focus:ring-2 focus:ring-amber-400 outline-none"
           />
+          <p className="text-xs text-gray-400 mt-1">This month and last month only</p>
         </div>
         {report ? (
           <p className="text-sm text-gray-500">

@@ -95,3 +95,12 @@ export async function deleteExpense(id: string): Promise<boolean> {
   expensesDb.write(next)
   return true
 }
+
+/** Delete expenses with dateKey before YYYY-MM-DD. */
+export async function purgeExpensesBeforeDateKey(cutoffDateKey: string): Promise<number> {
+  const all = expensesDb.read()
+  const kept = all.filter((e) => e.dateKey >= cutoffDateKey)
+  const deleted = all.length - kept.length
+  if (deleted > 0) expensesDb.write(kept)
+  return deleted
+}

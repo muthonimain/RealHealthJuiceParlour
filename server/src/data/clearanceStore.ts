@@ -91,3 +91,12 @@ export async function deleteClearancesByEmployee(employeeId: string): Promise<vo
   const all = clearancesDb.read()
   clearancesDb.write(all.filter((c) => c.employeeId !== employeeId))
 }
+
+/** Delete clearances with dateKey before YYYY-MM-DD. */
+export async function purgeClearancesBeforeDateKey(cutoffDateKey: string): Promise<number> {
+  const all = clearancesDb.read()
+  const kept = all.filter((c) => c.dateKey >= cutoffDateKey)
+  const deleted = all.length - kept.length
+  if (deleted > 0) clearancesDb.write(kept)
+  return deleted
+}

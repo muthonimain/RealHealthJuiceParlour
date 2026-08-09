@@ -188,6 +188,20 @@ export async function deleteOrder(id: string): Promise<boolean> {
   return true
 }
 
+/** Delete orders with createdAt before YYYY-MM-DD (Kenya calendar day). */
+export async function purgeOrdersBeforeDateKey(cutoffDateKey: string): Promise<number> {
+  const all = ordersDb.read()
+  const kept = all.filter((order) => {
+    const day = new Date(order.createdAt).toLocaleDateString('en-CA', {
+      timeZone: 'Africa/Nairobi',
+    })
+    return day >= cutoffDateKey
+  })
+  const deleted = all.length - kept.length
+  if (deleted > 0) ordersDb.write(kept)
+  return deleted
+}
+
 export async function deleteOrdersByEmployee(
   employeeId: string,
   employeeName: string,

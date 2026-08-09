@@ -3,6 +3,7 @@ import { syncMenuFromSeedIfNeeded } from './syncMenuFromSeed'
 import { isMenuEmpty, replaceAllCategories } from '../data/menuStore'
 import { seedEmployeesFromEnvIfEmpty } from '../data/employeeStore'
 import { syncOrderNumberSequence } from '../lib/orderNumber'
+import { purgeRecordsOlderThanPreviousMonth } from '../lib/dataRetention'
 import { getDataDir } from '../lib/persistence'
 import fs from 'fs'
 
@@ -27,5 +28,6 @@ export async function initDatabase(): Promise<void> {
   }
 
   await syncMenuFromSeedIfNeeded()
+  await purgeRecordsOlderThanPreviousMonth()
   console.log('[data] Disk persistence ready')
 }

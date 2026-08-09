@@ -20,6 +20,7 @@ import {
 import { asyncHandler } from '../middleware/asyncHandler'
 import { buildDailyProductSalesReport, buildProductSalesReport } from '../services/productSalesReport'
 import { allocateOrderId } from '../lib/orderNumber'
+import { getRetentionCutoffDateKey, purgeRecordsIfNeeded } from '../lib/dataRetention'
 
 const router = Router()
 const ownerOnly = [requireAuth, requireRole('owner')]
@@ -107,6 +108,7 @@ router.post(
 router.get(
   '/',
   asyncHandler(async (_req: Request, res: Response) => {
+    await purgeRecordsIfNeeded()
     res.json(await getAllOrders())
   })
 )
@@ -115,8 +117,11 @@ router.get(
   '/reports/product-sales',
   ...ownerOnly,
   asyncHandler(async (req: AuthRequest, res: Response) => {
+    await purgeRecordsIfNeeded()
     const monthParam = typeof req.query.month === 'string' ? req.query.month : ''
-    const monthKey = /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : toMonthKey()
+    let monthKey = /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : toMonthKey()
+    const minMonth = getRetentionCutoffDateKey().slice(0, 7)
+    if (monthKey < minMonth) monthKey = minMonth
     res.json(await buildProductSalesReport(monthKey))
   })
 )

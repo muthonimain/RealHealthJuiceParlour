@@ -1,5 +1,10 @@
 import { Calendar } from 'lucide-react'
-import { dayLabelFromKey, isTodayDateKey, todayDateKey } from '../lib/dateKey'
+import {
+  dayLabelFromKey,
+  isTodayDateKey,
+  retentionCutoffDateKey,
+  todayDateKey,
+} from '../lib/dateKey'
 
 interface RecordsDatePickerProps {
   value: string
@@ -9,6 +14,8 @@ interface RecordsDatePickerProps {
 
 export default function RecordsDatePicker({ value, onChange, className = '' }: RecordsDatePickerProps) {
   const isToday = isTodayDateKey(value)
+  const minDate = retentionCutoffDateKey()
+  const maxDate = todayDateKey()
 
   return (
     <section
@@ -21,6 +28,9 @@ export default function RecordsDatePicker({ value, onChange, className = '' }: R
             View records for
           </p>
           <p className="text-sm text-gray-500 mt-1">{dayLabelFromKey(value)}</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Records kept for this month and last month only
+          </p>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
@@ -41,8 +51,15 @@ export default function RecordsDatePicker({ value, onChange, className = '' }: R
             <input
               type="date"
               value={value}
-              max={todayDateKey()}
-              onChange={(e) => e.target.value && onChange(e.target.value)}
+              min={minDate}
+              max={maxDate}
+              onChange={(e) => {
+                const next = e.target.value
+                if (!next) return
+                if (next < minDate) onChange(minDate)
+                else if (next > maxDate) onChange(maxDate)
+                else onChange(next)
+              }}
               className="flex-1 sm:flex-none px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-900 focus:ring-2 focus:ring-amber-400 outline-none"
             />
           </label>
