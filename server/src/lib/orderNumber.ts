@@ -1,4 +1,4 @@
-import { pool } from '../db/pool'
+import { JsonDocument, loadJson } from '../lib/persistence'
 
 /** Two-digit year suffix for order numbers (e.g. 2026 → "26"). */
 export function orderYearSuffix(date = new Date()): string {
@@ -16,52 +16,46 @@ export function isFormattedOrderId(id: string): boolean {
   return ORDER_ID_PATTERN.test(id)
 }
 
-/** Allocate the next order id for the current calendar year (thread-safe via UPSERT). */
-export async function allocateOrderId(): Promise<string> {
-  const yy = orderYearSuffix()
-  const client = await pool.connect()
-  try {
-    await client.query('BEGIN')
-    const { rows } = await client.query<{ last_number: number }>(
-      `INSERT INTO order_number_seq (year_suffix, last_number)
-       VALUES ($1, 1)
-       ON CONFLICT (year_suffix) DO UPDATE
-         SET last_number = order_number_seq.last_number + 1
-       RETURNING last_number`,
-      [yy]
-    )
-    const seq = rows[0]?.last_number ?? 1
-    await client.query('COMMIT')
-    return formatOrderNumber(yy, seq)
-  } catch (err) {
-    await client.query('ROLLBACK')
-    throw err
-  } finally {
-    client.release()
-  }
+interface OrderSeqDoc {
+  [yearSuffix: string]: number
 }
 
-/** After deploy: align sequence with highest existing RHJPyy-#### id for this year. */
+const seqDb = new JsonDocument<OrderSeqDoc>('order-number-seq.json', () => ({}))
+
+let allocateChain: Promise<string> = Promise.resolve('')
+
+/** Allocate the next order id for the current calendar year (serialized writes). */
+export async function allocateOrderId(): Promise<string> {
+  const run = async (): Promise<string> => {
+    const yy = orderYearSuffix()
+    const seq = seqDb.read()
+    const next = (seq[yy] ?? 0) + 1
+    seq[yy] = next
+    seqDb.write(seq)
+    await seqDb.flush()
+    return formatOrderNumber(yy, next)
+  }
+
+  allocateChain = allocateChain.then(run, run)
+  return allocateChain
+}
+
+/** After startup: align sequence with highest existing RHJPyy-#### id for this year. */
 export async function syncOrderNumberSequence(): Promise<void> {
   const yy = orderYearSuffix()
   const prefix = `RHJP${yy}-`
-  const { rows } = await pool.query<{ id: string }>(
-    `SELECT id FROM orders WHERE id LIKE $1 ORDER BY id DESC LIMIT 1`,
-    [`${prefix}%`]
-  )
-
+  const orders = loadJson<{ id: string }[]>('orders.json', [])
   let lastFromOrders = 0
-  const latest = rows[0]?.id
-  if (latest) {
-    const match = latest.match(/^RHJP\d{2}-(\d{4})$/)
-    if (match) lastFromOrders = parseInt(match[1], 10)
+  for (const order of orders) {
+    if (!order.id?.startsWith(prefix)) continue
+    const match = order.id.match(/^RHJP\d{2}-(\d{4})$/)
+    if (match) {
+      lastFromOrders = Math.max(lastFromOrders, parseInt(match[1], 10))
+    }
   }
 
-  await pool.query(
-    `INSERT INTO order_number_seq (year_suffix, last_number)
-     VALUES ($1, $2)
-     ON CONFLICT (year_suffix) DO UPDATE
-       SET last_number = GREATEST(order_number_seq.last_number, EXCLUDED.last_number)`,
-    [yy, lastFromOrders]
-  )
+  const seq = seqDb.read()
+  seq[yy] = Math.max(seq[yy] ?? 0, lastFromOrders)
+  seqDb.write(seq)
+  await seqDb.flush()
 }

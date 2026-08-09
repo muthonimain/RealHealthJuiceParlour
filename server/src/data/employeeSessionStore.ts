@@ -1,22 +1,37 @@
 import { randomUUID } from 'crypto'
-import { pool } from '../db/pool'
+import { JsonCollection } from '../lib/persistence'
 
 const SESSION_TTL_MS = 90_000
 
-interface SessionRow {
-  session_id: string
-  employee_id: string
-  last_seen_at: Date
+interface EmployeeSession {
+  sessionId: string
+  employeeId: string
+  lastSeenAt: string
+}
+
+const sessionsDb = new JsonCollection<EmployeeSession>('employee-sessions.json')
+
+function pruneExpired(sessions: EmployeeSession[]): EmployeeSession[] {
+  const cutoff = Date.now() - SESSION_TTL_MS
+  return sessions.filter((s) => new Date(s.lastSeenAt).getTime() >= cutoff)
+}
+
+function persistLive(sessions: EmployeeSession[]): EmployeeSession[] {
+  const live = pruneExpired(sessions)
+  sessionsDb.write(live)
+  return live
 }
 
 /** Start a new device session for this employee (multiple devices allowed — shared cart). */
 export async function createEmployeeSession(employeeId: string): Promise<string> {
+  const sessions = pruneExpired(sessionsDb.read())
   const sessionId = randomUUID()
-  await pool.query(
-    `INSERT INTO employee_sessions (session_id, employee_id, last_seen_at)
-     VALUES ($1, $2, NOW())`,
-    [sessionId, employeeId]
-  )
+  sessions.push({
+    sessionId,
+    employeeId,
+    lastSeenAt: new Date().toISOString(),
+  })
+  sessionsDb.write(sessions)
   return sessionId
 }
 
@@ -24,40 +39,45 @@ export async function touchEmployeeSession(
   employeeId: string,
   sessionId: string
 ): Promise<boolean> {
-  const { rowCount } = await pool.query(
-    `UPDATE employee_sessions
-     SET last_seen_at = NOW()
-     WHERE employee_id = $1 AND session_id = $2`,
-    [employeeId, sessionId]
+  const sessions = pruneExpired(sessionsDb.read())
+  const index = sessions.findIndex(
+    (s) => s.employeeId === employeeId && s.sessionId === sessionId
   )
-  return (rowCount ?? 0) > 0
+  if (index < 0) {
+    sessionsDb.write(sessions)
+    return false
+  }
+  sessions[index] = {
+    ...sessions[index],
+    lastSeenAt: new Date().toISOString(),
+  }
+  sessionsDb.write(sessions)
+  return true
 }
 
 export async function releaseEmployeeSession(employeeId: string, sessionId: string): Promise<void> {
-  await pool.query('DELETE FROM employee_sessions WHERE employee_id = $1 AND session_id = $2', [
-    employeeId,
-    sessionId,
-  ])
+  const sessions = pruneExpired(sessionsDb.read())
+  sessionsDb.write(
+    sessions.filter((s) => !(s.employeeId === employeeId && s.sessionId === sessionId))
+  )
 }
 
-export async function isEmployeeSessionActive(employeeId: string, sessionId: string): Promise<boolean> {
-  const { rows } = await pool.query<SessionRow>(
-    `SELECT last_seen_at FROM employee_sessions
-     WHERE employee_id = $1 AND session_id = $2`,
-    [employeeId, sessionId]
+export async function isEmployeeSessionActive(
+  employeeId: string,
+  sessionId: string
+): Promise<boolean> {
+  const sessions = persistLive(sessionsDb.read())
+  const session = sessions.find(
+    (s) => s.employeeId === employeeId && s.sessionId === sessionId
   )
-  if (!rows[0]) return false
-  const lastSeen = new Date(rows[0].last_seen_at).getTime()
-  return Date.now() - lastSeen < SESSION_TTL_MS
+  if (!session) return false
+  return Date.now() - new Date(session.lastSeenAt).getTime() < SESSION_TTL_MS
 }
 
 /** Employees with at least one live device session (shown on staff picker). */
 export async function getActiveEmployeeIds(): Promise<string[]> {
-  const { rows } = await pool.query<{ employee_id: string }>(
-    `SELECT DISTINCT employee_id FROM employee_sessions
-     WHERE last_seen_at >= NOW() - INTERVAL '90 seconds'`
-  )
-  return rows.map((r) => r.employee_id)
+  const sessions = persistLive(sessionsDb.read())
+  return [...new Set(sessions.map((s) => s.employeeId))]
 }
 
 /** Block a second person from picking an already-active staff name on the sign-in screen. */
@@ -65,13 +85,8 @@ export async function isEmployeeInUseByAnotherSession(
   employeeId: string,
   currentSessionId?: string
 ): Promise<boolean> {
-  const { rows } = await pool.query<{ session_id: string }>(
-    `SELECT session_id FROM employee_sessions
-     WHERE employee_id = $1
-       AND last_seen_at >= NOW() - INTERVAL '90 seconds'`,
-    [employeeId]
-  )
-  if (rows.length === 0) return false
-  if (currentSessionId && rows.every((r) => r.session_id === currentSessionId)) return false
+  const sessions = persistLive(sessionsDb.read()).filter((s) => s.employeeId === employeeId)
+  if (sessions.length === 0) return false
+  if (currentSessionId && sessions.every((s) => s.sessionId === currentSessionId)) return false
   return true
 }

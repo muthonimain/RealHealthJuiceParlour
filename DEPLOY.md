@@ -2,33 +2,35 @@
 
 Repository: **https://github.com/muthonimain/RealHealthJuiceParlour**
 
-This app is a single Node server (API + built React UI) with **PostgreSQL**. `DATABASE_URL` is required in production.
+This app is a single Node server (API + built React UI) with **disk JSON storage**.  
+On Render you **must** attach a **persistent disk** so sales/expenses survive redeploys.
 
 ## Option 1: Render (recommended)
 
-1. Create a GitHub repo and push this project to `main`.
-2. Sign in at [render.com](https://render.com) → **New** → **Blueprint**.
+1. Push this project to `main` on GitHub.
+2. Sign in at [render.com](https://render.com) → **New** → **Blueprint** (or Web Service).
 3. Connect **muthonimain/RealHealthJuiceParlour** and apply `render.yaml`.
-4. In the service **Environment**, add owner/employee variables from `.env.example` (names, usernames, passwords).
-5. After deploy, open the Render URL (e.g. `https://real-health-juice-parlour.onrender.com`).
+4. Confirm a **Persistent Disk** is attached:
+   - Mount path: `/var/data`
+   - Env var: `DATA_DIR=/var/data`
+   - **Requires a paid instance** (Starter ~$7/mo or higher). Free web services **cannot** use persistent disks — without one, all sales/expenses are wiped on every restart.
+5. In **Environment**, add owner/employee variables from `.env.example`.
+6. Remove any old `DATABASE_URL` / Postgres database if still linked — they are no longer used.
+7. Open the Render URL after deploy.
 
-## Option 2: DigitalOcean App Platform
+### If the service already exists (manual disk)
 
-1. Create app from GitHub: **muthonimain/RealHealthJuiceParlour**, branch `main`.
-2. Attach a **PostgreSQL** database (injects `DATABASE_URL`).
-3. Use build: `npm run install:all && npm run build`  
-   Run: `npm run start`  
-   HTTP port: `5000`
-4. Set `NODE_ENV=production`, `DATABASE_SSL=true`, `JWT_SECRET`, and all `OWNER_*` / `EMPLOYEE_*` vars from `.env.example`.
-
-See `.do/app.yaml` for a sample App Platform spec (update secrets in the DO dashboard).
+1. Render Dashboard → your web service → **Disks** → **Add disk**
+2. Mount path: `/var/data` (size 1 GB is enough to start)
+3. Environment → add `DATA_DIR` = `/var/data`
+4. Delete Postgres / clear `DATABASE_URL` if present
+5. Redeploy
 
 ## Required environment variables
 
 | Variable | Purpose |
 |----------|---------|
-| `DATABASE_URL` | PostgreSQL connection string (from host) |
-| `DATABASE_SSL` | `true` on Render / DO managed Postgres |
+| `DATA_DIR` | Persistent data folder (Render: `/var/data`) |
 | `JWT_SECRET` | Long random secret for auth tokens |
 | `OWNER_1_*`, `OWNER_2_*` | Owner names, usernames, passwords |
 | `EMPLOYEE_1_*`, `EMPLOYEE_2_*` | Employee names, usernames, passwords |
@@ -40,9 +42,24 @@ Do **not** commit `server/.env` — it is gitignored.
 ## Local development
 
 ```bash
-docker compose up -d
-# Add DATABASE_URL to server/.env (see .env.example)
+npm run install:all
 npm run dev
 ```
 
+Data is stored under `server/persisted/` by default (no Postgres required).
+
 Frontend: http://localhost:5173 — API: http://localhost:5000
+
+## Data files (on disk)
+
+| File | Contents |
+|------|----------|
+| `menu.json` | Categories & items |
+| `orders.json` | Sales / receipts |
+| `expenses.json` | Expenses |
+| `clearances.json` | Daily staff clearances |
+| `employees.json` | Staff accounts |
+| `employee-carts.json` | Shared carts |
+| `employee-sessions.json` | Active device sessions |
+| `order-number-seq.json` | Order number counters |
+| `app-settings.json` | Menu seed revision, etc. |

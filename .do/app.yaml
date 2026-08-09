@@ -1,12 +1,10 @@
-# DigitalOcean App Platform spec — https://docs.digitalocean.com/products/app-platform/reference/app-spec/
+# DigitalOcean App Platform — optional
+# Prefer Render + persistent disk (see DEPLOY.md / render.yaml).
+# If using DO, attach a volume, mount it, and set DATA_DIR to that path.
+# PostgreSQL is no longer required.
+
 name: real-health-juice-parlour
 region: fra
-
-databases:
-  - name: rhjp-db
-    engine: PG
-    version: "16"
-    production: true
 
 services:
   - name: api
@@ -25,11 +23,8 @@ services:
         value: production
       - key: PORT
         value: "5000"
-      - key: DATABASE_URL
-        scope: RUN_TIME
-        value: ${rhjp-db.DATABASE_URL}
-      - key: DATABASE_SSL
-        value: "true"
+      - key: DATA_DIR
+        value: /var/data
       - key: JWT_SECRET
         scope: RUN_TIME
         type: SECRET

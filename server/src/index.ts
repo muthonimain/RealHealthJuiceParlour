@@ -12,7 +12,8 @@ import expensesRoutes from './routes/expenses'
 import profitRoutes from './routes/profit'
 import cartRoutes from './routes/cart'
 import { initDatabase } from './db/init'
-import { pool } from './db/pool'
+import { getDataDir } from './lib/persistence'
+import fs from 'fs'
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -37,19 +38,33 @@ app.use('/api/expenses', expensesRoutes)
 app.use('/api/profit', profitRoutes)
 app.use('/api/cart', cartRoutes)
 
-app.get('/api/health', async (_req, res) => {
-  try {
-    if (process.env.DATABASE_URL) {
-      await pool.query('SELECT 1')
+app.get('/api/health', (_req, res) => {
+  const dataDir = getDataDir()
+  const writable = (() => {
+    try {
+      fs.accessSync(dataDir, fs.constants.W_OK)
+      return true
+    } catch {
+      return false
     }
-    res.json({
-      status: 'ok',
-      service: 'Real Health Juice Parlour POS',
-      database: process.env.DATABASE_URL ? 'postgresql' : 'not_configured',
+  })()
+
+  if (!writable) {
+    res.status(503).json({
+      status: 'degraded',
+      message: 'Data directory not writable',
+      dataDir,
+      storage: 'disk',
     })
-  } catch {
-    res.status(503).json({ status: 'degraded', message: 'Database unreachable' })
+    return
   }
+
+  res.json({
+    status: 'ok',
+    service: 'Real Health Juice Parlour POS',
+    storage: 'disk',
+    dataDir,
+  })
 })
 
 // Serve React static build in production (single host — API + SPA)

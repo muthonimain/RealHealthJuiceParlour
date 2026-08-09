@@ -1,5 +1,5 @@
-import { pool } from '../db/pool'
 import { allocateOrderId, isFormattedOrderId } from '../lib/orderNumber'
+import { JsonCollection } from '../lib/persistence'
 
 export interface OrderItem {
   id: string
@@ -33,29 +33,11 @@ export interface Order {
   createdAt: string
 }
 
-interface OrderRow {
-  id: string
-  employee_id: string
-  employee_name: string
-  items: OrderItem[]
-  subtotal: number
-  delivery_included: boolean
-  safe_handling_amount: number
-  safe_handling_counts: SafeHandlingCounts | null
-  delivery_amount: number
-  packaging_amount: number
-  packaging_30_count: number
-  packaging_50_count: number
-  special_delivery_amount: number
-  box_and_tapes_amount: number
-  include_paybill: boolean
-  include_paybill_247247: boolean
-  include_mpesa_agent_store?: boolean
-  grand_total: number
-  created_at: Date
-}
+const ordersDb = new JsonCollection<Order>('orders.json')
 
-function normalizeCounts(raw: SafeHandlingCounts | Record<string, number> | null | undefined): SafeHandlingCounts {
+function normalizeCounts(
+  raw: SafeHandlingCounts | Record<string, number> | null | undefined
+): SafeHandlingCounts {
   if (!raw || typeof raw !== 'object') return {}
   const normalized: SafeHandlingCounts = {}
   for (const [key, value] of Object.entries(raw)) {
@@ -68,30 +50,6 @@ function normalizeCounts(raw: SafeHandlingCounts | Record<string, number> | null
   return normalized
 }
 
-function mapOrder(row: OrderRow): Order {
-  return {
-    id: row.id,
-    employeeId: row.employee_id,
-    employeeName: row.employee_name,
-    items: row.items,
-    subtotal: row.subtotal,
-    deliveryIncluded: row.delivery_included,
-    safeHandlingAmount: row.safe_handling_amount ?? 0,
-    safeHandlingCounts: normalizeCounts(row.safe_handling_counts),
-    deliveryAmount: row.delivery_amount,
-    packagingAmount: row.packaging_amount ?? 0,
-    packaging30Count: row.packaging_30_count ?? 0,
-    packaging50Count: row.packaging_50_count ?? 0,
-    specialDeliveryAmount: row.special_delivery_amount ?? 0,
-    boxAndTapesAmount: row.box_and_tapes_amount ?? 0,
-    includePaybill854845: row.include_paybill ?? false,
-    includePaybill247247: row.include_paybill_247247 ?? false,
-    includeMpesaAgentStore: row.include_mpesa_agent_store ?? false,
-    grandTotal: row.grand_total,
-    createdAt: new Date(row.created_at).toISOString(),
-  }
-}
-
 function resolveGeneratedAt(raw?: string): string | null {
   if (!raw || typeof raw !== 'string') return null
   const parsed = new Date(raw)
@@ -102,6 +60,12 @@ function resolveGeneratedAt(raw?: string): string | null {
   return parsed.toISOString()
 }
 
+function sortNewestFirst(list: Order[]): Order[] {
+  return [...list].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+}
+
 export async function createOrder(
   data: Omit<Order, 'id' | 'createdAt'> & { generatedAt?: string; id?: string }
 ): Promise<Order> {
@@ -109,91 +73,52 @@ export async function createOrder(
   if (!id || !isFormattedOrderId(id) || (await getOrderById(id))) {
     id = await allocateOrderId()
   }
-  const generatedAt = resolveGeneratedAt(data.generatedAt)
-  const safeHandlingCounts = normalizeCounts(data.safeHandlingCounts)
-  const { rows } = await pool.query<OrderRow>(
-    generatedAt
-      ? `INSERT INTO orders (
-           id, employee_id, employee_name, items, subtotal, delivery_included,
-           safe_handling_amount, safe_handling_counts,
-           delivery_amount, packaging_amount, packaging_30_count, packaging_50_count,
-           special_delivery_amount, box_and_tapes_amount, include_paybill, include_paybill_247247, include_mpesa_agent_store, grand_total, created_at
-         )
-         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::timestamptz)
-         RETURNING *`
-      : `INSERT INTO orders (
-           id, employee_id, employee_name, items, subtotal, delivery_included,
-           safe_handling_amount, safe_handling_counts,
-           delivery_amount, packaging_amount, packaging_30_count, packaging_50_count,
-           special_delivery_amount, box_and_tapes_amount, include_paybill, include_paybill_247247, include_mpesa_agent_store, grand_total
-         )
-         VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-         RETURNING *`,
-    generatedAt
-      ? [
-          id,
-          data.employeeId ?? '',
-          data.employeeName,
-          JSON.stringify(data.items),
-          data.subtotal,
-          data.deliveryIncluded,
-          data.safeHandlingAmount ?? 0,
-          JSON.stringify(safeHandlingCounts),
-          data.deliveryAmount ?? 0,
-          data.packagingAmount ?? 0,
-          data.packaging30Count ?? 0,
-          data.packaging50Count ?? 0,
-          data.specialDeliveryAmount ?? 0,
-          data.boxAndTapesAmount ?? 0,
-          data.includePaybill854845 ?? false,
-          data.includePaybill247247 ?? false,
-          data.includeMpesaAgentStore ?? false,
-          data.grandTotal,
-          generatedAt,
-        ]
-      : [
-          id,
-          data.employeeId ?? '',
-          data.employeeName,
-          JSON.stringify(data.items),
-          data.subtotal,
-          data.deliveryIncluded,
-          data.safeHandlingAmount ?? 0,
-          JSON.stringify(safeHandlingCounts),
-          data.deliveryAmount ?? 0,
-          data.packagingAmount ?? 0,
-          data.packaging30Count ?? 0,
-          data.packaging50Count ?? 0,
-          data.specialDeliveryAmount ?? 0,
-          data.boxAndTapesAmount ?? 0,
-          data.includePaybill854845 ?? false,
-          data.includePaybill247247 ?? false,
-          data.includeMpesaAgentStore ?? false,
-          data.grandTotal,
-        ]
-  )
-  return mapOrder(rows[0])
+
+  const order: Order = {
+    id,
+    employeeId: data.employeeId ?? '',
+    employeeName: data.employeeName,
+    items: data.items,
+    subtotal: data.subtotal,
+    deliveryIncluded: data.deliveryIncluded,
+    safeHandlingAmount: data.safeHandlingAmount ?? 0,
+    safeHandlingCounts: normalizeCounts(data.safeHandlingCounts),
+    deliveryAmount: data.deliveryAmount ?? 0,
+    packagingAmount: data.packagingAmount ?? 0,
+    packaging30Count: data.packaging30Count ?? 0,
+    packaging50Count: data.packaging50Count ?? 0,
+    specialDeliveryAmount: data.specialDeliveryAmount ?? 0,
+    boxAndTapesAmount: data.boxAndTapesAmount ?? 0,
+    includePaybill854845: data.includePaybill854845 ?? false,
+    includePaybill247247: data.includePaybill247247 ?? false,
+    includeMpesaAgentStore: data.includeMpesaAgentStore ?? false,
+    grandTotal: data.grandTotal,
+    createdAt: resolveGeneratedAt(data.generatedAt) ?? new Date().toISOString(),
+  }
+
+  const all = ordersDb.read()
+  all.unshift(order)
+  ordersDb.write(all)
+  return order
 }
 
 export async function getAllOrders(): Promise<Order[]> {
-  const { rows } = await pool.query<OrderRow>(
-    'SELECT * FROM orders ORDER BY created_at DESC'
-  )
-  return rows.map(mapOrder)
+  return sortNewestFirst(ordersDb.read())
 }
 
 export async function getOrderById(id: string): Promise<Order | undefined> {
-  const { rows } = await pool.query<OrderRow>('SELECT * FROM orders WHERE id = $1', [id])
-  return rows[0] ? mapOrder(rows[0]) : undefined
+  return ordersDb.read().find((o) => o.id === id)
 }
 
 export async function updateOrder(
   id: string,
   data: Partial<Omit<Order, 'id'>> & { createdAt?: string }
 ): Promise<Order | undefined> {
-  const existing = await getOrderById(id)
-  if (!existing) return undefined
+  const all = ordersDb.read()
+  const index = all.findIndex((o) => o.id === id)
+  if (index < 0) return undefined
 
+  const existing = all[index]
   const items = data.items ?? existing.items
   const subtotal = data.subtotal ?? existing.subtotal
   const deliveryIncluded = data.deliveryIncluded ?? existing.deliveryIncluded
@@ -228,56 +153,39 @@ export async function updateOrder(
     return undefined
   }
 
-  const { rows } = await pool.query<OrderRow>(
-    `UPDATE orders SET
-       employee_id = $2,
-       employee_name = $3,
-       items = $4::jsonb,
-       subtotal = $5,
-       delivery_included = $6,
-       safe_handling_amount = $7,
-       safe_handling_counts = $8::jsonb,
-       delivery_amount = $9,
-       packaging_amount = $10,
-       packaging_30_count = $11,
-       packaging_50_count = $12,
-       special_delivery_amount = $13,
-       box_and_tapes_amount = $14,
-       include_paybill = $15,
-       include_paybill_247247 = $16,
-       include_mpesa_agent_store = $17,
-       grand_total = $18,
-       created_at = $19::timestamptz
-     WHERE id = $1
-     RETURNING *`,
-    [
-      id,
-      employeeId ?? '',
-      employeeName.trim(),
-      JSON.stringify(items),
-      subtotal,
-      deliveryIncluded,
-      safeHandlingAmount,
-      JSON.stringify(safeHandlingCounts),
-      deliveryAmount,
-      packagingAmount,
-      packaging30Count,
-      packaging50Count,
-      specialDeliveryAmount,
-      boxAndTapesAmount,
-      includePaybill854845,
-      includePaybill247247,
-      includeMpesaAgentStore,
-      grandTotal,
-      createdAt,
-    ]
-  )
-  return rows[0] ? mapOrder(rows[0]) : undefined
+  const updated: Order = {
+    id,
+    employeeId: employeeId ?? '',
+    employeeName: employeeName.trim(),
+    items,
+    subtotal,
+    deliveryIncluded,
+    safeHandlingAmount,
+    safeHandlingCounts,
+    deliveryAmount,
+    packagingAmount,
+    packaging30Count,
+    packaging50Count,
+    specialDeliveryAmount,
+    boxAndTapesAmount,
+    includePaybill854845,
+    includePaybill247247,
+    includeMpesaAgentStore,
+    grandTotal,
+    createdAt,
+  }
+
+  all[index] = updated
+  ordersDb.write(all)
+  return updated
 }
 
 export async function deleteOrder(id: string): Promise<boolean> {
-  const { rowCount } = await pool.query('DELETE FROM orders WHERE id = $1', [id])
-  return (rowCount ?? 0) > 0
+  const all = ordersDb.read()
+  const next = all.filter((o) => o.id !== id)
+  if (next.length === all.length) return false
+  ordersDb.write(next)
+  return true
 }
 
 export async function deleteOrdersByEmployee(
@@ -286,24 +194,27 @@ export async function deleteOrdersByEmployee(
   dateKey?: string
 ): Promise<number> {
   const name = employeeName.trim()
-  const dateFilter =
-    dateKey && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
-      ? `AND created_at::date = $${employeeId.startsWith('name:') ? 2 : 3}::date`
-      : ''
-  const dateParams = dateFilter ? [dateKey] : []
+  const all = ordersDb.read()
+  const before = all.length
 
-  const { rowCount } = employeeId.startsWith('name:')
-    ? await pool.query(
-        `DELETE FROM orders WHERE employee_name = $1 ${dateFilter}`,
-        [employeeId.slice(5).trim() || name, ...dateParams]
-      )
-    : await pool.query(
-        `DELETE FROM orders
-         WHERE (employee_id = $1
-            OR (COALESCE(employee_id, '') = '' AND employee_name = $2)
-            OR employee_name = $2)
-         ${dateFilter}`,
-        [employeeId, name, ...dateParams]
-      )
-  return rowCount ?? 0
+  const next = all.filter((order) => {
+    if (dateKey && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+      const orderDay = new Date(order.createdAt).toLocaleDateString('en-CA')
+      if (orderDay !== dateKey) return true
+    }
+
+    if (employeeId.startsWith('name:')) {
+      const matchName = employeeId.slice(5).trim() || name
+      return order.employeeName !== matchName
+    }
+
+    const matchesId = order.employeeId === employeeId
+    const matchesName =
+      order.employeeName === name ||
+      (!order.employeeId && order.employeeName === name)
+    return !(matchesId || matchesName)
+  })
+
+  ordersDb.write(next)
+  return before - next.length
 }

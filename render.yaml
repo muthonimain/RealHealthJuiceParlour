@@ -1,32 +1,32 @@
 # Render Blueprint — connect this GitHub repo in the Render dashboard
 # https://render.com/docs/blueprint-spec
-
-databases:
-  - name: rhjp-db
-    databaseName: rhjp_pos
-    user: rhjp
-    plan: free
+#
+# IMPORTANT: After create, attach a Persistent Disk to this service:
+#   Mount path: /var/data
+# Then set env var DATA_DIR=/var/data (already set below).
+# Without a persistent disk, data is wiped on every redeploy/restart.
 
 services:
   - type: web
     name: real-health-juice-parlour
     runtime: node
-    plan: free
+    # Persistent disks are NOT available on Free — Starter ($7/mo) or higher required
+    plan: starter
     # NODE_ENV=production is set for runtime; install must still get devDependencies (vite, tsc, @types)
     buildCommand: NPM_CONFIG_PRODUCTION=false npm run install:all && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
+    disk:
+      name: rhjp-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "5000"
-      - key: DATABASE_SSL
-        value: "true"
-      - key: DATABASE_URL
-        fromDatabase:
-          name: rhjp-db
-          property: connectionString
+      - key: DATA_DIR
+        value: /var/data
       - key: JWT_SECRET
         generateValue: true
       # Staff credentials — set values in Render Dashboard → Environment

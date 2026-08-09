@@ -1,15 +1,8 @@
-services:
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: rhjp
-      POSTGRES_PASSWORD: rhjp_local_dev
-      POSTGRES_DB: rhjp_pos
-    ports:
-      - '5432:5432'
-    volumes:
-      - rhjp_pg_data:/var/lib/postgresql/data
+# Optional — PostgreSQL is no longer used.
+# Kept as a stub so `docker compose up` does not fail if someone still runs it.
 
-volumes:
-  rhjp_pg_data:
+services:
+  noop:
+    image: alpine:3.20
+    command: ["true"]
+    profiles: ["unused"]

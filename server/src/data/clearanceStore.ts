@@ -1,5 +1,5 @@
 import { toDateKey } from '../lib/dateKey'
-import { pool } from '../db/pool'
+import { JsonCollection } from '../lib/persistence'
 
 export { toDateKey }
 
@@ -11,37 +11,15 @@ export interface DailyClearance {
   clearedBy: string
 }
 
-interface ClearanceRow {
-  employee_id: string
-  employee_name: string
-  date_key: string
-  cleared_at: Date
-  cleared_by: string
-}
-
-function mapClearance(row: ClearanceRow): DailyClearance {
-  const dateKey =
-    typeof row.date_key === 'string'
-      ? row.date_key.slice(0, 10)
-      : new Date(row.date_key).toISOString().slice(0, 10)
-  return {
-    employeeId: row.employee_id,
-    employeeName: row.employee_name,
-    dateKey,
-    clearedAt: new Date(row.cleared_at).toISOString(),
-    clearedBy: row.cleared_by,
-  }
-}
+const clearancesDb = new JsonCollection<DailyClearance>('clearances.json')
 
 export async function findClearance(
   employeeId: string,
   dateKey: string
 ): Promise<DailyClearance | undefined> {
-  const { rows } = await pool.query<ClearanceRow>(
-    'SELECT * FROM clearances WHERE employee_id = $1 AND date_key = $2::date',
-    [employeeId, dateKey]
-  )
-  return rows[0] ? mapClearance(rows[0]) : undefined
+  return clearancesDb
+    .read()
+    .find((c) => c.employeeId === employeeId && c.dateKey === dateKey)
 }
 
 export function resolveClearanceStatus(
@@ -65,28 +43,22 @@ export async function revokeClearanceIfSuperseded(
 ): Promise<void> {
   const dateKey = toDateKey(orderCreatedAt)
   const createdMs = new Date(orderCreatedAt).getTime()
+  const all = clearancesDb.read()
 
-  const clearance = await findClearance(employeeId, dateKey)
+  let clearance = all.find((c) => c.employeeId === employeeId && c.dateKey === dateKey)
+
   if (!clearance && employeeName) {
-    const { rows } = await pool.query<ClearanceRow>(
-      'SELECT * FROM clearances WHERE date_key = $1::date AND employee_name = $2',
-      [dateKey, employeeName]
-    )
-    if (rows[0] && createdMs > new Date(rows[0].cleared_at).getTime()) {
-      await pool.query(
-        'DELETE FROM clearances WHERE employee_id = $1 AND date_key = $2::date',
-        [rows[0].employee_id, dateKey]
-      )
-    }
-    return
+    clearance = all.find((c) => c.dateKey === dateKey && c.employeeName === employeeName)
   }
 
-  if (clearance && createdMs > new Date(clearance.clearedAt).getTime()) {
-    await pool.query(
-      'DELETE FROM clearances WHERE employee_id = $1 AND date_key = $2::date',
-      [employeeId, dateKey]
+  if (!clearance) return
+  if (createdMs <= new Date(clearance.clearedAt).getTime()) return
+
+  clearancesDb.write(
+    all.filter(
+      (c) => !(c.employeeId === clearance!.employeeId && c.dateKey === dateKey)
     )
-  }
+  )
 }
 
 export async function clearEmployeeDay(
@@ -95,29 +67,27 @@ export async function clearEmployeeDay(
   dateKey: string,
   clearedBy: string
 ): Promise<DailyClearance> {
-  const clearedAt = new Date().toISOString()
-  const { rows } = await pool.query<ClearanceRow>(
-    `INSERT INTO clearances (employee_id, employee_name, date_key, cleared_at, cleared_by)
-     VALUES ($1, $2, $3::date, $4::timestamptz, $5)
-     ON CONFLICT (employee_id, date_key)
-     DO UPDATE SET
-       employee_name = EXCLUDED.employee_name,
-       cleared_at = EXCLUDED.cleared_at,
-       cleared_by = EXCLUDED.cleared_by
-     RETURNING *`,
-    [employeeId, employeeName, dateKey, clearedAt, clearedBy]
-  )
-  return mapClearance(rows[0])
+  const record: DailyClearance = {
+    employeeId,
+    employeeName,
+    dateKey,
+    clearedAt: new Date().toISOString(),
+    clearedBy,
+  }
+
+  const all = clearancesDb.read()
+  const index = all.findIndex((c) => c.employeeId === employeeId && c.dateKey === dateKey)
+  if (index >= 0) all[index] = record
+  else all.push(record)
+  clearancesDb.write(all)
+  return record
 }
 
 export async function getClearancesForDate(dateKey: string): Promise<DailyClearance[]> {
-  const { rows } = await pool.query<ClearanceRow>(
-    'SELECT * FROM clearances WHERE date_key = $1::date',
-    [dateKey]
-  )
-  return rows.map(mapClearance)
+  return clearancesDb.read().filter((c) => c.dateKey === dateKey)
 }
 
 export async function deleteClearancesByEmployee(employeeId: string): Promise<void> {
-  await pool.query('DELETE FROM clearances WHERE employee_id = $1', [employeeId])
+  const all = clearancesDb.read()
+  clearancesDb.write(all.filter((c) => c.employeeId !== employeeId))
 }
